@@ -1,0 +1,51 @@
+{
+  "name": "mobile-sdk",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/mobile-sdk/src",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc",
+        "cwd": "packages/mobile-sdk"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run",
+        "cwd": "packages/mobile-sdk"
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest run --coverage",
+        "cwd": "packages/mobile-sdk"
+      }
+    },
+    "test:watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "vitest",
+        "cwd": "packages/mobile-sdk"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "eslint --config ../../eslint.config.mjs \"src/**/*.ts\"",
+        "cwd": "packages/mobile-sdk"
+      }
+    },
+    "format": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "prettier --write \"src/**/*.ts\"",
+        "cwd": "packages/mobile-sdk"
+      }
+    }
+  },
+  "tags": []
+}

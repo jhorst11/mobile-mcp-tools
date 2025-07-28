@@ -1,0 +1,493 @@
+/*
+ * Copyright (c) 2025, salesforce.com, inc.
+ * All rights reserved.
+ * SPDX-License-Identifier: MIT
+ * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
+ */
+
+import { CommandRunner } from './commandRunner.js';
+import { FileUtils } from './fileUtils.js';
+import { DeviceManager } from './deviceManager.js';
+import { join } from 'path';
+
+export interface BuildOptions {
+  projectPath: string;
+  configuration: 'debug' | 'release';
+  clean: boolean;
+  targetDevice?: string;
+}
+
+export interface BuildResult {
+  success: boolean;
+  appPath?: string;
+  deviceId?: string;
+  deviceName?: string;
+  appBundleId?: string;
+  buildLogPath?: string;
+  error?: string;
+}
+
+export class BuildManager {
+  /**
+   * Detect the platform of a project
+   */
+  static async detectPlatform(
+    projectPath: string
+  ): Promise<'ios' | 'android' | 'react-native' | null> {
+    // Check for iOS-specific files
+    if (await FileUtils.exists(join(projectPath, 'ios'))) {
+      return 'ios';
+    }
+
+    // Check for specific iOS project files
+    const files =
+      (await FileUtils.exists(join(projectPath, '*.xcworkspace'))) ||
+      (await FileUtils.exists(join(projectPath, '*.xcodeproj')));
+    if (files) {
+      return 'ios';
+    }
+
+    // Check for Android-specific files
+    if (
+      (await FileUtils.exists(join(projectPath, 'android'))) ||
+      (await FileUtils.exists(join(projectPath, 'build.gradle'))) ||
+      (await FileUtils.exists(join(projectPath, 'app', 'build.gradle')))
+    ) {
+      return 'android';
+    }
+
+    // Check for React Native
+    if (await FileUtils.exists(join(projectPath, 'package.json'))) {
+      try {
+        const packageJson = await FileUtils.readJsonFile(join(projectPath, 'package.json'));
+        if (packageJson && typeof packageJson === 'object' && 'dependencies' in packageJson) {
+          const deps = (packageJson as { dependencies?: Record<string, string> }).dependencies;
+          if (deps?.['react-native']) {
+            return 'react-native';
+          }
+        }
+      } catch {
+        // Ignore JSON parsing errors
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Build and deploy to iOS simulator
+   */
+  static async buildAndDeployIOS(options: BuildOptions): Promise<BuildResult> {
+    try {
+      const { projectPath, configuration, clean, targetDevice } = options;
+
+      // Find the workspace or project file
+      let buildTarget: string | null = null;
+      const workspaceFiles = ['*.xcworkspace', '*.xcodeproj'];
+
+      for (const pattern of workspaceFiles) {
+        const files = await this.findFilesWithPattern(projectPath, pattern);
+        if (files.length > 0) {
+          buildTarget = files[0];
+          break;
+        }
+      }
+
+      if (!buildTarget) {
+        throw new Error('No Xcode workspace or project file found');
+      }
+
+      const isWorkspace = buildTarget.endsWith('.xcworkspace');
+      const buildArgs = [
+        isWorkspace ? '-workspace' : '-project',
+        buildTarget,
+        '-scheme',
+        await this.getIOSScheme(projectPath, buildTarget),
+        '-configuration',
+        configuration === 'debug' ? 'Debug' : 'Release',
+        '-sdk',
+        'iphonesimulator',
+      ];
+
+      // Find and start simulator if needed
+      let deviceInfo: { deviceId: string; deviceName: string } | undefined;
+
+      if (targetDevice) {
+        try {
+          deviceInfo = await DeviceManager.startIOSSimulator(targetDevice);
+          buildArgs.push('-destination', `id=${deviceInfo.deviceId}`);
+        } catch {
+          // Fall back to generic simulator destination
+          buildArgs.push('-destination', 'generic/platform=iOS Simulator');
+        }
+      } else {
+        // Use default simulator
+        buildArgs.push('-destination', 'generic/platform=iOS Simulator');
+      }
+
+      // Add clean if requested
+      if (clean) {
+        buildArgs.push('clean');
+      }
+
+      // Add build action
+      buildArgs.push('build');
+
+      // Create build log file
+      const logPath = join(projectPath, 'build.log');
+
+      // Execute the build
+      console.error(`Building iOS project: xcodebuild ${buildArgs.join(' ')}`);
+      const buildResult = await CommandRunner.run('xcodebuild', buildArgs, {
+        cwd: projectPath,
+        timeout: 300000, // 5 minutes
+      });
+
+      // Write build log
+      await FileUtils.writeFile(logPath, buildResult.stdout + '\n' + buildResult.stderr);
+
+      if (!buildResult.success) {
+        return {
+          success: false,
+          error: `Build failed: ${buildResult.stderr}`,
+          buildLogPath: logPath,
+        };
+      }
+
+      // Find the built app
+      const appPath = await this.findBuiltIOSApp(projectPath);
+      const bundleId = appPath ? await this.getIOSBundleId(appPath) : undefined;
+
+      // Install and launch on simulator if device was specified
+      if (deviceInfo && appPath) {
+        try {
+          // Install the app
+          const installResult = await CommandRunner.run('xcrun', [
+            'simctl',
+            'install',
+            deviceInfo.deviceId,
+            appPath,
+          ]);
+
+          if (!installResult.success) {
+            console.error(`Failed to install app: ${installResult.stderr}`);
+          } else if (bundleId) {
+            // Launch the app
+            const launchResult = await CommandRunner.run('xcrun', [
+              'simctl',
+              'launch',
+              deviceInfo.deviceId,
+              bundleId,
+            ]);
+
+            if (!launchResult.success) {
+              console.error(`Failed to launch app: ${launchResult.stderr}`);
+            }
+          }
+        } catch (error) {
+          console.error(`Error during install/launch: ${error}`);
+        }
+      }
+
+      return {
+        success: true,
+        appPath,
+        deviceId: deviceInfo?.deviceId,
+        deviceName: deviceInfo?.deviceName,
+        appBundleId: bundleId,
+        buildLogPath: logPath,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Build and deploy to Android emulator
+   */
+  static async buildAndDeployAndroid(options: BuildOptions): Promise<BuildResult> {
+    try {
+      const { projectPath, configuration, clean, targetDevice } = options;
+
+      // Find the gradle wrapper
+      const gradlewPath = (await FileUtils.exists(join(projectPath, 'gradlew')))
+        ? join(projectPath, 'gradlew')
+        : 'gradlew';
+
+      const buildArgs: string[] = [];
+
+      // Add clean if requested
+      if (clean) {
+        buildArgs.push('clean');
+      }
+
+      // Add build task
+      const buildTask = configuration === 'debug' ? 'assembleDebug' : 'assembleRelease';
+      buildArgs.push(buildTask);
+
+      // Create build log file
+      const logPath = join(projectPath, 'build.log');
+
+      // Execute the build
+      console.error(`Building Android project: ${gradlewPath} ${buildArgs.join(' ')}`);
+      const buildResult = await CommandRunner.run(gradlewPath, buildArgs, {
+        cwd: projectPath,
+        timeout: 300000, // 5 minutes
+      });
+
+      // Write build log
+      await FileUtils.writeFile(logPath, buildResult.stdout + '\n' + buildResult.stderr);
+
+      if (!buildResult.success) {
+        return {
+          success: false,
+          error: `Build failed: ${buildResult.stderr}`,
+          buildLogPath: logPath,
+        };
+      }
+
+      // Find the built APK
+      const apkPath = await this.findBuiltAndroidApk(projectPath, configuration);
+      const bundleId = apkPath ? await this.getAndroidPackageName(projectPath) : undefined;
+
+      // Start emulator and install/launch if device was specified
+      let deviceInfo: { deviceId: string; deviceName: string } | undefined;
+
+      if (targetDevice && apkPath) {
+        try {
+          deviceInfo = await DeviceManager.startAndroidEmulator(targetDevice);
+
+          // Install the APK
+          const installResult = await CommandRunner.run('adb', [
+            '-s',
+            deviceInfo.deviceId,
+            'install',
+            '-r',
+            apkPath,
+          ]);
+
+          if (!installResult.success) {
+            console.error(`Failed to install APK: ${installResult.stderr}`);
+          } else if (bundleId) {
+            // Launch the app
+            const launchResult = await CommandRunner.run('adb', [
+              '-s',
+              deviceInfo.deviceId,
+              'shell',
+              'am',
+              'start',
+              '-n',
+              `${bundleId}/.MainActivity`,
+            ]);
+
+            if (!launchResult.success) {
+              console.error(`Failed to launch app: ${launchResult.stderr}`);
+            }
+          }
+        } catch (error) {
+          console.error(`Error during emulator start/install/launch: ${error}`);
+        }
+      }
+
+      return {
+        success: true,
+        appPath: apkPath,
+        deviceId: deviceInfo?.deviceId,
+        deviceName: deviceInfo?.deviceName,
+        appBundleId: bundleId,
+        buildLogPath: logPath,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Build and deploy based on detected platform
+   */
+  static async buildAndDeploy(options: BuildOptions): Promise<BuildResult> {
+    const platform = await this.detectPlatform(options.projectPath);
+
+    if (!platform) {
+      return {
+        success: false,
+        error: 'Could not detect project platform',
+      };
+    }
+
+    switch (platform) {
+      case 'ios':
+        return this.buildAndDeployIOS(options);
+      case 'android':
+        return this.buildAndDeployAndroid(options);
+      case 'react-native':
+        // For React Native, we need to build for a specific platform
+        // This would require additional logic to determine which platform to build
+        return {
+          success: false,
+          error: 'React Native projects require specifying target platform',
+        };
+      default:
+        return {
+          success: false,
+          error: `Unsupported platform: ${platform}`,
+        };
+    }
+  }
+
+  /**
+   * Helper method to find files with a pattern
+   */
+  private static async findFilesWithPattern(directory: string, pattern: string): Promise<string[]> {
+    try {
+      const result = await CommandRunner.run('find', [directory, '-name', pattern, '-type', 'f']);
+      if (result.success) {
+        return result.stdout.split('\n').filter(line => line.trim().length > 0);
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Get the iOS scheme name
+   */
+  private static async getIOSScheme(projectPath: string, buildTarget: string): Promise<string> {
+    try {
+      const isWorkspace = buildTarget.endsWith('.xcworkspace');
+      const listResult = await CommandRunner.run(
+        'xcodebuild',
+        [isWorkspace ? '-workspace' : '-project', buildTarget, '-list'],
+        { cwd: projectPath }
+      );
+
+      if (listResult.success) {
+        const lines = listResult.stdout.split('\n');
+        let inSchemes = false;
+        for (const line of lines) {
+          if (line.trim() === 'Schemes:') {
+            inSchemes = true;
+            continue;
+          }
+          if (inSchemes && line.trim().length > 0 && !line.startsWith(' ')) {
+            break;
+          }
+          if (inSchemes && line.trim().length > 0) {
+            return line.trim();
+          }
+        }
+      }
+    } catch {
+      // Fall back to default
+    }
+
+    // Default scheme name (often matches project name)
+    const projectName = buildTarget
+      .split('/')
+      .pop()
+      ?.replace(/\.(xcworkspace|xcodeproj)$/, '');
+    return projectName || 'MyApp';
+  }
+
+  /**
+   * Find the built iOS app
+   */
+  private static async findBuiltIOSApp(projectPath: string): Promise<string | undefined> {
+    try {
+      const result = await CommandRunner.run('find', [projectPath, '-name', '*.app', '-type', 'd']);
+
+      if (result.success) {
+        const apps = result.stdout
+          .split('\n')
+          .filter(line => line.trim().length > 0 && line.includes('Debug-iphonesimulator'));
+        return apps[0] || undefined;
+      }
+    } catch {
+      // Ignore errors
+    }
+    return undefined;
+  }
+
+  /**
+   * Get iOS bundle identifier
+   */
+  private static async getIOSBundleId(appPath: string): Promise<string | undefined> {
+    try {
+      const plistPath = join(appPath, 'Info.plist');
+      const result = await CommandRunner.run('plutil', ['-p', plistPath]);
+
+      if (result.success) {
+        const bundleIdMatch = result.stdout.match(/"CFBundleIdentifier" => "([^"]+)"/);
+        return bundleIdMatch ? bundleIdMatch[1] : undefined;
+      }
+    } catch {
+      // Ignore errors
+    }
+    return undefined;
+  }
+
+  /**
+   * Find the built Android APK
+   */
+  private static async findBuiltAndroidApk(
+    projectPath: string,
+    configuration: 'debug' | 'release'
+  ): Promise<string | undefined> {
+    try {
+      const configName = configuration === 'debug' ? 'debug' : 'release';
+      const result = await CommandRunner.run('find', [
+        projectPath,
+        '-name',
+        `*${configName}.apk`,
+        '-type',
+        'f',
+      ]);
+
+      if (result.success) {
+        const apks = result.stdout.split('\n').filter(line => line.trim().length > 0);
+        return apks[0] || undefined;
+      }
+    } catch {
+      // Ignore errors
+    }
+    return undefined;
+  }
+
+  /**
+   * Get Android package name from manifest
+   */
+  private static async getAndroidPackageName(projectPath: string): Promise<string | undefined> {
+    try {
+      // Try to find AndroidManifest.xml
+      const manifestResult = await CommandRunner.run('find', [
+        projectPath,
+        '-name',
+        'AndroidManifest.xml',
+        '-type',
+        'f',
+      ]);
+
+      if (manifestResult.success) {
+        const manifests = manifestResult.stdout
+          .split('\n')
+          .filter(line => line.trim().length > 0 && line.includes('src/main'));
+
+        if (manifests.length > 0) {
+          const manifestContent = await FileUtils.readFile(manifests[0]);
+          const packageMatch = manifestContent.match(/package="([^"]+)"/);
+          return packageMatch ? packageMatch[1] : undefined;
+        }
+      }
+    } catch {
+      // Ignore errors
+    }
+    return undefined;
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "name": "@salesforce/mobile-sdk-mcp-server",
+  "version": "0.0.1",
+  "type": "module",
+  "files": [
+    "dist",
+    "resources"
+  ],
+  "description": "Salesforce Mobile SDK MCP Server - Automates the complete mobile development lifecycle",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "sfdc-mobile-sdk-mcp-server": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc ",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "lint": "eslint --config ../../eslint.config.mjs \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.2",
+    "dedent": "^1.5.3",
+    "zod": "^3.25.67",
+    "execa": "^9.0.0",
+    "semver": "^7.6.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/inspector": "^0.15.0",
+    "@types/node": "^24.0.7",
+    "@types/semver": "^7.5.8",
+    "@vitest/coverage-v8": "^3.2.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.3"
+  }
+}

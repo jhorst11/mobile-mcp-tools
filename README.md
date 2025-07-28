@@ -8,6 +8,8 @@ A collection of Model Context Protocol (MCP) tools for Salesforce Mobile Web app
 
 ## Features
 
+### Mobile Web Development (`@salesforce/mobile-web-mcp-server`)
+
 - **App Review**: Implement app store review functionality
 - **AR Space Capture**: Capture and process AR space data
 - **Barcode Scanner**: Scan and process barcodes
@@ -19,6 +21,14 @@ A collection of Model Context Protocol (MCP) tools for Salesforce Mobile Web app
 - **Location**: Access device location services
 - **NFC**: Implement NFC functionality
 - **Payments**: Process mobile payments
+
+### Mobile SDK Development (`@salesforce/mobile-sdk-mcp-server`)
+
+- **Environment Setup**: Automated prerequisite checking and validation
+- **Salesforce Authentication**: Streamlined org login and session management
+- **Connected App Provisioning**: Programmatic Connected App creation and configuration
+- **Project Scaffolding**: Multi-platform project creation (iOS, Android, React Native)
+- **Connection Configuration**: Automated credential injection and platform-specific setup
 
 ## Prerequisites
 
