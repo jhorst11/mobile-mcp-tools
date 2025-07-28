@@ -13,7 +13,7 @@ import {
   ProjectScaffoldGuidanceResponse,
   type ProjectScaffoldGuidanceRequestType,
 } from '../../schemas/mobileSdkSchema.js';
-import { resolve, join } from 'path';
+import { resolve, join, dirname, basename } from 'path';
 
 export class ProjectScaffoldTool implements Tool {
   readonly name = 'Project Scaffold Guidance';
@@ -61,33 +61,50 @@ All CLI tools use consistent parameter names:
 
 ### iOS Native Project
 \`\`\`bash
+# Navigate to the parent directory where you want to create the project
+cd /path/to/parent/directory
+
+# CLI will create the project directory for you
 forceios create \\
   --apptype=native_swift \\
   --appname="My Mobile App" \\
   --packagename=com.company.mymobileapp \\
   --organization="My Company" \\
-  --outputdir=./projects
+  --outputdir=MyMobileApp
 \`\`\`
 
 ### Android Native Project
 \`\`\`bash
+# Navigate to the parent directory where you want to create the project
+cd /path/to/parent/directory
+
+# CLI will create the project directory for you
 forcedroid create \\
   --apptype=native_kotlin \\
   --appname="My Mobile App" \\
   --packagename=com.company.mymobileapp \\
   --organization="My Company" \\
-  --outputdir=./projects
+  --outputdir=MyMobileApp
 \`\`\`
 
 ### React Native Project
 \`\`\`bash
+# Navigate to the parent directory where you want to create the project
+cd /path/to/parent/directory
+
+# CLI will create the project directory for you
 forcereact create \\
   --apptype=react_native \\
   --appname="My Mobile App" \\
   --packagename=com.company.mymobileapp \\
   --organization="My Company" \\
-  --outputdir=./projects
+  --outputdir=MyMobileApp
 \`\`\`
+
+## Important Notes
+- The CLI tools will create the project directory for you - don't create it beforehand
+- Run the commands from the parent directory where you want the project to be created
+- The --outputdir parameter should be just the directory name, not a full path
 
 ## Next Steps
 After creating your project:
@@ -140,6 +157,8 @@ To get specific commands for your project parameters, provide them to this tool.
 
       // Generate specific commands
       const outputDir = resolve(params.outputDir);
+      const parentDir = dirname(outputDir);
+      const projectDirName = basename(outputDir);
       const projectPath = join(outputDir, params.appName);
 
       let commands: string[] = [];
@@ -150,14 +169,14 @@ To get specific commands for your project parameters, provide them to this tool.
         case 'ios':
           cliName = 'forceios';
           commands = [
-            `mkdir -p "${outputDir}"`,
-            `cd "${outputDir}"`,
+            `mkdir -p "${parentDir}"`,
+            `cd "${parentDir}"`,
             `${cliName} create \\`,
             `  --apptype=native_swift \\`,
             `  --appname="${params.appName}" \\`,
             `  --packagename=${params.packageId} \\`,
             `  --organization="${params.organization}" \\`,
-            `  --outputdir="${outputDir}"`,
+            `  --outputdir="${projectDirName}"`,
           ];
           guidance = `# iOS Project Scaffolding Commands
 
@@ -178,14 +197,14 @@ Your project will be created at: ${projectPath}
         case 'android':
           cliName = 'forcedroid';
           commands = [
-            `mkdir -p "${outputDir}"`,
-            `cd "${outputDir}"`,
+            `mkdir -p "${parentDir}"`,
+            `cd "${parentDir}"`,
             `${cliName} create \\`,
             `  --apptype=native_kotlin \\`,
             `  --appname="${params.appName}" \\`,
             `  --packagename=${params.packageId} \\`,
             `  --organization="${params.organization}" \\`,
-            `  --outputdir="${outputDir}"`,
+            `  --outputdir="${projectDirName}"`,
           ];
           guidance = `# Android Project Scaffolding Commands
 
@@ -206,14 +225,14 @@ Your project will be created at: ${projectPath}
         case 'react-native':
           cliName = 'forcereact';
           commands = [
-            `mkdir -p "${outputDir}"`,
-            `cd "${outputDir}"`,
+            `mkdir -p "${parentDir}"`,
+            `cd "${parentDir}"`,
             `${cliName} create \\`,
             `  --apptype=react_native \\`,
             `  --appname="${params.appName}" \\`,
             `  --packagename=${params.packageId} \\`,
             `  --organization="${params.organization}" \\`,
-            `  --outputdir="${outputDir}"`,
+            `  --outputdir="${projectDirName}"`,
           ];
           guidance = `# React Native Project Scaffolding Commands
 
