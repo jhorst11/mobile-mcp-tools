@@ -38,6 +38,7 @@ export class ProvisionConnectedAppTool implements Tool {
 5. **Configure OAuth Settings**:
    - Check "Enable OAuth Settings"
    - Callback URL: Enter \`sfdc://success\`
+   - **IMPORTANT**: Uncheck "Require Secret for Web Server Flow" (mobile apps don't need the consumer secret)
    - Selected OAuth Scopes: Add these scopes:
      - Access and manage your data (api)
      - Provide access to your data via the Web (web)
@@ -51,11 +52,19 @@ export class ProvisionConnectedAppTool implements Tool {
    - Copy the "Consumer Key" (Client ID) - this is what you'll provide to this tool
 
 ## Login URL Configuration
-When providing credentials to this tool, also specify your org's login URL:
-- **Production/Developer orgs**: https://login.salesforce.com (default)
-- **Sandbox orgs**: https://test.salesforce.com
-- **Custom domains**: https://mycompany.my.salesforce.com
+**Do you need a custom login URL?**
+
+Most developers can use the default login URL. Choose your situation:
+
+### Option 1: Use Default Login URL (Most Common)
+If you're using a **production org** or **developer org**, you can skip providing a login URL and use the default: \`https://login.salesforce.com\`
+
+### Option 2: Provide Custom Login URL
+If you're using any of these, provide the appropriate login URL when calling this tool:
+- **Sandbox orgs**: \`https://test.salesforce.com\`
+- **Custom domains**: \`https://mycompany.my.salesforce.com\`
 - **Scratch orgs**: Check your scratch org info for the specific URL
+- **Partner/Trialforce orgs**: Use your organization-specific URL
 
 ## Configuring Login Servers in Your Mobile App
 After validation, you'll need to configure your mobile app to use the custom login server:
@@ -77,16 +86,36 @@ Configure the server connection in your Android app using:
 **Android Documentation**: https://developer.salesforce.com/docs/platform/mobile-sdk/guide/oauth-custom-login-host.html
 
 ## Important Notes
-- The Consumer Secret is not needed for mobile applications
+- **Uncheck "Require Secret for Web Server Flow"** - Mobile applications don't need the Consumer Secret
 - Make sure the Callback URL is exactly: \`sfdc://success\`
 - After creating the app, it may take 2-10 minutes to become active
+- Most developers can use the default login URL (https://login.salesforce.com)
 - iOS apps: Omit "https://" prefix when configuring login host
 - Android apps: Include "https://" prefix when configuring login URL
 
 ## Reference
 For detailed instructions, see: https://help.salesforce.com/s/articleView?id=platform.ev_relay_create_connected_app.htm&language=en_US&type=5
 
-Once you have your Consumer Key and know your login URL, provide them to this tool to validate and store the configuration.`;
+## Providing Credentials to This Tool
+
+### If using default login URL (production/developer org):
+Provide only your Consumer Key:
+\`\`\`json
+{
+  "consumerKey": "3MVG9A2kN3Bn17h..."
+}
+\`\`\`
+
+### If using custom login URL (sandbox/custom domain):
+Provide both Consumer Key and login URL:
+\`\`\`json
+{
+  "consumerKey": "3MVG9A2kN3Bn17h...",
+  "loginUrl": "https://test.salesforce.com"
+}
+\`\`\`
+
+Once you have your Consumer Key (and custom login URL if needed), provide them to this tool to validate and store the configuration.`;
   }
 
   private async handleRequest(params: ConnectedAppGuidanceRequestType) {
