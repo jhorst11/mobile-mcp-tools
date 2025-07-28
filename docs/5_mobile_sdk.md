@@ -255,6 +255,71 @@ This appendix provides a detailed technical specification for the primary tools 
 | create-new-salesforce-mobile-app | A guided, interactive workflow to create a new, fully configured mobile app from scratch using expert guidance. | 1\. **User Interaction:** Greet user and request permission for environment check. 2\. **Tool Call:** env/checkPrerequisites. 3\. **User Interaction:** Prompt user to log in to Salesforce. 4\. **Tool Call:** salesforce/login. 5\. **User Interaction:** Provide Connected App creation guidance. 6\. **Tool Call:** salesforce/provisionConnectedApp (guidance mode). 7\. **User Interaction:** Collect Connected App credentials from user. 8\. **Tool Call:** salesforce/provisionConnectedApp (validation mode). 9\. **User Interaction:** Ask for project details (platform, app name, etc.). 10\. **Tool Call:** project/scaffold (generate commands). 11\. **User Interaction:** Guide user through CLI execution. 12\. **Tool Call:** project/configureConnection. 13\. **User Interaction:** Report success and next steps. |
 | run-full-quality-check | Executes all available tests for the current project and provides a consolidated quality report. | 1\. **User Interaction:** Confirm project context and start tests. 2\. **Tool Call:** testing/run with type="lwc". 3\. **Tool Call:** testing/run with type="apex". 4\. **Tool Call:** testing/run with type="e2e". 5\. **User Interaction:** Present a consolidated report of all test results. |
 
+## 2.1 Phase 1.5: Critical Setup Validation
+
+**⚠️ Before proceeding with feature development, it's essential to validate that your Mobile SDK foundation is working correctly.**
+
+After completing the initial setup (environment check, Connected App, scaffolding, and configuration), perform this critical validation step:
+
+### Purpose
+- Verify that the app builds successfully
+- Ensure authentication flow works properly
+- Catch configuration issues early
+- Provide confidence before implementing features
+
+### Validation Workflow
+
+1. **Build and Deploy**:
+   ```bash
+   # Build and launch app on simulator
+   build-run-on-simulator --projectPath "/path/to/ContactsApp"
+   ```
+
+2. **Manual Authentication Test**:
+   - ✅ App compiles without errors
+   - ✅ App installs and launches on simulator  
+   - ✅ Salesforce login screen appears
+   - ✅ Can select appropriate org type (Production/Sandbox/Custom)
+   - ✅ Enter Salesforce credentials successfully
+   - ✅ Authentication completes without errors
+   - ✅ App navigates to main screen after login
+   - ✅ No crashes or error messages during flow
+
+3. **Troubleshooting Common Issues**:
+
+   **Build Failures:**
+   - Check Connected App consumer key in `bootconfig.plist`
+   - Verify Xcode project structure is intact
+   - Run `xcode-add-files` if Swift files are missing from project
+
+   **Authentication Failures:**
+   - Ensure Connected App callback URL is exactly `sfdc://success`
+   - Check login URL matches your org type (production vs sandbox vs custom)
+   - Verify OAuth scopes are properly configured
+   - Confirm Connected App is active (may take 2-10 minutes after creation)
+
+   **App Crashes:**
+   - Review build logs for dependency issues
+   - Check Mobile SDK version compatibility
+   - Validate bootconfig.plist format and content
+
+### Why This Step is Critical
+
+Many developers skip validation and dive straight into feature development, only to discover fundamental configuration issues hours later. This validation step:
+
+- **Saves Development Time**: Catches issues before they become complex to debug
+- **Ensures Solid Foundation**: Confirms the Mobile SDK setup is correct
+- **Reduces Frustration**: Prevents building features on a broken foundation  
+- **Improves Confidence**: Provides assurance that the basics work
+
+### Only After Validation Passes
+
+Once you've successfully completed the authentication test, you can proceed with confidence to:
+- Implement your specific app features
+- Use `xcode-add-files` when LLMs generate new Swift files
+- Iterate rapidly with the `build-run-on-simulator` tool
+- Build upon the validated foundation
+
 #### **Works cited**
 
 1. Developing Mobile Applications with Salesforce Mobile SDK: The present work represents a complete manual, accessed July 23, 2025, [https://jsaer.com/download/vol-8-iss-10-2021/JSAER2021-8-10-199-211.pdf](https://jsaer.com/download/vol-8-iss-10-2021/JSAER2021-8-10-199-211.pdf)  
