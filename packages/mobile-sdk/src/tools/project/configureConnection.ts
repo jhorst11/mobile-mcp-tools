@@ -26,11 +26,18 @@ export class ProjectConfigurationTool implements Tool {
 
   private async detectPlatform(projectPath: string): Promise<string | null> {
     // Check for iOS-specific files
-    if (
-      (await FileUtils.exists(join(projectPath, 'bootconfig.plist'))) ||
-      (await FileUtils.exists(join(projectPath, '*.xcodeproj')))
-    ) {
+    if (await FileUtils.exists(join(projectPath, 'bootconfig.plist'))) {
       return 'ios';
+    }
+
+    // Check for .xcodeproj directory (iOS projects)
+    try {
+      const files = await FileUtils.readDirectory(projectPath);
+      if (files.some(file => file.endsWith('.xcodeproj'))) {
+        return 'ios';
+      }
+    } catch {
+      // Directory might not exist or be readable
     }
 
     // Check for Android-specific files

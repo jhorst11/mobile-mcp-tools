@@ -29,6 +29,13 @@ export class FileUtils {
   }
 
   /**
+   * Read a directory and return its contents
+   */
+  static async readDirectory(path: string): Promise<string[]> {
+    return fs.readdir(path);
+  }
+
+  /**
    * Write content to a file, creating directories if necessary
    */
   static async writeFile(path: string, content: string): Promise<void> {
