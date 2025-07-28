@@ -21,7 +21,7 @@ import { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 
 // Phase 1 Tools
 import { CheckPrerequisitesTool } from './tools/environment/checkPrerequisites.js';
-import { SalesforceLoginTool } from './tools/salesforce/login.js';
+
 import { ProvisionConnectedAppTool } from './tools/salesforce/provisionConnectedApp.js';
 import { ProjectScaffoldTool } from './tools/project/scaffold.js';
 import { ProjectConfigurationTool } from './tools/project/configureConnection.js';
@@ -31,6 +31,7 @@ import { SimulatorStartTool } from './tools/simulator/start.js';
 import { ListDevicesTool } from './tools/simulator/listDevices.js';
 import { BuildRunOnSimulatorTool } from './tools/build/runOnSimulator.js';
 import { ResourceReadTool } from './tools/resource/read.js';
+import { XcodeAddFilesTool } from './tools/xcode/addFiles.js';
 
 const server = new McpServer({
   name: 'sfdc-mobile-sdk-mcp-server',
@@ -59,6 +60,7 @@ const tools = [
   new ListDevicesTool(),
   new BuildRunOnSimulatorTool(),
   new ResourceReadTool(),
+  new XcodeAddFilesTool(),
 ];
 
 // Register all tools with the server
