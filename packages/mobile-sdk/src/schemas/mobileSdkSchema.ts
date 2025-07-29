@@ -41,12 +41,8 @@ export const SalesforceLoginResponse = z.object({
 // Connected App guidance schemas
 export const ConnectedAppGuidanceRequest = z.object({
   consumerKey: z.string().min(1, 'Consumer Key is required').optional(),
-  callbackUrl: z.string().url('Valid callback URL required').default('sfdc://success').optional(),
-  loginUrl: z
-    .string()
-    .url('Valid login URL required')
-    .default('https://login.salesforce.com')
-    .optional(),
+  callbackUrl: z.string().default('sfdc://success').optional(),
+  loginUrl: z.string().default('https://login.salesforce.com').optional(),
 });
 
 export const ConnectedAppGuidanceResponse = z.object({
@@ -76,6 +72,37 @@ export const ProjectScaffoldGuidanceRequest = z.object({
     .optional(),
   organization: z.string().min(1, 'Organization name is required').optional(),
   outputDir: z.string().min(1, 'Output directory is required').optional(),
+
+  // Template selection criteria
+  appType: z
+    .enum(['basic', 'data-heavy', 'enterprise', 'custom-auth', 'sso'], {
+      description:
+        'Type of application: basic (simple app), data-heavy (offline sync), enterprise (advanced features), custom-auth (custom login), sso (identity provider)',
+    })
+    .optional(),
+  uiFramework: z
+    .enum(['modern', 'traditional'], {
+      description:
+        'UI framework preference: modern (SwiftUI/Jetpack Compose/TypeScript) or traditional (UIKit/Java/JavaScript)',
+    })
+    .optional(),
+  authStrategy: z
+    .enum(['standard', 'custom-native', 'deferred', 'sso-provider'], {
+      description:
+        'Authentication strategy: standard (Salesforce web login), custom-native (native login screen), deferred (optional login), sso-provider (identity provider)',
+    })
+    .optional(),
+  features: z
+    .array(z.enum(['push-notifications', 'offline-sync', 'package-manager']))
+    .optional()
+    .describe(
+      'Special features needed: push-notifications, offline-sync, package-manager (iOS Swift Package Manager)'
+    ),
+  language: z
+    .enum(['default', 'typescript', 'kotlin', 'swift', 'java', 'objc'], {
+      description: 'Preferred language (overrides platform defaults)',
+    })
+    .optional(),
 });
 
 export const ProjectScaffoldGuidanceResponse = z.object({
@@ -83,6 +110,9 @@ export const ProjectScaffoldGuidanceResponse = z.object({
   guidance: z.string().optional(),
   commands: z.array(z.string()).optional(),
   projectPath: z.string().optional(),
+  recommendedTemplate: z.string().optional(),
+  templateReason: z.string().optional(),
+  alternativeTemplates: z.array(z.string()).optional(),
   error: z.string().optional(),
 });
 
@@ -90,7 +120,8 @@ export const ProjectScaffoldGuidanceResponse = z.object({
 export const ProjectConfigurationRequest = z.object({
   projectPath: z.string().min(1, 'Project path is required'),
   consumerKey: z.string().min(1, 'Consumer key is required'),
-  callbackUrl: z.string().url('Valid callback URL required'),
+  callbackUrl: z.string().default('sfdc://success'),
+  loginUrl: z.string().optional(),
 });
 
 export const ProjectConfigurationResponse = z.object({
@@ -151,23 +182,43 @@ export const DeviceListResponse = z.object({
   error: z.string().optional(),
 });
 
-// Enhanced build schemas for Phase 2
-export const BuildRunOnSimulatorRequest = z.object({
+// Build guidance schemas
+export const BuildGuidanceRequest = z.object({
   projectPath: z.string().min(1, 'Project path is required'),
-  targetDevice: z.string().optional(),
   configuration: z.enum(['debug', 'release']).default('debug'),
   clean: z.boolean().default(false),
-  install: z.boolean().default(true),
-  launch: z.boolean().default(true),
 });
 
-export const BuildRunOnSimulatorResponse = z.object({
+export const BuildGuidanceResponse = z.object({
   success: z.boolean(),
-  buildLogUri: z.string().optional(),
+  platform: z.string().optional(),
+  guidance: z.string().optional(),
+  commands: z.array(z.string()).optional(),
+  buildLogPath: z.string().optional(),
+  expectedAppPath: z.string().optional(),
+  error: z.string().optional(),
+});
+
+// Deploy guidance schemas
+export const DeployGuidanceRequest = z.object({
+  projectPath: z.string().min(1, 'Project path is required'),
   appPath: z.string().optional(),
-  deviceId: z.string().optional(),
-  deviceName: z.string().optional(),
-  appBundleId: z.string().optional(),
+  bundleId: z.string().optional(),
+  targetDevice: z.string().optional(),
+});
+
+export const DeployGuidanceResponse = z.object({
+  success: z.boolean(),
+  platform: z.string().optional(),
+  guidance: z.string().optional(),
+  commands: z.array(z.string()).optional(),
+  verificationCommands: z.array(z.string()).optional(),
+  deviceInfo: z
+    .object({
+      deviceId: z.string(),
+      deviceName: z.string(),
+    })
+    .optional(),
   error: z.string().optional(),
 });
 
@@ -235,7 +286,66 @@ export type SimulatorStartResponseType = z.TypeOf<typeof SimulatorStartResponse>
 export type DeviceListRequestType = z.TypeOf<typeof DeviceListRequest>;
 export type DeviceInfoType = z.TypeOf<typeof DeviceInfo>;
 export type DeviceListResponseType = z.TypeOf<typeof DeviceListResponse>;
-export type BuildRunOnSimulatorRequestType = z.TypeOf<typeof BuildRunOnSimulatorRequest>;
-export type BuildRunOnSimulatorResponseType = z.TypeOf<typeof BuildRunOnSimulatorResponse>;
+export type BuildGuidanceRequestType = z.TypeOf<typeof BuildGuidanceRequest>;
+export type BuildGuidanceResponseType = z.TypeOf<typeof BuildGuidanceResponse>;
+export type DeployGuidanceRequestType = z.TypeOf<typeof DeployGuidanceRequest>;
+export type DeployGuidanceResponseType = z.TypeOf<typeof DeployGuidanceResponse>;
 export type ResourceReadRequestType = z.TypeOf<typeof ResourceReadRequest>;
 export type ResourceReadResponseType = z.TypeOf<typeof ResourceReadResponse>;
+
+// Workflow planner schemas
+export const WorkflowPlannerRequest = z.object({
+  goal: z.string().min(1, 'Goal description is required'),
+  currentContext: z
+    .object({
+      projectPath: z.string().optional(),
+      platform: z.enum(['ios', 'android', 'react-native']).optional(),
+      hasConnectedApp: z.boolean().optional(),
+      isConfigured: z.boolean().optional(),
+    })
+    .optional(),
+  userExperience: z.enum(['beginner', 'intermediate', 'expert']).optional().default('intermediate'),
+  preferences: z
+    .object({
+      skipValidation: z.boolean().optional().default(false),
+      autoExecute: z.boolean().optional().default(false),
+      includeOptionalSteps: z.boolean().optional().default(true),
+    })
+    .optional(),
+});
+
+export const WorkflowTodoItem = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  status: z.enum(['pending', 'in_progress', 'completed', 'skipped']).default('pending'),
+  dependencies: z.array(z.string()).default([]),
+  toolCall: z.string().optional(),
+  manualStep: z.boolean().optional().default(false),
+  optional: z.boolean().optional().default(false),
+  estimatedMinutes: z.number().optional(),
+  rationale: z.string().optional(),
+});
+
+export const WorkflowUtilityTool = z.object({
+  name: z.string(),
+  description: z.string(),
+  toolId: z.string(),
+  useCase: z.string(),
+});
+
+export const WorkflowPlannerResponse = z.object({
+  success: z.boolean(),
+  goal: z.string().optional(),
+  summary: z.string().optional(),
+  estimatedTime: z.string().optional(),
+  todos: z.array(WorkflowTodoItem).optional(),
+  utilityTools: z.array(WorkflowUtilityTool).optional(),
+  nextAction: z.string().optional(),
+  error: z.string().optional(),
+});
+
+export type WorkflowPlannerRequestType = z.TypeOf<typeof WorkflowPlannerRequest>;
+export type WorkflowPlannerResponseType = z.TypeOf<typeof WorkflowPlannerResponse>;
+export type WorkflowTodoItemType = z.TypeOf<typeof WorkflowTodoItem>;
+export type WorkflowUtilityToolType = z.TypeOf<typeof WorkflowUtilityTool>;

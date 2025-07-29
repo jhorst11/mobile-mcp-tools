@@ -15,9 +15,9 @@ import {
 } from '../../schemas/mobileSdkSchema.js';
 import { ResourceManager } from '../../utils/resourceManager.js';
 
-export class ResourceReadTool implements Tool {
-  readonly name = 'Resource Read';
-  readonly toolId = 'resource-read';
+export class DebugLogsTool implements Tool {
+  readonly name = 'Debug Logs';
+  readonly toolId = 'debug-logs';
   readonly description =
     'Reads the contents of a resource (such as build logs, configuration files, or project artifacts) from a file URI.';
   readonly inputSchema = ResourceReadRequest;

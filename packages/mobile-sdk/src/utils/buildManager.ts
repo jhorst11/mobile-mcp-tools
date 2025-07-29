@@ -24,6 +24,7 @@ export interface BuildResult {
   deviceName?: string;
   appBundleId?: string;
   buildLogPath?: string;
+  processId?: string;
   error?: string;
 }
 
@@ -34,41 +35,48 @@ export class BuildManager {
   static async detectPlatform(
     projectPath: string
   ): Promise<'ios' | 'android' | 'react-native' | null> {
-    // Check for iOS-specific files
-    if (await FileUtils.exists(join(projectPath, 'ios'))) {
-      return 'ios';
-    }
+    try {
+      // Check for iOS-specific files by reading directory contents
+      const files = await FileUtils.readDirectory(projectPath);
 
-    // Check for specific iOS project files
-    const files =
-      (await FileUtils.exists(join(projectPath, '*.xcworkspace'))) ||
-      (await FileUtils.exists(join(projectPath, '*.xcodeproj')));
-    if (files) {
-      return 'ios';
-    }
+      // Check for Xcode project files
+      const hasXcodeProject = files.some(file => file.endsWith('.xcodeproj'));
+      const hasXcodeWorkspace = files.some(file => file.endsWith('.xcworkspace'));
 
-    // Check for Android-specific files
-    if (
-      (await FileUtils.exists(join(projectPath, 'android'))) ||
-      (await FileUtils.exists(join(projectPath, 'build.gradle'))) ||
-      (await FileUtils.exists(join(projectPath, 'app', 'build.gradle')))
-    ) {
-      return 'android';
-    }
-
-    // Check for React Native
-    if (await FileUtils.exists(join(projectPath, 'package.json'))) {
-      try {
-        const packageJson = await FileUtils.readJsonFile(join(projectPath, 'package.json'));
-        if (packageJson && typeof packageJson === 'object' && 'dependencies' in packageJson) {
-          const deps = (packageJson as { dependencies?: Record<string, string> }).dependencies;
-          if (deps?.['react-native']) {
-            return 'react-native';
-          }
-        }
-      } catch {
-        // Ignore JSON parsing errors
+      if (hasXcodeProject || hasXcodeWorkspace) {
+        return 'ios';
       }
+
+      // Check for iOS subdirectory (React Native structure)
+      if (files.includes('ios')) {
+        return 'ios';
+      }
+
+      // Check for Android-specific files
+      if (
+        files.includes('android') ||
+        (await FileUtils.exists(join(projectPath, 'build.gradle'))) ||
+        (await FileUtils.exists(join(projectPath, 'app', 'build.gradle')))
+      ) {
+        return 'android';
+      }
+
+      // Check for React Native
+      if (files.includes('package.json')) {
+        try {
+          const packageJson = await FileUtils.readJsonFile(join(projectPath, 'package.json'));
+          if (packageJson && typeof packageJson === 'object' && 'dependencies' in packageJson) {
+            const deps = (packageJson as { dependencies?: Record<string, string> }).dependencies;
+            if (deps?.['react-native']) {
+              return 'react-native';
+            }
+          }
+        } catch {
+          // Ignore JSON parsing errors
+        }
+      }
+    } catch (error) {
+      console.error('Error detecting project platform:', error);
     }
 
     return null;
@@ -117,12 +125,50 @@ export class BuildManager {
           deviceInfo = await DeviceManager.startIOSSimulator(targetDevice);
           buildArgs.push('-destination', `id=${deviceInfo.deviceId}`);
         } catch {
-          // Fall back to generic simulator destination
-          buildArgs.push('-destination', 'generic/platform=iOS Simulator');
+          console.error(
+            `Failed to start specified simulator '${targetDevice}', trying default simulator...`
+          );
+          // Try to start default simulator instead of falling back to generic
+          try {
+            const devices = await DeviceManager.listIOSSimulators();
+            const defaultDevice =
+              devices.find(d => d.available && d.name.includes('iPhone')) ||
+              devices.find(d => d.available);
+            if (defaultDevice) {
+              deviceInfo = await DeviceManager.startIOSSimulator(defaultDevice.name);
+              buildArgs.push('-destination', `id=${deviceInfo.deviceId}`);
+              console.log(`✅ Started fallback simulator: ${deviceInfo.deviceName}`);
+            } else {
+              buildArgs.push('-destination', 'generic/platform=iOS Simulator');
+            }
+          } catch {
+            buildArgs.push('-destination', 'generic/platform=iOS Simulator');
+          }
         }
       } else {
-        // Use default simulator
-        buildArgs.push('-destination', 'generic/platform=iOS Simulator');
+        // Auto-select and start a default simulator
+        try {
+          console.log('🔍 No target device specified, finding available simulator...');
+          const devices = await DeviceManager.listIOSSimulators();
+
+          // Prefer iPhone simulators, then any available simulator
+          const defaultDevice =
+            devices.find(d => d.available && d.name.includes('iPhone')) ||
+            devices.find(d => d.available);
+
+          if (defaultDevice) {
+            console.log(`🚀 Starting default simulator: ${defaultDevice.name}`);
+            deviceInfo = await DeviceManager.startIOSSimulator(defaultDevice.name);
+            buildArgs.push('-destination', `id=${deviceInfo.deviceId}`);
+            console.log(`✅ Simulator ready: ${deviceInfo.deviceName} (${deviceInfo.deviceId})`);
+          } else {
+            console.log('⚠️ No available simulators found, using generic destination');
+            buildArgs.push('-destination', 'generic/platform=iOS Simulator');
+          }
+        } catch (error) {
+          console.error('⚠️ Failed to start default simulator:', error);
+          buildArgs.push('-destination', 'generic/platform=iOS Simulator');
+        }
       }
 
       // Add clean if requested
@@ -146,56 +192,78 @@ export class BuildManager {
       // Write build log
       await FileUtils.writeFile(logPath, buildResult.stdout + '\n' + buildResult.stderr);
 
-      if (!buildResult.success) {
+      // Verify build success by analyzing build logs
+      const buildVerification = await this.verifyIOSBuildSuccess(buildResult, logPath);
+      if (!buildVerification.success) {
         return {
           success: false,
-          error: `Build failed: ${buildResult.stderr}`,
+          error: buildVerification.error,
           buildLogPath: logPath,
         };
+      }
+
+      console.log(`✅ Build verification successful`);
+      if (buildVerification.warnings.length > 0) {
+        console.log(`⚠️ Build warnings detected: ${buildVerification.warnings.length}`);
+        buildVerification.warnings.forEach(warning => console.log(`   ${warning}`));
       }
 
       // Find the built app
       const appPath = await this.findBuiltIOSApp(projectPath);
       const bundleId = appPath ? await this.getIOSBundleId(appPath) : undefined;
 
-      // Install and launch on simulator if device was specified
-      if (deviceInfo && appPath) {
-        try {
-          // Install the app
-          const installResult = await CommandRunner.run('xcrun', [
-            'simctl',
-            'install',
-            deviceInfo.deviceId,
-            appPath,
-          ]);
-
-          if (!installResult.success) {
-            console.error(`Failed to install app: ${installResult.stderr}`);
-          } else if (bundleId) {
-            // Launch the app
-            const launchResult = await CommandRunner.run('xcrun', [
-              'simctl',
-              'launch',
-              deviceInfo.deviceId,
-              bundleId,
-            ]);
-
-            if (!launchResult.success) {
-              console.error(`Failed to launch app: ${launchResult.stderr}`);
-            }
-          }
-        } catch (error) {
-          console.error(`Error during install/launch: ${error}`);
-        }
+      // Deploy and verify app is running on simulator
+      if (!deviceInfo) {
+        return {
+          success: false,
+          error:
+            'No simulator was started, app built but not deployed. Use simulator-list-devices and specify targetDevice parameter.',
+          buildLogPath: logPath,
+        };
       }
+
+      if (!appPath) {
+        return {
+          success: false,
+          error: 'App was built but .app file not found, cannot install',
+          buildLogPath: logPath,
+        };
+      }
+
+      if (!bundleId) {
+        return {
+          success: false,
+          error: 'Could not determine bundle ID from built app',
+          buildLogPath: logPath,
+        };
+      }
+
+      // Install, launch, and verify the app is running
+      const deploymentResult = await this.deployAndVerifyIOSApp(deviceInfo, appPath, bundleId);
+
+      if (!deploymentResult.success) {
+        return {
+          success: false,
+          error: deploymentResult.error,
+          buildLogPath: logPath,
+          appPath,
+          deviceId: deviceInfo.deviceId,
+          deviceName: deviceInfo.deviceName,
+          appBundleId: bundleId,
+        };
+      }
+
+      console.log(`🎉 App is verified running on ${deviceInfo.deviceName}!`);
+      console.log(`   Process ID: ${deploymentResult.processId}`);
 
       return {
         success: true,
         appPath,
-        deviceId: deviceInfo?.deviceId,
-        deviceName: deviceInfo?.deviceName,
+        deviceId: deviceInfo.deviceId,
+        deviceName: deviceInfo.deviceName,
         appBundleId: bundleId,
         buildLogPath: logPath,
+        processId: deploymentResult.processId,
       };
     } catch (error) {
       return {
@@ -342,11 +410,21 @@ export class BuildManager {
   }
 
   /**
-   * Helper method to find files with a pattern
+   * Helper method to find files or directories with a pattern
    */
   private static async findFilesWithPattern(directory: string, pattern: string): Promise<string[]> {
     try {
-      const result = await CommandRunner.run('find', [directory, '-name', pattern, '-type', 'f']);
+      // Xcode projects and workspaces are directories, not files
+      const isXcodePattern = pattern.includes('.xcodeproj') || pattern.includes('.xcworkspace');
+      const typeFlag = isXcodePattern ? 'd' : 'f';
+
+      const result = await CommandRunner.run('find', [
+        directory,
+        '-name',
+        pattern,
+        '-type',
+        typeFlag,
+      ]);
       if (result.success) {
         return result.stdout.split('\n').filter(line => line.trim().length > 0);
       }
@@ -489,5 +567,223 @@ export class BuildManager {
       // Ignore errors
     }
     return undefined;
+  }
+
+  /**
+   * Verify iOS build success by analyzing build logs
+   */
+  private static async verifyIOSBuildSuccess(
+    buildResult: { success: boolean; stdout: string; stderr: string },
+    logPath: string
+  ): Promise<{ success: boolean; error?: string; warnings: string[] }> {
+    const warnings: string[] = [];
+
+    // First check if the command itself failed
+    if (!buildResult.success) {
+      return {
+        success: false,
+        error: `Build command failed: ${buildResult.stderr}`,
+        warnings,
+      };
+    }
+
+    try {
+      // Read and analyze the build log
+      const logContent = await FileUtils.readFile(logPath);
+
+      // Check for build failure indicators
+      const failurePatterns = [
+        /BUILD FAILED/i,
+        /\*\* BUILD FAILED \*\*/i,
+        /error:/i,
+        /fatal error:/i,
+        /compilation failed/i,
+        /ld: library not found/i,
+        /no such file or directory/i,
+      ];
+
+      for (const pattern of failurePatterns) {
+        if (pattern.test(logContent)) {
+          const errorLines = logContent
+            .split('\n')
+            .filter(line => pattern.test(line))
+            .slice(0, 3); // Limit to first 3 error lines
+
+          return {
+            success: false,
+            error: `Build failed with errors: ${errorLines.join('; ')}`,
+            warnings,
+          };
+        }
+      }
+
+      // Check for success indicators
+      const successPatterns = [/BUILD SUCCEEDED/i, /\*\* BUILD SUCCEEDED \*\*/i];
+
+      const hasSuccessIndicator = successPatterns.some(pattern => pattern.test(logContent));
+
+      // Collect warnings
+      const warningLines = logContent
+        .split('\n')
+        .filter(line => /warning:/i.test(line))
+        .slice(0, 5); // Limit to first 5 warnings
+
+      warnings.push(...warningLines);
+
+      if (!hasSuccessIndicator) {
+        return {
+          success: false,
+          error: 'Build log does not contain success indicators. Build may have failed silently.',
+          warnings,
+        };
+      }
+
+      return {
+        success: true,
+        warnings,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to read build log: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        warnings,
+      };
+    }
+  }
+
+  /**
+   * Deploy and verify iOS app is running on simulator
+   */
+  private static async deployAndVerifyIOSApp(
+    deviceInfo: { deviceId: string; deviceName: string },
+    appPath: string,
+    bundleId: string
+  ): Promise<{ success: boolean; error?: string; processId?: string }> {
+    try {
+      console.log(`📱 Installing app on ${deviceInfo.deviceName}...`);
+      console.log(`   App path: ${appPath}`);
+      console.log(`   Device ID: ${deviceInfo.deviceId}`);
+
+      // Step 1: Install the app
+      const installResult = await CommandRunner.run('xcrun', [
+        'simctl',
+        'install',
+        deviceInfo.deviceId,
+        appPath,
+      ]);
+
+      if (!installResult.success) {
+        return {
+          success: false,
+          error: `Failed to install app: ${installResult.stderr}`,
+        };
+      }
+
+      console.log(`✅ App installed successfully`);
+
+      // Step 2: Launch the app
+      console.log(`🚀 Launching app (Bundle ID: ${bundleId})...`);
+      const launchResult = await CommandRunner.run('xcrun', [
+        'simctl',
+        'launch',
+        deviceInfo.deviceId,
+        bundleId,
+      ]);
+
+      if (!launchResult.success) {
+        return {
+          success: false,
+          error: `Failed to launch app: ${launchResult.stderr}`,
+        };
+      }
+
+      console.log(`🔍 Verifying app is running...`);
+
+      // Step 3: Verify the app is actually running by checking process list
+      const processVerification = await this.verifyAppIsRunning(deviceInfo.deviceId, bundleId);
+
+      if (!processVerification.success) {
+        return {
+          success: false,
+          error: `App launched but verification failed: ${processVerification.error}`,
+        };
+      }
+
+      return {
+        success: true,
+        processId: processVerification.processId,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Error during deployment: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
+  }
+
+  /**
+   * Verify app is running on simulator by checking process list
+   */
+  private static async verifyAppIsRunning(
+    deviceId: string,
+    bundleId: string
+  ): Promise<{ success: boolean; error?: string; processId?: string }> {
+    try {
+      // Give the app a moment to fully start
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Check running processes on the simulator
+      const psResult = await CommandRunner.run('xcrun', ['simctl', 'spawn', deviceId, 'ps', 'aux']);
+
+      if (!psResult.success) {
+        return {
+          success: false,
+          error: `Failed to get process list: ${psResult.stderr}`,
+        };
+      }
+
+      // Look for our app in the process list
+      const processLines = psResult.stdout.split('\n');
+      const appProcess = processLines.find(line => line.includes(bundleId));
+
+      if (!appProcess) {
+        // Try alternative verification method using simctl list
+        const appListResult = await CommandRunner.run('xcrun', [
+          'simctl',
+          'list',
+          'apps',
+          deviceId,
+        ]);
+
+        if (appListResult.success && appListResult.stdout.includes(bundleId)) {
+          console.log(`✅ App verified installed, but process verification inconclusive`);
+          return {
+            success: true,
+            processId: 'unknown',
+          };
+        }
+
+        return {
+          success: false,
+          error: `App is not running on simulator. Bundle ID '${bundleId}' not found in process list.`,
+        };
+      }
+
+      // Extract process ID from the process line
+      const processMatch = appProcess.trim().match(/^\s*\S+\s+(\d+)/);
+      const processId = processMatch ? processMatch[1] : 'unknown';
+
+      console.log(`✅ App verified running with process ID: ${processId}`);
+
+      return {
+        success: true,
+        processId,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Process verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
   }
 }

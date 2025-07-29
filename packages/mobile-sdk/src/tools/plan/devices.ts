@@ -15,9 +15,9 @@ import {
 } from '../../schemas/mobileSdkSchema.js';
 import { DeviceManager } from '../../utils/deviceManager.js';
 
-export class ListDevicesTool implements Tool {
-  readonly name = 'List Devices';
-  readonly toolId = 'simulator-list-devices';
+export class PlanDevicesTool implements Tool {
+  readonly name = 'Plan Devices';
+  readonly toolId = 'plan-devices';
   readonly description =
     'Lists all available iOS simulators and Android emulators, with their current status and availability.';
   readonly inputSchema = DeviceListRequest;

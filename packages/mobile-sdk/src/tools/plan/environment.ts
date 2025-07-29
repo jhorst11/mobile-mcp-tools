@@ -21,9 +21,9 @@ interface PrerequisiteCheck {
   platform?: 'darwin' | 'win32' | 'linux';
 }
 
-export class CheckPrerequisitesTool implements Tool {
-  readonly name = 'Environment Prerequisites Checker';
-  readonly toolId = 'env-check-prerequisites';
+export class PlanEnvironmentTool implements Tool {
+  readonly name = 'Plan Environment';
+  readonly toolId = 'plan-environment';
   readonly description =
     'Verifies that all required local development tools are installed and meet minimum version requirements for Salesforce Mobile SDK development.';
   readonly inputSchema = EmptySchema;

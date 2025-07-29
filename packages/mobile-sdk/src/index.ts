@@ -19,19 +19,26 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
 const version = packageJson.version;
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 
-// Phase 1 Tools
-import { CheckPrerequisitesTool } from './tools/environment/checkPrerequisites.js';
+// Plan Tools
+import { PlanWorkflowTool } from './tools/plan/workflow.js';
+import { PlanEnvironmentTool } from './tools/plan/environment.js';
+import { PlanDevicesTool } from './tools/plan/devices.js';
 
-import { ProvisionConnectedAppTool } from './tools/salesforce/provisionConnectedApp.js';
-import { ProjectScaffoldTool } from './tools/project/scaffold.js';
-import { ProjectConfigurationTool } from './tools/project/configureConnection.js';
+// Create Tools
+import { CreateConnectedAppTool } from './tools/create/connectedApp.js';
+import { CreateProjectTool } from './tools/create/project.js';
+import { CreateConfigurationTool } from './tools/create/configuration.js';
+import { CreateAddFilesTool } from './tools/create/addFiles.js';
 
-// Phase 2 Tools
-import { SimulatorStartTool } from './tools/simulator/start.js';
-import { ListDevicesTool } from './tools/simulator/listDevices.js';
-import { BuildRunOnSimulatorTool } from './tools/build/runOnSimulator.js';
-import { ResourceReadTool } from './tools/resource/read.js';
-import { XcodeAddFilesTool } from './tools/xcode/addFiles.js';
+// Build Tools
+import { BuildProjectTool } from './tools/build/project.js';
+
+// Deploy Tools
+import { DeploySimulatorTool } from './tools/deploy/simulator.js';
+import { DeployAppTool } from './tools/deploy/app.js';
+
+// Debug Tools
+import { DebugLogsTool } from './tools/debug/logs.js';
 
 const server = new McpServer({
   name: 'sfdc-mobile-sdk-mcp-server',
@@ -46,21 +53,28 @@ const annotations: ToolAnnotations = {
   openWorldHint: false, // Well-defined, specific functionality
 };
 
-// Initialize Phase 1 & 2 tools
+// Initialize organized tools
 const tools = [
-  // Phase 1: Foundation - Environment, Authentication, and Project Scaffolding
-  new CheckPrerequisitesTool(),
-  // new SalesforceLoginTool(),
-  new ProvisionConnectedAppTool(),
-  new ProjectScaffoldTool(),
-  new ProjectConfigurationTool(),
+  // Plan Tools - Planning & Discovery
+  new PlanWorkflowTool(),
+  new PlanEnvironmentTool(),
+  new PlanDevicesTool(),
 
-  // Phase 2: Build & Deploy Pipeline - Integrating Platform-Native Toolchains
-  new SimulatorStartTool(),
-  new ListDevicesTool(),
-  new BuildRunOnSimulatorTool(),
-  new ResourceReadTool(),
-  new XcodeAddFilesTool(),
+  // Create Tools - Project & Configuration Creation
+  new CreateConnectedAppTool(),
+  new CreateProjectTool(),
+  new CreateConfigurationTool(),
+  new CreateAddFilesTool(),
+
+  // Build Tools - Application Building
+  new BuildProjectTool(),
+
+  // Deploy Tools - Deployment & Execution
+  new DeploySimulatorTool(),
+  new DeployAppTool(),
+
+  // Debug Tools - Troubleshooting & Diagnostics
+  new DebugLogsTool(),
 ];
 
 // Register all tools with the server
@@ -75,7 +89,7 @@ export default server;
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error(`Salesforce Mobile SDK MCP Server (Phase 1 & 2) running on stdio`);
+  console.error(`Salesforce Mobile SDK MCP Server running on stdio`);
   console.error(`Available tools: ${tools.map(t => t.toolId).join(', ')}`);
   console.error(`Working directory: ${process.cwd()}`);
 }

@@ -14,9 +14,9 @@ import {
   type ConnectedAppGuidanceRequestType,
 } from '../../schemas/mobileSdkSchema.js';
 
-export class ProvisionConnectedAppTool implements Tool {
-  readonly name = 'Connected App Guidance';
-  readonly toolId = 'salesforce-provision-connected-app';
+export class CreateConnectedAppTool implements Tool {
+  readonly name = 'Create Connected App';
+  readonly toolId = 'create-connected-app';
   readonly description =
     'Provides step-by-step guidance for manually creating a Connected App in Salesforce and accepts the Consumer Key for project configuration.';
   readonly inputSchema = ConnectedAppGuidanceRequest;
@@ -181,15 +181,40 @@ Once you have your Consumer Key (and custom login URL if needed), provide them t
         };
       }
 
-      // Validate and set login URL
-      const loginUrl = params.loginUrl || 'https://login.salesforce.com';
+      // Validate and normalize login URL
+      let loginUrl = params.loginUrl || 'https://login.salesforce.com';
 
-      // Common Salesforce login URL validation
+      // Auto-add https:// if missing
+      if (loginUrl && !loginUrl.startsWith('http://') && !loginUrl.startsWith('https://')) {
+        loginUrl = `https://${loginUrl}`;
+      }
+
+      // Comprehensive Salesforce login URL validation patterns
       const validLoginUrlPatterns = [
+        // Standard Salesforce URLs
         /^https:\/\/login\.salesforce\.com$/,
         /^https:\/\/test\.salesforce\.com$/,
+
+        // My Domain URLs
         /^https:\/\/[a-zA-Z0-9-]+\.my\.salesforce\.com$/,
+
+        // Scratch org and sandbox URLs
         /^https:\/\/[a-zA-Z0-9-]+--[a-zA-Z0-9-]+\.my\.salesforce\.com$/,
+
+        // Partner Community and test environments (pc-rnd, cs1, etc.)
+        /^https:\/\/[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+\.my\.[a-zA-Z0-9-]+\.salesforce\.com$/,
+
+        // Enhanced My Domain with additional subdomains
+        /^https:\/\/[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+\.my\.salesforce\.com$/,
+
+        // Sandbox URLs with various patterns
+        /^https:\/\/[a-zA-Z0-9-]+\.sandbox\.my\.salesforce\.com$/,
+
+        // Developer edition and trailhead playground URLs
+        /^https:\/\/[a-zA-Z0-9-]+\.develop\.my\.salesforce\.com$/,
+
+        // Custom domains (more flexible pattern)
+        /^https:\/\/[a-zA-Z0-9.-]+\.salesforce\.com$/,
       ];
 
       const isValidLoginUrl = validLoginUrlPatterns.some(pattern => pattern.test(loginUrl));
@@ -202,7 +227,15 @@ Once you have your Consumer Key (and custom login URL if needed), provide them t
                 {
                   success: false,
                   error:
-                    'Login URL must be a valid Salesforce login URL (e.g., https://login.salesforce.com, https://test.salesforce.com, or your custom domain).',
+                    `Login URL "${loginUrl}" is not recognized as a valid Salesforce login URL. ` +
+                    'Supported formats include:\n' +
+                    '• https://login.salesforce.com (Production)\n' +
+                    '• https://test.salesforce.com (Sandbox)\n' +
+                    '• https://mydomain.my.salesforce.com (My Domain)\n' +
+                    '• https://mydomain--sandbox.my.salesforce.com (Sandbox My Domain)\n' +
+                    '• https://mydomain.test1.my.pc-rnd.salesforce.com (Partner/Test environments)\n' +
+                    '• Custom Salesforce domains ending in .salesforce.com\n\n' +
+                    'Note: You can omit "https://" - it will be added automatically.',
                   guidance: this.generateGuidance(),
                 },
                 null,

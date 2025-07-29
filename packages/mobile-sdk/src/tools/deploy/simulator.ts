@@ -15,9 +15,9 @@ import {
 } from '../../schemas/mobileSdkSchema.js';
 import { DeviceManager } from '../../utils/deviceManager.js';
 
-export class SimulatorStartTool implements Tool {
-  readonly name = 'Simulator Start';
-  readonly toolId = 'simulator-start';
+export class DeploySimulatorTool implements Tool {
+  readonly name = 'Deploy Simulator';
+  readonly toolId = 'deploy-simulator';
   readonly description =
     'Starts a specific iOS simulator or Android emulator by name, ensuring it is ready for app deployment.';
   readonly inputSchema = SimulatorStartRequest;
