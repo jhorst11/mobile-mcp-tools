@@ -71,7 +71,6 @@ export const ProjectScaffoldGuidanceRequest = z.object({
     )
     .optional(),
   organization: z.string().min(1, 'Organization name is required').optional(),
-  outputDir: z.string().min(1, 'Output directory is required').optional(),
 
   // Template selection criteria
   appType: z
