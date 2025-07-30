@@ -17,6 +17,7 @@ import { BuildManager } from '../../utils/buildManager.js';
 import { DeviceManager } from '../../utils/deviceManager.js';
 import { FileUtils } from '../../utils/fileUtils.js';
 import { CommandRunner } from '../../utils/commandRunner.js';
+import { DesignUtils } from '../../utils/designUtils.js';
 
 interface DeploymentResult {
   success: boolean;
@@ -118,6 +119,44 @@ export class DeployAppTool implements Tool {
               },
             ],
           };
+      }
+
+      // Add design document reference to successful deployments
+      if (deployResult.success) {
+        const designReminder = DesignUtils.generateDesignReminder(params.projectPath);
+        const phaseCheck = DesignUtils.checkPhaseAlignment(params.projectPath, 'deploy');
+        const nextSteps = DesignUtils.extractNextSteps(params.projectPath);
+
+        let enhancedMessage = deployResult.message || '';
+
+        enhancedMessage += designReminder;
+
+        if (phaseCheck.recommendation) {
+          enhancedMessage += `
+## 🎯 **PHASE ALIGNMENT CHECK**
+
+${phaseCheck.recommendation}
+
+**💡 Tip:** Now that deployment is complete, reference your design document to plan your next development iteration.
+`;
+        }
+
+        if (nextSteps.length > 0) {
+          enhancedMessage += `
+## 📋 **NEXT STEPS FROM DESIGN DOCUMENT**
+
+${nextSteps
+  .slice(0, 3)
+  .map(step => `- ${step}`)
+  .join('\n')}
+${nextSteps.length > 3 ? '\n*(See design document for complete roadmap)*' : ''}
+`;
+        }
+
+        deployResult = {
+          ...deployResult,
+          message: enhancedMessage,
+        };
       }
 
       return {

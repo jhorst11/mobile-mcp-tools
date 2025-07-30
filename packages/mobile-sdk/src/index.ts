@@ -23,6 +23,7 @@ import { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 import { PlanWorkflowTool } from './tools/plan/workflow.js';
 import { PlanEnvironmentTool } from './tools/plan/environment.js';
 import { PlanDevicesTool } from './tools/plan/devices.js';
+import { PlanDesignTool } from './tools/plan/design.js';
 
 // Create Tools
 import { CreateConnectedAppTool } from './tools/create/connectedApp.js';
@@ -59,6 +60,7 @@ const tools = [
   new PlanWorkflowTool(),
   new PlanEnvironmentTool(),
   new PlanDevicesTool(),
+  new PlanDesignTool(),
 
   // Create Tools - Project & Configuration Creation
   new CreateConnectedAppTool(),

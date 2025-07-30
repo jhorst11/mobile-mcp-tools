@@ -116,6 +116,61 @@ export const ProjectScaffoldGuidanceResponse = z.object({
   error: z.string().optional(),
 });
 
+// Project design planning schemas
+export const ProjectDesignPlanRequest = z.object({
+  projectPath: z.string().min(1, 'Project path is required'),
+  projectDescription: z.string().min(10, 'Project description must be at least 10 characters'),
+  requirements: z
+    .array(z.string())
+    .optional()
+    .describe('List of specific requirements or features'),
+  userStories: z
+    .array(z.string())
+    .optional()
+    .describe('User stories in "As a X, I want Y, so that Z" format'),
+  technicalConstraints: z
+    .array(z.string())
+    .optional()
+    .describe('Technical constraints or limitations'),
+  integrations: z
+    .array(z.string())
+    .optional()
+    .describe('External integrations needed (e.g., third-party APIs)'),
+  targetAudience: z.string().optional().describe('Description of the target audience'),
+  businessGoals: z
+    .array(z.string())
+    .optional()
+    .describe('Business objectives this app should achieve'),
+  existingAssets: z
+    .array(z.string())
+    .optional()
+    .describe('Existing systems, APIs, or resources to leverage'),
+  timeline: z.string().optional().describe('Project timeline or milestones'),
+  platforms: z
+    .array(z.enum(['ios', 'android', 'web']))
+    .optional()
+    .describe('Target platforms'),
+});
+
+export const ProjectDesignPlanResponse = z.object({
+  success: z.boolean(),
+  designDocumentPath: z.string().optional(),
+  implementationPlan: z
+    .array(
+      z.object({
+        phase: z.string(),
+        description: z.string(),
+        tasks: z.array(z.string()),
+        estimatedDuration: z.string().optional(),
+        dependencies: z.array(z.string()).optional(),
+      })
+    )
+    .optional(),
+  architectureOverview: z.string().optional(),
+  nextSteps: z.array(z.string()).optional(),
+  error: z.string().optional(),
+});
+
 // Project configuration schemas
 export const ProjectConfigurationRequest = z.object({
   projectPath: z.string().min(1, 'Project path is required'),
@@ -275,6 +330,8 @@ export type ProjectScaffoldGuidanceRequestType = z.TypeOf<typeof ProjectScaffold
 export type ProjectScaffoldGuidanceResponseType = z.TypeOf<typeof ProjectScaffoldGuidanceResponse>;
 export type ProjectConfigurationRequestType = z.TypeOf<typeof ProjectConfigurationRequest>;
 export type ProjectConfigurationResponseType = z.TypeOf<typeof ProjectConfigurationResponse>;
+export type ProjectDesignPlanRequestType = z.TypeOf<typeof ProjectDesignPlanRequest>;
+export type ProjectDesignPlanResponseType = z.TypeOf<typeof ProjectDesignPlanResponse>;
 export type BuildRequestType = z.TypeOf<typeof BuildRequest>;
 export type BuildResponseType = z.TypeOf<typeof BuildResponse>;
 export type TestRequestType = z.TypeOf<typeof TestRequest>;

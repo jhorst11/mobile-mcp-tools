@@ -14,7 +14,7 @@ import {
   type ProjectScaffoldGuidanceRequestType,
 } from '../../schemas/mobileSdkSchema.js';
 import { dirname, basename } from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
 // Template definitions from TEMPLATES.md - comprehensive Mobile SDK template guide
@@ -43,8 +43,28 @@ interface Template {
  */
 function parseTemplatesFromMarkdown(): Template[] {
   try {
-    const templatesPath = join(__dirname, 'TEMPLATES.md');
-    const content = readFileSync(templatesPath, 'utf-8');
+    // Try multiple possible locations for TEMPLATES.md
+    const possiblePaths = [
+      join(process.cwd(), 'packages/mobile-sdk/src/tools/create/TEMPLATES.md'),
+      join(process.cwd(), 'src/tools/create/TEMPLATES.md'),
+      join(process.cwd(), 'TEMPLATES.md'),
+      join(process.cwd(), 'dist/tools/create/TEMPLATES.md'),
+      join(process.cwd(), 'packages/mobile-sdk/dist/tools/create/TEMPLATES.md'),
+    ];
+
+    let content = '';
+    for (const templatesPath of possiblePaths) {
+      try {
+        content = readFileSync(templatesPath, 'utf-8');
+        break;
+      } catch {
+        // Continue to next path
+      }
+    }
+
+    if (!content) {
+      throw new Error('TEMPLATES.md not found in any expected location');
+    }
 
     const templates: Template[] = [];
     const sections = content.split(/^#### /m).slice(1); // Split by template headers, skip intro
@@ -448,6 +468,186 @@ export class CreateProjectTool implements Tool {
     };
   }
 
+  /**
+   * Generate template-specific extension guidance by parsing from TEMPLATES.md
+   */
+  private generateExtensionGuide(template: Template, params: ProjectScaffoldGuidanceRequestType) {
+    const isDataHeavy =
+      template.isOfflineFirst ||
+      params.appType === 'data-heavy' ||
+      template.templateId.includes('MobileSync');
+
+    try {
+      const templatesContent = this.readTemplatesMarkdown();
+      const guidanceType = isDataHeavy ? 'Data-Heavy' : 'Basic';
+
+      // Extract the relevant extension guide section
+      const extensionSection = this.extractExtensionGuideSection(templatesContent, guidanceType);
+
+      if (!extensionSection) {
+        console.warn(`No extension guidance found for ${guidanceType} template type`);
+        return this.generateFallbackExtensionGuide(template, params);
+      }
+
+      // Extract content using template-specific section names
+      const isDataHeavyContent = extensionSection.includes('Data-Heavy Template Extension Guide');
+
+      return {
+        projectStructure: this.substituteTemplatePlaceholders(
+          this.extractSectionContent(extensionSection, 'Project Structure'),
+          params
+        ),
+        addingFeatures: isDataHeavyContent
+          ? this.extractSectionContent(extensionSection, 'Adding New Object Types')
+          : this.extractSectionContent(extensionSection, 'Adding New Features (Basic Template)'),
+        commonPatterns: isDataHeavyContent
+          ? this.extractSectionContent(extensionSection, 'Data Flow Pattern')
+          : this.extractSectionContent(extensionSection, 'API Integration Patterns'),
+        requiredFiles: this.extractListItems(
+          extensionSection,
+          isDataHeavyContent ? 'Required Files (Data-Heavy Templates)' : 'Required Files (Basic)'
+        ),
+        pitfalls: this.extractListItems(
+          extensionSection,
+          isDataHeavyContent ? 'Common Pitfalls (Data-Heavy)' : 'Common Pitfalls (Basic)'
+        ),
+      };
+    } catch (error) {
+      console.warn('Failed to parse extension guidance from TEMPLATES.md, using fallback:', error);
+      return this.generateFallbackExtensionGuide(template, params);
+    }
+  }
+
+  /**
+   * Read the raw TEMPLATES.md content for parsing extension guidance
+   */
+  private readTemplatesMarkdown(): string {
+    try {
+      // Try multiple possible locations for TEMPLATES.md
+      const possiblePaths = [
+        join(process.cwd(), 'packages/mobile-sdk/src/tools/create/TEMPLATES.md'),
+        join(process.cwd(), 'src/tools/create/TEMPLATES.md'),
+        join(process.cwd(), 'TEMPLATES.md'),
+        join(process.cwd(), 'dist/tools/create/TEMPLATES.md'),
+        join(process.cwd(), 'packages/mobile-sdk/dist/tools/create/TEMPLATES.md'),
+      ];
+
+      for (const templatesPath of possiblePaths) {
+        try {
+          return readFileSync(templatesPath, 'utf-8');
+        } catch {
+          // Continue to next path
+        }
+      }
+
+      throw new Error('TEMPLATES.md not found in any expected location');
+    } catch (error) {
+      console.warn('Failed to read TEMPLATES.md:', error);
+      return '';
+    }
+  }
+
+  /**
+   * Extract a specific extension guide section from templates content
+   */
+  private extractExtensionGuideSection(content: string, guidanceType: string): string | null {
+    // First try to match until the next ### section
+    let sectionPattern = new RegExp(
+      `### ${guidanceType} Template Extension Guide([\\s\\S]*?)(?=^### )`,
+      'im'
+    );
+    let match = content.match(sectionPattern);
+
+    // If no next section found, match until end of file (for last section)
+    if (!match) {
+      sectionPattern = new RegExp(`### ${guidanceType} Template Extension Guide([\\s\\S]*)$`, 'im');
+      match = content.match(sectionPattern);
+    }
+
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Extract content for a specific subsection
+   */
+  private extractSectionContent(section: string, sectionName: string): string {
+    const pattern = new RegExp(`#### ${sectionName}([\\s\\S]*?)(?=#### |$)`, 'i');
+    const match = section.match(pattern);
+    return match ? match[1].trim() : '';
+  }
+
+  /**
+   * Extract list items from a section
+   */
+  private extractListItems(section: string, sectionName: string): string[] {
+    const sectionContent = this.extractSectionContent(section, sectionName);
+    if (!sectionContent) return [];
+
+    const lines = sectionContent.split('\n');
+    const items: string[] = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('- ')) {
+        items.push(trimmed.substring(2));
+      }
+    }
+
+    return items;
+  }
+
+  /**
+   * Replace template placeholders like {appName} with actual values
+   */
+  private substituteTemplatePlaceholders(
+    content: string,
+    params: ProjectScaffoldGuidanceRequestType
+  ): string {
+    return content
+      .replace(/\{appName\}/g, params.appName || 'YourApp')
+      .replace(/\{packageId\}/g, params.packageId || 'com.example.yourapp')
+      .replace(/\{organization\}/g, params.organization || 'Your Organization');
+  }
+
+  /**
+   * Fallback extension guide if parsing fails
+   */
+  private generateFallbackExtensionGuide(
+    template: Template,
+    params: ProjectScaffoldGuidanceRequestType
+  ) {
+    const isDataHeavy =
+      template.isOfflineFirst ||
+      params.appType === 'data-heavy' ||
+      template.templateId.includes('MobileSync');
+
+    return {
+      projectStructure: `Basic project structure for ${template.platform} ${template.templateId}`,
+      addingFeatures: isDataHeavy
+        ? 'When adding features to data-heavy templates, update userstore.json and usersync.json files'
+        : 'When adding features, create models, services, and update UI components',
+      commonPatterns: isDataHeavy
+        ? 'Follow MobileSync patterns: Sync → Query → Modify → Upload'
+        : 'Use SalesforceSDK REST API for direct Salesforce integration',
+      requiredFiles: isDataHeavy
+        ? [
+            'userstore.json',
+            'usersync.json',
+            'bootconfig files',
+            'Service classes',
+            'Model classes',
+          ]
+        : ['bootconfig files', 'Service classes', 'Model classes', 'UI components'],
+      pitfalls: isDataHeavy
+        ? [
+            'Missing userstore.json entries',
+            'Incorrect field mapping',
+            'Missing sync configuration',
+          ]
+        : ['Poor error handling', 'Missing authentication handling', 'Hardcoded values'],
+    };
+  }
+
   private generateGeneralGuidance(): string {
     return `# Salesforce Mobile SDK Project Scaffolding Guide
 
@@ -571,6 +771,455 @@ Ensure you have the correct CLI installed:
 **💡 Tip**: Provide your requirements to get personalized template recommendations!`;
   }
 
+  /**
+   * Generate a comprehensive PRD (Product Requirements Document) for the project
+   */
+  private generatePRD(template: Template, params: ProjectScaffoldGuidanceRequestType): string {
+    const isDataHeavy =
+      template.isOfflineFirst ||
+      params.appType === 'data-heavy' ||
+      template.templateId.includes('MobileSync');
+    const isIOS = template.platform === 'ios';
+    const isAndroid = template.platform === 'android';
+    const isReactNative = template.platform === 'react-native';
+
+    const currentDate = new Date().toISOString().split('T')[0];
+
+    return `# Project Requirements Document (PRD)
+**Project:** ${params.appName}  
+**Template:** ${template.templateId}  
+**Platform:** ${template.platform.toUpperCase()}  
+**Generated:** ${currentDate}  
+**Package ID:** ${params.packageId}
+
+---
+
+## 📋 **EXECUTIVE SUMMARY**
+
+This PRD defines the technical requirements, architecture patterns, and development workflow for **${params.appName}**, a ${isDataHeavy ? 'data-heavy offline-first' : 'basic REST API-based'} Salesforce mobile application built using the **${template.templateId}** template.
+
+### **Template Selection Rationale**
+- **Platform:** ${template.platform.toUpperCase()} - ${template.description}
+- **App Type:** ${isDataHeavy ? 'Data-Heavy (MobileSync)' : 'Basic (Direct API)'}
+- **UI Framework:** ${params.uiFramework || 'default'} - ${isIOS ? 'SwiftUI with modern iOS patterns' : isAndroid ? 'Jetpack Compose or traditional Views' : 'React Native components'}
+- **Authentication:** ${params.authStrategy || 'standard'} - Standard Salesforce OAuth
+- **Offline Support:** ${isDataHeavy ? '✅ Full offline sync with SmartStore' : '❌ Online-only with direct API calls'}
+
+---
+
+## 🏗️ **PROJECT ARCHITECTURE**
+
+### **Technology Stack**
+${
+  isIOS
+    ? `- **Language:** Swift
+- **UI Framework:** SwiftUI
+- **Architecture:** MVVM with ObservableObject
+- **Data Layer:** ${isDataHeavy ? 'MobileSync SDK + SmartStore' : 'SFRestAPI (direct REST calls)'}
+- **Threading:** Combine for reactive programming`
+    : ''
+}${
+      isAndroid
+        ? `- **Language:** ${params.language === 'kotlin' ? 'Kotlin' : 'Java'}
+- **UI Framework:** ${params.uiFramework === 'modern' ? 'Jetpack Compose' : 'Traditional Android Views'}
+- **Architecture:** MVVM with LiveData/StateFlow
+- **Data Layer:** ${isDataHeavy ? 'MobileSync SDK + SmartStore' : 'RestClient (direct REST calls)'}`
+        : ''
+    }${
+      isReactNative
+        ? `- **Language:** ${params.language === 'typescript' ? 'TypeScript' : 'JavaScript'}
+- **UI Framework:** React Native
+- **State Management:** Redux/Context API
+- **Data Layer:** ${isDataHeavy ? 'MobileSync SDK + SmartStore' : 'REST API calls'}`
+        : ''
+    }
+
+### **Project Structure**
+\`\`\`
+${params.appName}/
+├── ${
+      isIOS
+        ? `${params.appName}/                   # iOS main folder
+│   ├── Models/                  # Data models
+│   ├── Services/                # API services  
+│   ├── ViewModels/              # SwiftUI ViewModels
+│   ├── Views/                   # SwiftUI Views
+│   └── Resources/               # Assets, localizations`
+        : isAndroid
+          ? `app/src/main/
+│   ├── java/.../models/         # Data models
+│   ├── java/.../services/       # API services
+│   ├── java/.../viewmodels/     # ViewModels
+│   ├── java/.../activities/     # Activities/Fragments
+│   └── res/                     # Resources, layouts`
+          : `src/
+│   ├── components/              # React components
+│   ├── services/                # API services
+│   ├── store/                   # State management
+│   └── navigation/              # Navigation setup`
+    }
+${
+  isDataHeavy
+    ? `├── userstore.json              # SmartStore soup schemas
+├── usersync.json               # MobileSync configurations`
+    : ''
+}
+└── bootconfig.plist             # App configuration
+\`\`\`
+
+---
+
+## 🚀 **DEVELOPMENT WORKFLOW**
+
+### **Phase 1: Project Creation**
+\`\`\`bash
+# Use the create-project tool with these exact parameters:
+{
+  "platform": "${params.platform}",
+  "appName": "${params.appName}",
+  "organization": "${params.organization || 'com.yourcompany'}",
+  "packageId": "${params.packageId}",
+  "outputDir": "${params.outputDir}",
+  "appType": "${params.appType || 'basic'}",
+  "language": "${params.language || 'default'}",
+  "uiFramework": "${params.uiFramework || 'modern'}",
+  "authStrategy": "${params.authStrategy || 'standard'}"${
+    params.features
+      ? `,
+  "features": ${JSON.stringify(params.features)}`
+      : ''
+  }
+}
+\`\`\`
+
+### **Phase 2: Build & Deploy**
+\`\`\`bash
+# Build the project
+{
+  "projectPath": "${params.outputDir}/${params.appName}",
+  "configuration": "debug"
+}
+# Use build-project tool
+
+# Deploy to simulator/emulator  
+{
+  "projectPath": "${params.outputDir}/${params.appName}",
+  "targetDevice": "auto"  // Will auto-select available device
+}
+# Use deploy-app tool
+\`\`\`
+
+---
+
+## ⚠️ **CRITICAL EXTENSION GUIDELINES**
+
+### **🚨 MOST COMMON MISTAKES TO AVOID**
+${
+  isIOS
+    ? `
+1. **❌ SceneDelegate not updated** - When adding tabs, ALWAYS update SceneDelegate.swift
+2. **❌ Missing @StateObject/@ObservableObject** - SwiftUI reactive updates will fail
+3. **❌ ${!isDataHeavy ? 'Adding userstore.json unnecessarily' : 'Missing userstore.json entries'}** - ${!isDataHeavy ? 'Basic templates use direct API calls' : 'Causes SmartStore "soup not found" errors'}
+4. **❌ Incorrect CodingKeys** - Must match exact Salesforce field API names`
+    : ''
+}${
+      isAndroid
+        ? `
+1. **❌ Missing MainActivity updates** - When adding navigation, update MainActivity
+2. **❌ ${!isDataHeavy ? 'Adding userstore.json unnecessarily' : 'Missing userstore.json entries'}** - ${!isDataHeavy ? 'Basic templates use direct API calls' : 'Causes SmartStore errors'}
+3. **❌ Incorrect @SerializedName** - Must match exact Salesforce field API names`
+        : ''
+    }
+
+### **✅ STEP-BY-STEP EXTENSION PROCESS**
+
+#### **Adding New Features (e.g., Opportunities Tab)**
+
+${
+  isIOS
+    ? `**STEP 1: Update SceneDelegate.swift (REQUIRED for tabs)**
+\`\`\`swift
+// SceneDelegate.swift - Update if adding TabView
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    guard let windowScene = (scene as? UIWindowScene) else { return }
+    
+    self.window = UIWindow(windowScene: windowScene)
+    
+    // Update to TabView if adding multiple tabs
+    let contentView = MainTabView() // Instead of single ContactsView
+    
+    self.window!.rootViewController = UIHostingController(rootView: contentView)
+    self.window!.makeKeyAndVisible()
+}
+\`\`\`
+
+**STEP 2: Create TabView Structure**
+\`\`\`swift
+struct MainTabView: View {
+    var body: some View {
+        TabView {
+            ContactsListView()
+                .tabItem {
+                    Image(systemName: "person.2")
+                    Text("Contacts")
+                }
+            
+            OpportunitiesListView() // <-- New tab
+                .tabItem {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                    Text("Opportunities")
+                }
+        }
+    }
+}
+\`\`\`
+
+**STEP 3: Create Data Model**
+\`\`\`swift
+struct Opportunity: Codable, Identifiable {
+    let id: String?
+    let name: String
+    let amount: Double?
+    let closeDate: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id = "Id"
+        case name = "Name"
+        case amount = "Amount"
+        case closeDate = "CloseDate"
+    }
+}
+\`\`\``
+    : ''
+}${
+      isAndroid
+        ? `**STEP 1: Update MainActivity** 
+\`\`\`${params.language === 'kotlin' ? 'kotlin' : 'java'}
+// Add navigation setup for multiple screens
+${
+  params.language === 'kotlin'
+    ? `class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+        
+        // Setup navigation with bottom tabs
+        setupBottomNavigation()
+    }
+}`
+    : `public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        
+        // Setup navigation with bottom tabs
+        setupBottomNavigation();
+    }
+}`
+}
+\`\`\`
+
+**STEP 2: Create Data Model**
+\`\`\`${params.language === 'kotlin' ? 'kotlin' : 'java'}
+${
+  params.language === 'kotlin'
+    ? `data class Opportunity(
+    @SerializedName("Id") val id: String? = null,
+    @SerializedName("Name") val name: String,
+    @SerializedName("Amount") val amount: Double?,
+    @SerializedName("CloseDate") val closeDate: String?
+)`
+    : `public class Opportunity {
+    @SerializedName("Id") private String id;
+    @SerializedName("Name") private String name;
+    @SerializedName("Amount") private Double amount;
+    @SerializedName("CloseDate") private String closeDate;
+    
+    // Constructors, getters, setters...
+}`
+}
+\`\`\``
+        : ''
+    }
+
+#### **Configuration Files Updates**
+
+${
+  isDataHeavy
+    ? `**userstore.json** - Add soup schema for new objects:
+\`\`\`json
+{
+  "soups": [
+    {
+      "soupName": "Opportunity",
+      "indexes": [
+        {"path": "Id", "type": "string"},
+        {"path": "Name", "type": "string"},
+        {"path": "Amount", "type": "floating"}
+      ]
+    }
+  ]
+}
+\`\`\`
+
+**usersync.json** - Add sync configuration:
+\`\`\`json
+{
+  "syncs": [
+    {
+      "syncName": "syncOpportunities",
+      "syncType": "syncDown",
+      "soupName": "Opportunity",
+      "target": {
+        "type": "soql",
+        "query": "SELECT Id, Name, Amount, CloseDate FROM Opportunity LIMIT 1000"
+      }
+    }
+  ]
+}
+\`\`\``
+    : `**🚫 NO userstore.json/usersync.json needed**
+Basic templates use direct REST API calls:
+\`\`\`${isIOS ? 'swift' : isAndroid ? (params.language === 'kotlin' ? 'kotlin' : 'java') : 'javascript'}
+${
+  isIOS
+    ? `// Use SFRestAPI directly
+SFRestAPI.sharedInstance().performSOQL("SELECT Id, Name FROM Opportunity") { response in
+    // Handle response
+}`
+    : isAndroid
+      ? params.language === 'kotlin'
+        ? `// Use RestClient directly
+RestClient.sendAsync(RestRequest.requestForQuery("SELECT Id, Name FROM Opportunity")) { response ->
+    // Handle response
+}`
+        : `// Use RestClient directly
+RestClient.sendAsync(RestRequest.requestForQuery("SELECT Id, Name FROM Opportunity"), response -> {
+    // Handle response
+});`
+      : `// Use fetch or axios directly
+fetch('/services/data/v55.0/query?q=SELECT+Id,Name+FROM+Opportunity')
+  .then(response => response.json())
+  .then(data => {
+    // Handle response
+  });`
+}
+\`\`\``
+}
+
+---
+
+## 📋 **REQUIRED FILES CHECKLIST**
+
+When adding new features, update these files:
+
+### **Core Files**
+${
+  isIOS
+    ? `- [ ] **SceneDelegate.swift** - ⚠️ Update for tabs (MOST CRITICAL)
+- [ ] **MainTabView.swift** - Add new tab items
+- [ ] **{Feature}ListView.swift** - New feature UI
+- [ ] **{Feature}ViewModel.swift** - Business logic
+- [ ] **{Feature}.swift** - Data model`
+    : isAndroid
+      ? `- [ ] **MainActivity.${params.language === 'kotlin' ? 'kt' : 'java'}** - Update navigation
+- [ ] **activity_main.xml** - Add navigation components  
+- [ ] **{Feature}Activity.${params.language === 'kotlin' ? 'kt' : 'java'}** - New feature UI
+- [ ] **{Feature}ViewModel.${params.language === 'kotlin' ? 'kt' : 'java'}** - Business logic
+- [ ] **{Feature}.${params.language === 'kotlin' ? 'kt' : 'java'}** - Data model`
+      : `- [ ] **App.tsx** - Update navigation
+- [ ] **{Feature}Screen.tsx** - New feature UI
+- [ ] **{Feature}Service.ts** - API integration
+- [ ] **{Feature}.types.ts** - TypeScript types`
+}
+
+### **Configuration Files**
+${
+  isDataHeavy
+    ? `- [ ] **userstore.json** - Add soup schemas
+- [ ] **usersync.json** - Add sync configurations`
+    : `- [ ] **bootconfig.plist** - OAuth settings (already configured)`
+}
+
+### **Service Layer**
+- [ ] **{Feature}Service.${isIOS ? 'swift' : isAndroid ? (params.language === 'kotlin' ? 'kt' : 'java') : 'ts'}** - API integration
+${isDataHeavy ? `- [ ] **{Feature}SyncManager.${isIOS ? 'swift' : isAndroid ? (params.language === 'kotlin' ? 'kt' : 'java') : 'ts'}** - Offline sync logic` : ''}
+
+---
+
+## 🛠️ **TOOL REFERENCE**
+
+### **Available MCP Tools**
+1. **create-project** - Generate new project from template
+2. **build-project** - Build iOS/Android/React Native project  
+3. **deploy-app** - Deploy to simulator/emulator with auto-detection
+
+### **Recommended Workflow**
+1. Use **create-project** with parameters above
+2. Extend project following guidelines in this PRD
+3. Use **build-project** to compile
+4. Use **deploy-app** to test on device
+5. Reference this PRD throughout development
+
+---
+
+## 📚 **ADDITIONAL RESOURCES**
+
+- **Salesforce Mobile SDK Documentation:** [https://developer.salesforce.com/docs/atlas.en-us.mobile_sdk.meta/mobile_sdk/](https://developer.salesforce.com/docs/atlas.en-us.mobile_sdk.meta/mobile_sdk/)
+- **Template Reference:** See \`TEMPLATES.md\` in project tools
+- **MobileSync Guide:** ${isDataHeavy ? 'Critical for offline functionality' : 'Not needed for this project'}
+
+---
+
+*🤖 This PRD was auto-generated by the Salesforce Mobile SDK MCP Server. Keep this document alongside your project for reference throughout development.*`;
+  }
+
+  /**
+   * Save PRD document to a temporary location to avoid interfering with project creation
+   */
+  private savePRD(prdContent: string, outputDir: string, appName: string): string {
+    try {
+      // Save PRD in parent directory with app name prefix to avoid directory conflicts
+      const tempPrdPath = join(outputDir, `${appName}_PROJECT_REQUIREMENTS.md`);
+
+      // Ensure parent directory exists
+      mkdirSync(outputDir, { recursive: true });
+
+      writeFileSync(tempPrdPath, prdContent, 'utf8');
+
+      // Add instructions to the PRD for moving it after project creation
+      const updatedContent =
+        prdContent +
+        `
+
+---
+
+## 📁 **POST-CREATION SETUP**
+
+**IMPORTANT**: This PRD was saved as \`${appName}_PROJECT_REQUIREMENTS.md\` to avoid conflicts during project creation.
+
+**After your project is created, move this file:**
+\`\`\`bash
+mv "${tempPrdPath}" "${join(outputDir, appName, 'PROJECT_REQUIREMENTS.md')}"
+\`\`\`
+
+**Or on Windows:**
+\`\`\`cmd
+move "${tempPrdPath}" "${join(outputDir, appName, 'PROJECT_REQUIREMENTS.md')}"
+\`\`\`
+
+This ensures the PRD is properly located within your project directory for ongoing reference.
+`;
+
+      writeFileSync(tempPrdPath, updatedContent, 'utf8');
+      return tempPrdPath;
+    } catch (error) {
+      console.warn('Failed to save PRD document:', error);
+      return '';
+    }
+  }
+
   private generateSpecificGuidance(params: ProjectScaffoldGuidanceRequestType): {
     success: boolean;
     guidance: string;
@@ -579,6 +1228,14 @@ Ensure you have the correct CLI installed:
     recommendedTemplate?: string;
     templateReason?: string;
     alternativeTemplates?: string[];
+    extensionGuide?: {
+      projectStructure: string;
+      addingFeatures: string;
+      commonPatterns: string;
+      requiredFiles: string[];
+      pitfalls: string[];
+    };
+    prdPath?: string;
     error?: string;
   } {
     // If platform is specified, use template selection
@@ -796,14 +1453,201 @@ For better template recommendations, consider specifying:
 - \`features\`: push-notifications, offline-sync, package-manager`;
       }
 
+      // Generate extension guide and embed it prominently in the main guidance
+      const extensionGuide = template ? this.generateExtensionGuide(template, params) : undefined;
+
+      // Enhance the main guidance with extension instructions
+      let enhancedGuidance = guidance;
+
+      // Add critical warning at the very beginning for iOS templates
+      if (template && template.platform === 'ios') {
+        const isDataHeavy =
+          template.isOfflineFirst ||
+          params.appType === 'data-heavy' ||
+          template.templateId.includes('MobileSync');
+        enhancedGuidance = `
+## ⚠️ **CRITICAL iOS EXTENSION WARNING**
+
+**🚨 MOST COMMON MISTAKE: When adding tabs to iOS apps, YOU MUST update SceneDelegate.swift!**
+
+**❌ DON'T DO THIS:**
+- Create new views without updating SceneDelegate
+- ${!isDataHeavy ? 'Add userstore.json to basic templates (unnecessary)' : 'Forget to add userstore.json entries'}
+
+**✅ DO THIS FIRST:**
+- Update SceneDelegate.swift to point to MainTabView  
+- ${isDataHeavy ? 'Update userstore.json and usersync.json' : 'Use direct REST API calls (NO userstore/usersync needed)'}
+
+---
+
+${guidance}`;
+      } else {
+        enhancedGuidance = guidance;
+      }
+
+      if (template) {
+        const isDataHeavy =
+          template.isOfflineFirst ||
+          params.appType === 'data-heavy' ||
+          template.templateId.includes('MobileSync');
+        const isIOS = template.platform === 'ios';
+
+        enhancedGuidance += `
+
+## 🚀 **CRITICAL: Template Extension Guide**
+
+**📋 WHEN EXTENDING THIS PROJECT, YOU MUST FOLLOW THESE INSTRUCTIONS:**
+
+### **Adding Features Checklist:**
+
+${
+  isIOS
+    ? `**STEP 1: Update SceneDelegate.swift (REQUIRED for adding tabs)**
+\`\`\`swift
+// SceneDelegate.swift - Update if adding TabView
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    guard let windowScene = (scene as? UIWindowScene) else { return }
+    
+    self.window = UIWindow(windowScene: windowScene)
+    
+    // Update to TabView if adding multiple tabs
+    let contentView = MainTabView() // Instead of single ContactsView
+    
+    self.window!.rootViewController = UIHostingController(rootView: contentView)
+    self.window!.makeKeyAndVisible()
+}
+\`\`\`
+
+**STEP 2: Create TabView Structure**
+\`\`\`swift
+struct MainTabView: View {
+    var body: some View {
+        TabView {
+            ContactsListView()
+                .tabItem {
+                    Image(systemName: "person.2")
+                    Text("Contacts")
+                }
+            
+            OpportunitiesListView() // <-- New tab
+                .tabItem {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                    Text("Opportunities")
+                }
+        }
+    }
+}
+\`\`\`
+
+`
+    : ''
+}**STEP ${isIOS ? '3' : '1'}: Create Data Model**
+\`\`\`${isIOS ? 'swift' : 'kotlin'}
+${
+  isIOS
+    ? `struct Opportunity: Codable, Identifiable {
+    let id: String?
+    let name: String
+    let amount: Double?
+    
+    enum CodingKeys: String, CodingKey {
+        case id = "Id"
+        case name = "Name"
+        case amount = "Amount"
+    }
+}`
+    : `data class Opportunity(
+    @SerializedName("Id") val id: String? = null,
+    @SerializedName("Name") val name: String,
+    @SerializedName("Amount") val amount: Double?
+)`
+}
+\`\`\`
+
+**STEP ${isIOS ? '4' : '2'}: Create Service Layer**
+${
+  isDataHeavy
+    ? `${isIOS ? '- Update userstore.json with Opportunity soup schema' : ''}
+${isIOS ? '- Update usersync.json with syncOpportunities configuration' : ''}
+- Use MobileSync for offline data`
+    : '- Use direct REST API calls (NO userstore.json/usersync.json needed)'
+}
+
+${extensionGuide?.addingFeatures || ''}
+
+### **Required File Updates:**
+${isIOS ? '✅ **SceneDelegate.swift - UPDATE FOR TABS (most commonly missed!)**' : ''}
+${isDataHeavy ? '✅ **userstore.json - Add soup schemas for new objects**' : '❌ **NO userstore.json needed for basic templates**'}
+${isDataHeavy ? '✅ **usersync.json - Add sync configurations**' : '❌ **NO usersync.json needed for basic templates**'}
+✅ **Model classes - Data structures**
+✅ **Service classes - Business logic**
+✅ **View classes - UI components**
+
+${extensionGuide?.requiredFiles.map(file => `✅ **${file}**`).join('\n') || ''}
+
+### **⚠️ CRITICAL MISTAKES TO AVOID:**
+${isIOS ? '❌ **MOST COMMON: SceneDelegate not updated** - App still shows single view instead of TabView' : ''}
+${!isDataHeavy ? '❌ **Adding userstore.json unnecessarily** - Basic templates use direct API calls' : ''}
+${isDataHeavy ? '❌ **Missing userstore.json entry** - Causes SmartStore "soup not found" errors' : ''}
+${isDataHeavy ? '❌ **Missing usersync.json entry** - Sync operations fail silently' : ''}
+❌ **Incorrect field API names** - Use exact Salesforce field names
+${isIOS ? '❌ **Missing @StateObject/@ObservableObject** - SwiftUI reactive updates fail' : ''}
+
+${extensionGuide?.pitfalls.map(pitfall => `❌ **${pitfall}**`).join('\n') || ''}
+
+### **Architecture Patterns:**
+${isDataHeavy ? 'MobileSync Pattern: Sync → Query → Modify → Upload' : 'Direct API Pattern: Authenticate → Query → Display'}
+${extensionGuide?.commonPatterns || ''}
+
+**⚡ REMEMBER: This is a ${template.templateId} template. ${isDataHeavy ? 'Use MobileSync for offline data.' : 'Use direct REST API calls.'} Follow the patterns above exactly!**
+`;
+      }
+
+      // Generate and save PRD document
+      let prdPath = '';
+      if (template && params.outputDir && params.appName) {
+        try {
+          const prdContent = this.generatePRD(template, params);
+          prdPath = this.savePRD(prdContent, params.outputDir, params.appName);
+
+          if (prdPath) {
+            enhancedGuidance += `
+
+## 📋 **PRD DOCUMENT SAVED**
+
+A comprehensive **Project Requirements Document** has been saved to:
+\`${prdPath}\`
+
+This PRD contains:
+- ✅ **Template-specific extension guidelines**
+- ✅ **Step-by-step development workflow** 
+- ✅ **Exact tool usage instructions**
+- ✅ **Architecture patterns and best practices**
+- ✅ **Common pitfalls and solutions**
+
+**🔧 AFTER PROJECT CREATION:** Move the PRD into your project directory:
+\`\`\`bash
+mv "${prdPath}" "${join(params.outputDir, params.appName, 'PROJECT_REQUIREMENTS.md')}"
+\`\`\`
+
+**💡 IMPORTANT: Keep this PRD alongside your project and reference it throughout development!**
+`;
+          }
+        } catch (error) {
+          console.warn('Failed to generate/save PRD:', error);
+        }
+      }
+
       return {
         success: true,
-        guidance,
+        guidance: enhancedGuidance,
         commands,
         projectPath,
         recommendedTemplate: template?.templateId,
         templateReason: template ? reason : undefined,
         alternativeTemplates: alternatives.map(alt => alt.templateId),
+        extensionGuide,
+        prdPath: prdPath || undefined,
       };
     }
 

@@ -15,6 +15,7 @@ import {
 } from '../../schemas/mobileSdkSchema.js';
 import { BuildManager } from '../../utils/buildManager.js';
 import { FileUtils } from '../../utils/fileUtils.js';
+import { DesignUtils } from '../../utils/designUtils.js';
 import { join } from 'path';
 
 export class BuildProjectTool implements Tool {
@@ -106,6 +107,22 @@ export class BuildProjectTool implements Tool {
               },
             ],
           };
+      }
+
+      // Add design document reference to guidance
+      const designReminder = DesignUtils.generateDesignReminder(params.projectPath);
+      const phaseCheck = DesignUtils.checkPhaseAlignment(params.projectPath, 'build');
+
+      guidance += designReminder;
+
+      if (phaseCheck.recommendation) {
+        guidance += `
+## 🎯 **PHASE ALIGNMENT CHECK**
+
+${phaseCheck.recommendation}
+
+**💡 Tip:** Reference your design document to ensure you're building the right features at the right time according to your implementation roadmap.
+`;
       }
 
       return {

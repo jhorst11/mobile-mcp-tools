@@ -16,6 +16,7 @@ import {
   type WorkflowUtilityToolType,
 } from '../../schemas/mobileSdkSchema.js';
 import { FileUtils } from '../../utils/fileUtils.js';
+import { DesignUtils } from '../../utils/designUtils.js';
 import { resolve } from 'path';
 
 export class PlanWorkflowTool implements Tool {
@@ -437,6 +438,45 @@ export class PlanWorkflowTool implements Tool {
         },
       };
 
+      // Add design document guidance if project exists
+      let designGuidance = '';
+      if (context.hasProject && params.currentContext?.projectPath) {
+        const designDoc = DesignUtils.findDesignDocument(params.currentContext.projectPath);
+        if (designDoc.found) {
+          const guidance = designDoc.content
+            ? DesignUtils.extractKeyGuidance(designDoc.content)
+            : null;
+          designGuidance = `
+
+## 📋 **DESIGN DOCUMENT INTEGRATION**
+
+✅ **Design document found:** \`${designDoc.path}\`
+
+**🎯 CRITICAL:** Reference your design document throughout this workflow:
+${guidance?.architecturePattern ? `- **Architecture Pattern:** ${guidance.architecturePattern}` : ''}
+${guidance?.keyRequirements.length ? `- **Key Requirements:** ${guidance.keyRequirements.slice(0, 3).join(', ')}` : ''}
+${guidance?.implementationPhases.length ? `- **Implementation Phases:** Follow the roadmap in your design document` : ''}
+
+**💡 WORKFLOW INTEGRATION:** Before each major step, verify it aligns with your design document requirements and architectural decisions.
+`;
+        } else {
+          designGuidance = `
+
+## 📋 **DESIGN DOCUMENT RECOMMENDATION**
+
+⚠️ **No design document found for this project.**
+
+**RECOMMENDATION:** Consider using the \`plan-design\` tool to create a comprehensive design document before proceeding. This ensures:
+- Clear architectural decisions
+- Consistent implementation approach  
+- Defined success metrics
+- Phase-by-phase development roadmap
+
+**Usage:** Call \`plan-design\` with your project requirements to generate a persistent design reference.
+`;
+        }
+      }
+
       return {
         content: [
           {
@@ -451,6 +491,7 @@ export class PlanWorkflowTool implements Tool {
                 todos,
                 utilityTools,
                 nextAction,
+                designGuidance: designGuidance.trim(),
               },
               null,
               2

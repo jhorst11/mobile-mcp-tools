@@ -512,3 +512,407 @@ forceios createWithTemplate --templaterepouri=MobileSyncExplorerSwift --appname=
 ```
 
 This guide provides comprehensive information for LLMs to understand the purpose, features, technical implementation, and appropriate use cases for each Salesforce Mobile SDK template, enabling better decision-making when bootstrapping new mobile applications.
+
+## Extension Guidance for LLMs
+
+### Data-Heavy Template Extension Guide
+
+#### Project Structure (MobileSync Template)
+
+```
+{appName}/
+├── {appName}/                    # iOS main folder
+│   ├── Models/                   # Data models
+│   ├── Services/                 # Business logic & API calls
+│   ├── ViewModels/              # SwiftUI ViewModels
+│   ├── Views/                   # SwiftUI Views
+│   └── Configuration/           # App configuration
+├── userstore.json               # Offline storage schema
+├── usersync.json                # Sync configuration
+└── bootconfig.plist             # App bootstrap config
+```
+
+For Android:
+
+```
+{appName}/
+├── app/src/main/
+│   ├── java/.../model/          # Data models
+│   ├── java/.../service/        # Business logic
+│   ├── java/.../viewmodel/      # ViewModels
+│   ├── java/.../view/           # Activities/Fragments
+│   └── res/                     # Resources
+├── app/src/main/assets/userstore.json
+├── app/src/main/assets/usersync.json
+└── app/src/main/res/raw/bootconfig.json
+```
+
+#### Adding New Features/Tabs (All Templates)
+
+When adding new features or tabs to any iOS template:
+
+**1. Update App Entry Point (iOS)**
+If adding new tabs or changing main view structure:
+
+```swift
+// SceneDelegate.swift - Update windowScene setup
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    guard let windowScene = (scene as? UIWindowScene) else { return }
+
+    self.window = UIWindow(windowScene: windowScene)
+
+    // If you have a TabView, make sure SceneDelegate points to it
+    let contentView = MainTabView() // <-- Update to your main view
+
+    self.window!.rootViewController = UIHostingController(rootView: contentView)
+    self.window!.makeKeyAndVisible()
+}
+```
+
+**2. iOS Tab Structure**
+When adding new tabs, follow this pattern:
+
+```swift
+// MainTabView.swift
+struct MainTabView: View {
+    var body: some View {
+        TabView {
+            ContactsListView()
+                .tabItem {
+                    Image(systemName: "person.2")
+                    Text("Contacts")
+                }
+
+            OpportunitiesListView() // <-- New tab
+                .tabItem {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                    Text("Opportunities")
+                }
+        }
+    }
+}
+```
+
+#### Adding New Object Types (Data-Heavy Template)
+
+When adding a new Salesforce object (e.g., Product, Order):
+
+**1. Define the Object Model**
+
+_iOS Swift:_
+
+```swift
+import Foundation
+import MobileSync
+
+struct Product: Codable, Equatable {
+    let id: String?
+    let name: String
+    let price: Decimal
+    let description: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id = "Id"
+        case name = "Name"
+        case price = "Price__c"
+        case description = "Description"
+    }
+}
+```
+
+_Android Kotlin:_
+
+```kotlin
+data class Product(
+    @SerializedName("Id") val id: String? = null,
+    @SerializedName("Name") val name: String,
+    @SerializedName("Price__c") val price: Double,
+    @SerializedName("Description") val description: String? = null
+)
+```
+
+**2. Update Storage Configuration**
+Add to `userstore.json`:
+
+```json
+{
+  "soups": [
+    {
+      "soupName": "Product",
+      "features": ["externalStorage"],
+      "indexes": [
+        { "path": "Id", "type": "string" },
+        { "path": "Name", "type": "string" },
+        { "path": "__local__", "type": "string" }
+      ]
+    }
+  ]
+}
+```
+
+**3. Configure Sync**
+Add to `usersync.json`:
+
+```json
+{
+  "syncs": [
+    {
+      "syncName": "syncProducts",
+      "syncType": "soqlSync",
+      "soupName": "Product",
+      "options": {
+        "query": "SELECT Id, Name, Price__c, Description FROM Product__c ORDER BY Name"
+      }
+    }
+  ]
+}
+```
+
+**4. Create Service Layer**
+
+_iOS Swift:_
+
+```swift
+import SmartStore
+import MobileSync
+
+class ProductService: ObservableObject {
+    private let smartStore = SmartStore.shared
+
+    func syncProducts() async throws {
+        let syncManager = SyncManager.shared
+        try await syncManager.sync("syncProducts")
+    }
+
+    func getProducts() throws -> [Product] {
+        let querySpec = QuerySpec.buildAllQuerySpec("Product", orderPath: "Name", order: .ascending, pageSize: 1000)
+        let cursor = try smartStore.query(querySpec, pageIndex: 0)
+
+        return cursor.compactMap { record in
+            try? JSONDecoder().decode(Product.self, from: JSONSerialization.data(withJSONObject: record))
+        }
+    }
+}
+```
+
+#### Data Flow Pattern
+
+1. **Sync**: Background sync from Salesforce → SmartStore
+2. **Query**: Read from SmartStore for UI display
+3. **Modify**: Local changes to SmartStore
+4. **Upload**: Push local changes back to Salesforce
+
+#### Naming Conventions
+
+- **Soup Names**: Use PascalCase object names (e.g., "Product", "ContactTask")
+- **Sync Names**: Use "sync" + ObjectName (e.g., "syncProducts", "syncContactTasks")
+- **Index Paths**: Match Salesforce field API names exactly
+
+#### When to Update Configuration Files
+
+**Decision Tree for Adding New Features:**
+
+```
+Are you adding a new Salesforce object (Account, Contact, Opportunity, etc.)?
+├── YES: Is this a MobileSync/Data-Heavy template?
+│   ├── YES: Update userstore.json + usersync.json + create models + services + views
+│   └── NO: Create models + services + views only (no userstore/usersync)
+└── NO: Are you adding UI tabs/navigation changes?
+    └── YES: Update SceneDelegate.swift + create new views
+```
+
+#### Required Files (Data-Heavy Templates)
+
+**ALWAYS UPDATE for New Objects:**
+
+- ✅ userstore.json - Add soup schema for each new Salesforce object
+- ✅ usersync.json - Add sync configuration for each new object
+- ✅ SceneDelegate.swift - Update if adding tabs or changing main view
+- ✅ Model classes - Swift/Kotlin data structures
+- ✅ Service classes - Business logic and sync operations
+- ✅ View classes - UI components for the new feature
+
+**Example: Adding Opportunities tab to MobileSync template**
+
+1. userstore.json: Add "Opportunity" soup with indexes
+2. usersync.json: Add "syncOpportunities" configuration
+3. SceneDelegate.swift: Update to show MainTabView (not single ContactsView)
+4. Opportunity.swift: Data model with proper CodingKeys
+5. OpportunityService.swift: Sync and query operations
+6. OpportunitiesListView.swift: UI for displaying opportunities
+
+#### Required Files (Basic Templates)
+
+**NO userstore.json/usersync.json needed:**
+
+- ✅ SceneDelegate.swift - Update if adding tabs or changing main view
+- ✅ Model classes - Swift/Kotlin data structures
+- ✅ Service classes - Direct REST API calls (no MobileSync)
+- ✅ View classes - UI components for the new feature
+
+**Example: Adding Opportunities tab to Basic template**
+
+1. SceneDelegate.swift: Update to show MainTabView
+2. Opportunity.swift: Data model for JSON parsing
+3. OpportunityService.swift: Direct REST API calls using SFRestAPI
+4. OpportunitiesListView.swift: UI for displaying opportunities
+
+#### Common Pitfalls (Data-Heavy)
+
+**Critical iOS Architecture Mistakes:**
+
+- ❌ **SceneDelegate not updated** - App still shows single view instead of TabView
+- ❌ **Missing userstore.json entry** - New objects cause SmartStore "soup not found" errors
+- ❌ **Missing usersync.json entry** - Sync operations fail silently for new objects
+- ❌ **Wrong template type assumption** - Adding userstore.json to basic templates (unnecessary)
+
+**Data Configuration Mistakes:**
+
+- ❌ Incorrect field API names in CodingKeys/SerializedName (causes nil values)
+- ❌ Not including `__local__` index (prevents conflict detection)
+- ❌ Hardcoding SOQL queries instead of using sync configurations
+- ❌ Not handling offline scenarios in UI code
+- ❌ Missing proper error handling for sync operations
+
+**iOS-Specific Mistakes:**
+
+- ❌ Creating new views but not adding them to navigation/tabs
+- ❌ Not importing required frameworks (SwiftUI, MobileSync, etc.)
+- ❌ Missing @StateObject or @ObservableObject property wrappers
+- ❌ Not handling authentication state changes in new views
+
+### Basic Template Extension Guide
+
+#### Project Structure (Basic Template)
+
+```
+{appName}/
+├── {appName}/                   # iOS main folder
+│   ├── Models/                  # Data models
+│   ├── Services/                # API services
+│   ├── ViewModels/              # SwiftUI ViewModels
+│   └── Views/                   # SwiftUI Views
+└── bootconfig.plist             # App configuration
+```
+
+#### Adding New Features (Basic Template)
+
+When adding new Salesforce integration to Basic templates:
+
+**1. Update App Entry Point (if adding tabs)**
+
+```swift
+// SceneDelegate.swift - Update if adding TabView
+func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    guard let windowScene = (scene as? UIWindowScene) else { return }
+
+    self.window = UIWindow(windowScene: windowScene)
+
+    // Update to TabView if adding multiple tabs
+    let contentView = MainTabView() // Instead of single ContactsView
+
+    self.window!.rootViewController = UIHostingController(rootView: contentView)
+    self.window!.makeKeyAndVisible()
+}
+```
+
+**2. Create Data Model**
+Follow Swift Codable patterns with proper field mapping:
+
+```swift
+struct Opportunity: Codable, Identifiable {
+    let id: String?
+    let name: String
+    let amount: Double?
+    let closeDate: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id = "Id"
+        case name = "Name"
+        case amount = "Amount"
+        case closeDate = "CloseDate"
+    }
+}
+```
+
+**3. Implement Service Layer**
+
+- Use SalesforceSDK REST API directly (NO userstore.json needed)
+- Implement proper error handling
+- Handle authentication states
+
+```swift
+import SalesforceSDKCore
+
+class OpportunityService: ObservableObject {
+    @Published var opportunities: [Opportunity] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+
+    func loadOpportunities() {
+        isLoading = true
+
+        let request = RestClient.shared.requestForQuery("SELECT Id, Name, Amount, CloseDate FROM Opportunity LIMIT 100")
+
+        RestClient.shared.send(request: request) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isLoading = false
+
+                switch result {
+                case .success(let response):
+                    if let records = response.asJsonDictionary()["records"] as? [[String: Any]] {
+                        self?.opportunities = records.compactMap { dict in
+                            try? JSONDecoder().decode(Opportunity.self, from: JSONSerialization.data(withJSONObject: dict))
+                        }
+                    }
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+}
+```
+
+**4. Update UI Layer**
+
+- Create SwiftUI views and ViewModels
+- Handle loading states
+- Display errors appropriately
+- Add to TabView if creating multiple tabs
+
+#### API Integration Patterns
+
+- Use SalesforceSDK RestClient for API calls
+- Implement proper authentication handling
+- Cache data appropriately for performance
+
+#### Required Files (Basic)
+
+- bootconfig.plist/json - Connected App configuration
+- Service classes - API integration logic
+- Model classes - Data structures
+- Views and ViewModels - UI components
+
+#### Common Pitfalls (Basic)
+
+**Critical iOS Architecture Mistakes:**
+
+- ❌ **SceneDelegate not updated** - App still shows single view instead of TabView when adding tabs
+- ❌ **Adding userstore.json unnecessarily** - Basic templates use direct API calls, not SmartStore
+- ❌ **Missing TabView structure** - Creating new views but not organizing them in tabs
+
+**API Integration Mistakes:**
+
+- ❌ Not handling authentication properly (SFUserAccountManager.shared.currentUserAccount)
+- ❌ Missing error handling for network failures
+- ❌ Not implementing proper loading states (@Published properties)
+- ❌ Hardcoding API versions or endpoints (use RestClient.shared)
+- ❌ Not following platform-specific UI patterns (SwiftUI best practices)
+
+**Data Handling Mistakes:**
+
+- ❌ Incorrect field API names in CodingKeys (causes nil values)
+- ❌ Not making models Identifiable for SwiftUI Lists
+- ❌ Missing @StateObject/@ObservableObject property wrappers
+- ❌ Not handling JSON parsing errors gracefully
