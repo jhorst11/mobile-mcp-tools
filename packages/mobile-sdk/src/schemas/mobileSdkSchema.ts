@@ -102,6 +102,7 @@ export const ProjectScaffoldGuidanceRequest = z.object({
       description: 'Preferred language (overrides platform defaults)',
     })
     .optional(),
+  outputDir: z.string().min(1, 'Output directory is required').optional(),
 });
 
 export const ProjectScaffoldGuidanceResponse = z.object({

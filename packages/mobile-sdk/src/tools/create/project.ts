@@ -14,293 +14,225 @@ import {
   type ProjectScaffoldGuidanceRequestType,
 } from '../../schemas/mobileSdkSchema.js';
 import { dirname, basename } from 'path';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
-// Template definitions from TEMPLATE_GUIDE.md
+// Template definitions from TEMPLATES.md - comprehensive Mobile SDK template guide
 interface Template {
   name: string;
   platform: 'ios' | 'android' | 'react-native';
   language: string;
   architecture: string;
   description: string;
+  technicalImplementation: string[];
   useCases: string[];
   keyFeatures: string[];
+  modificationGuide: string[];
   cli: string;
   templateId: string;
   deprecated?: boolean;
+  isOfflineFirst?: boolean;
+  hasCustomAuth?: boolean;
+  hasAdvancedFeatures?: boolean;
+  dataPattern?: 'direct-api' | 'mobilesync' | 'smartstore';
+  uiFramework?: 'swiftui' | 'uikit' | 'compose' | 'traditional' | 'react';
 }
 
-const TEMPLATES: Template[] = [
-  // iOS Templates
-  {
-    name: 'iOS Native Swift Template',
-    platform: 'ios',
-    language: 'Swift',
-    architecture: 'SwiftUI + Combine',
-    description:
-      'Modern Swift application template using MobileSync data framework with SwiftUI for declarative UI and Combine for reactive programming.',
-    useCases: [
-      'Standard iOS apps with Salesforce integration',
-      'Apps requiring offline data sync',
-      'Modern iOS UI with reactive programming patterns',
-    ],
-    keyFeatures: ['MobileSync', 'SwiftUI', 'Combine framework'],
-    cli: 'forceios',
-    templateId: 'iOSNativeSwiftTemplate',
-  },
-  {
-    name: 'iOS Native Swift Package Manager Template',
-    platform: 'ios',
-    language: 'Swift',
-    architecture: 'SwiftUI + Combine + Swift Package Manager',
-    description:
-      'Identical to iOSNativeSwiftTemplate but uses Swift Package Manager instead of CocoaPods for dependency management.',
-    useCases: [
-      'Projects preferring Swift Package Manager over CocoaPods',
-      'Modern iOS development workflows',
-      'Teams wanting streamlined dependency management',
-    ],
-    keyFeatures: ['MobileSync', 'SwiftUI', 'Combine', 'Swift Package Manager'],
-    cli: 'forceios',
-    templateId: 'iOSNativeSwiftPackageManagerTemplate',
-  },
-  {
-    name: 'iOS Native Swift Encrypted Notification Template',
-    platform: 'ios',
-    language: 'Swift',
-    architecture: 'Basic Swift + Notification Service Extension',
-    description:
-      'Swift application template that includes a notification service extension for handling encrypted push notifications.',
-    useCases: [
-      'Apps requiring secure/encrypted push notifications',
-      'Enterprise applications with sensitive data',
-      'Apps needing custom notification processing',
-    ],
-    keyFeatures: ['Notification Service Extension', 'encrypted notifications'],
-    cli: 'forceios',
-    templateId: 'iOSNativeSwiftEncryptedNotificationTemplate',
-  },
-  {
-    name: 'iOS Native Login Template',
-    platform: 'ios',
-    language: 'Swift',
-    architecture: 'SwiftUI + Custom Login',
-    description: 'Sample Swift application featuring a native login screen built with SwiftUI.',
-    useCases: [
-      'Apps requiring custom branded login experience',
-      'Native login UI instead of web-based authentication',
-      'Custom authentication flows',
-    ],
-    keyFeatures: ['SwiftUI', 'custom native login screen', 'branded authentication'],
-    cli: 'forceios',
-    templateId: 'iOSNativeLoginTemplate',
-  },
-  {
-    name: 'iOS IDP Template (Authenticator)',
-    platform: 'ios',
-    language: 'Swift',
-    architecture: 'Identity Provider pattern',
-    description: 'Sample Swift application demonstrating Identity Provider (IDP) functionality.',
-    useCases: [
-      'Building custom authentication providers',
-      'SSO implementations',
-      'Enterprise identity management solutions',
-      'Multi-app authentication scenarios',
-    ],
-    keyFeatures: ['Identity Provider functionality', 'SSO', 'authentication delegation'],
-    cli: 'forceios',
-    templateId: 'iOSIDPTemplate',
-  },
-  {
-    name: 'MobileSync Explorer Swift',
-    platform: 'ios',
-    language: 'Swift',
-    architecture: 'MobileSync + SwiftUI',
-    description:
-      'Comprehensive sample Swift application demonstrating MobileSync data framework capabilities.',
-    useCases: [
-      'Learning MobileSync framework',
-      'Reference implementation for data synchronization',
-      'Apps requiring robust offline capabilities',
-      'Contact management applications',
-    ],
-    keyFeatures: ['MobileSync', 'offline sync', 'CRUD operations', 'conflict resolution'],
-    cli: 'forceios',
-    templateId: 'MobileSyncExplorerSwift',
-  },
-  {
-    name: 'iOS Native Template (Objective-C)',
-    platform: 'ios',
-    language: 'Objective-C',
-    architecture: 'UIKit + Objective-C',
-    description: 'Basic Objective-C application template for iOS.',
-    useCases: [
-      'Legacy Objective-C projects',
-      'Teams with existing Objective-C expertise',
-      'Gradual migration from Objective-C to Swift',
-    ],
-    keyFeatures: ['UIKit', 'Objective-C', 'basic Salesforce SDK integration'],
-    cli: 'forceios',
-    templateId: 'iOSNativeTemplate',
-  },
+/**
+ * Parse TEMPLATES.md to extract template information
+ */
+function parseTemplatesFromMarkdown(): Template[] {
+  try {
+    const templatesPath = join(__dirname, 'TEMPLATES.md');
+    const content = readFileSync(templatesPath, 'utf-8');
 
-  // Android Templates
-  {
-    name: 'Android Native Kotlin Template',
-    platform: 'android',
-    language: 'Kotlin',
-    architecture: 'Basic Kotlin',
-    description: 'Basic Kotlin application template for Android.',
-    useCases: [
-      'Standard Android apps with Salesforce integration',
-      'Modern Android development with Kotlin',
-      'Basic mobile app requirements',
-    ],
-    keyFeatures: ['Kotlin', 'basic Salesforce SDK integration'],
-    cli: 'forcedroid',
-    templateId: 'AndroidNativeKotlinTemplate',
-  },
-  {
-    name: 'Android Native Login Template',
-    platform: 'android',
-    language: 'Kotlin',
-    architecture: 'Jetpack Compose + Custom Login',
-    description:
-      'Sample Android application featuring a native login screen created with Jetpack Compose.',
-    useCases: [
-      'Apps requiring custom branded login experience',
-      'Modern Android UI with Jetpack Compose',
-      'Native login instead of web-based authentication',
-    ],
-    keyFeatures: ['Jetpack Compose', 'custom native login', 'modern Android UI'],
-    cli: 'forcedroid',
-    templateId: 'AndroidNativeLoginTemplate',
-  },
-  {
-    name: 'Android IDP Template',
-    platform: 'android',
-    language: 'Kotlin',
-    architecture: 'Identity Provider pattern',
-    description:
-      'Sample Kotlin application demonstrating Identity Provider (IDP) functionality for Android.',
-    useCases: [
-      'Android SSO implementations',
-      'Enterprise identity management',
-      'Multi-app authentication scenarios',
-      'Custom authentication providers',
-    ],
-    keyFeatures: ['Identity Provider functionality', 'SSO', 'Kotlin'],
-    cli: 'forcedroid',
-    templateId: 'AndroidIDPTemplate',
-  },
-  {
-    name: 'MobileSync Explorer Kotlin Template',
-    platform: 'android',
-    language: 'Kotlin',
-    architecture: 'Modern Android Architecture + MobileSync + Jetpack Compose',
-    description:
-      'Advanced Android template demonstrating modern architecture patterns with MobileSync.',
-    useCases: [
-      'Enterprise Android applications',
-      'Apps requiring sophisticated offline data sync',
-      'Modern Android architecture reference',
-      'Contact management with flexible UI',
-      'Learning modern Android development patterns',
-    ],
-    keyFeatures: [
-      'Kotlin Coroutines',
-      'Jetpack Compose',
-      'SObject-to-Kotlin data class framework',
-      'Advanced MobileSync patterns',
-      'Repository pattern implementation',
-      'Flexible/responsive UI design',
-    ],
-    cli: 'forcedroid',
-    templateId: 'MobileSyncExplorerKotlinTemplate',
-  },
-  {
-    name: 'Android Native Template (Java)',
-    platform: 'android',
-    language: 'Java',
-    architecture: 'Basic Java',
-    description: 'Basic Java application template for Android.',
-    useCases: [
-      'Legacy Java Android projects',
-      'Teams with existing Java expertise',
-      'Gradual migration from Java to Kotlin',
-    ],
-    keyFeatures: ['Java', 'basic Salesforce SDK integration'],
-    cli: 'forcedroid',
-    templateId: 'AndroidNativeTemplate',
-  },
+    const templates: Template[] = [];
+    const sections = content.split(/^#### /m).slice(1); // Split by template headers, skip intro
 
-  // React Native Templates
-  {
-    name: 'React Native Template',
-    platform: 'react-native',
-    language: 'JavaScript',
-    architecture: 'React Native + React Navigation',
-    description:
-      'Basic React Native application template supporting both iOS and Android platforms.',
-    useCases: [
-      'Cross-platform mobile development',
-      'Teams with React/JavaScript expertise',
-      'Rapid prototyping for both platforms',
-      'Shared codebase between iOS and Android',
-    ],
-    keyFeatures: ['React Native', 'React Navigation', 'cross-platform'],
-    cli: 'forcereact',
-    templateId: 'ReactNativeTemplate',
-  },
-  {
-    name: 'React Native TypeScript Template',
-    platform: 'react-native',
-    language: 'TypeScript',
-    architecture: 'React Native + TypeScript',
-    description: 'React Native application template written in TypeScript.',
-    useCases: [
-      'Large-scale React Native applications',
-      'Teams preferring type safety',
-      'Complex applications requiring better code maintainability',
-      'JavaScript teams transitioning to TypeScript',
-    ],
-    keyFeatures: ['TypeScript', 'React Native', 'type safety', 'cross-platform'],
-    cli: 'forcereact',
-    templateId: 'ReactNativeTypeScriptTemplate',
-  },
-  {
-    name: 'React Native Deferred Template',
-    platform: 'react-native',
-    language: 'JavaScript',
-    architecture: 'React Native + Deferred Authentication',
-    description: 'React Native application template implementing deferred login pattern.',
-    useCases: [
-      'Apps with guest/anonymous access',
-      'Gradual authentication onboarding',
-      'Apps where login is not immediately required',
-      'Better user experience with optional authentication',
-    ],
-    keyFeatures: ['Deferred authentication', 'guest access', 'React Native'],
-    cli: 'forcereact',
-    templateId: 'ReactNativeDeferredTemplate',
-  },
-  {
-    name: 'MobileSync Explorer React Native',
-    platform: 'react-native',
-    language: 'JavaScript',
-    architecture: 'React Native + MobileSync',
-    description:
-      'Sample React Native application demonstrating MobileSync data framework in a cross-platform context.',
-    useCases: [
-      'Learning MobileSync in React Native',
-      'Cross-platform apps with offline sync requirements',
-      'Reference implementation for React Native data sync',
-      'Contact management across platforms',
-    ],
-    keyFeatures: ['MobileSync', 'React Native', 'offline sync', 'cross-platform'],
-    cli: 'forcereact',
-    templateId: 'MobileSyncExplorerReactNative',
-  },
-];
+    for (const section of sections) {
+      const lines = section.split('\n');
+      const templateId = lines[0].trim();
+
+      // Extract basic info
+      let name = '';
+      let cli = '';
+      let platform: 'ios' | 'android' | 'react-native' = 'ios';
+      let language = '';
+      let architecture = '';
+      let description = '';
+      const technicalImplementation: string[] = [];
+      const useCases: string[] = [];
+      const keyFeatures: string[] = [];
+      const modificationGuide: string[] = [];
+
+      let currentSection = '';
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+
+        if (line.startsWith('- **CLI**:')) {
+          cli = line.replace('- **CLI**: `', '').replace('`', '');
+          if (cli === 'forceios') platform = 'ios';
+          else if (cli === 'forcedroid') platform = 'android';
+          else if (cli === 'forcereact') platform = 'react-native';
+        }
+
+        if (line.startsWith('- **Platform**:')) {
+          const platformText = line.replace('- **Platform**: ', '').toLowerCase();
+          if (platformText.includes('ios')) platform = 'ios';
+          else if (platformText.includes('android')) platform = 'android';
+          else if (platformText.includes('react native')) platform = 'react-native';
+        }
+
+        if (line.startsWith('- **Language**:')) {
+          language = line.replace('- **Language**: ', '');
+        }
+
+        if (line.startsWith('- **Architecture**:')) {
+          architecture = line.replace('- **Architecture**: ', '');
+        }
+
+        if (line.startsWith('**Description**:')) {
+          description = line.replace('**Description**: ', '');
+          // Continue reading description if it spans multiple lines
+          let j = i + 1;
+          while (j < lines.length && lines[j] && !lines[j].startsWith('**')) {
+            description += ' ' + lines[j].trim();
+            j++;
+          }
+          i = j - 1;
+        }
+
+        // Parse sections
+        if (line.startsWith('**Technical Implementation**:')) {
+          currentSection = 'technical';
+        } else if (line.startsWith('**Use Cases**:')) {
+          currentSection = 'useCases';
+        } else if (line.startsWith('**Key Features**:')) {
+          currentSection = 'keyFeatures';
+        } else if (line.startsWith('**Modification Guide**:')) {
+          currentSection = 'modification';
+        } else if (line.startsWith('- ') || line.startsWith('  - ')) {
+          const listItem = line.replace(/^(\s*- )/, '').trim();
+
+          switch (currentSection) {
+            case 'technical':
+              technicalImplementation.push(listItem);
+              break;
+            case 'useCases':
+              useCases.push(listItem);
+              break;
+            case 'keyFeatures':
+              keyFeatures.push(listItem);
+              break;
+            case 'modification':
+              modificationGuide.push(listItem);
+              break;
+          }
+        }
+
+        // Extract name from template ID if not explicitly found
+        if (!name && templateId) {
+          name = templateId
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim();
+          if (name.endsWith('Template')) {
+            name = name.replace('Template', '').trim();
+          }
+        }
+      }
+
+      // Create template object
+      if (templateId && cli) {
+        const template: Template = {
+          name: name || templateId,
+          platform,
+          language: language || 'Unknown',
+          architecture: architecture || 'Unknown',
+          description: description || 'Mobile SDK template',
+          technicalImplementation,
+          useCases,
+          keyFeatures,
+          modificationGuide,
+          cli,
+          templateId,
+          // Infer additional properties from content
+          isOfflineFirst:
+            description.toLowerCase().includes('mobilesync') ||
+            keyFeatures.some(f => f.toLowerCase().includes('sync')),
+          hasCustomAuth:
+            name.toLowerCase().includes('login') ||
+            name.toLowerCase().includes('idp') ||
+            description.toLowerCase().includes('custom login'),
+          hasAdvancedFeatures:
+            name.toLowerCase().includes('explorer') || technicalImplementation.length > 5,
+          dataPattern: description.toLowerCase().includes('mobilesync')
+            ? 'mobilesync'
+            : 'direct-api',
+          uiFramework: keyFeatures.some(f => f.includes('SwiftUI'))
+            ? 'swiftui'
+            : keyFeatures.some(f => f.includes('Jetpack Compose'))
+              ? 'compose'
+              : keyFeatures.some(f => f.includes('React'))
+                ? 'react'
+                : 'traditional',
+        };
+
+        templates.push(template);
+      }
+    }
+
+    return templates;
+  } catch (error) {
+    console.warn('Failed to parse TEMPLATES.md, falling back to basic templates:', error);
+    // Fallback to basic template definitions if parsing fails
+    return [
+      {
+        name: 'iOS Native Swift Template',
+        platform: 'ios',
+        language: 'Swift',
+        architecture: 'SwiftUI + Combine',
+        description: 'Modern Swift application template',
+        technicalImplementation: ['SwiftUI for UI', 'Combine for reactive programming'],
+        useCases: ['Standard iOS apps'],
+        keyFeatures: ['SwiftUI', 'Combine'],
+        modificationGuide: ['Update SOQL queries for different objects'],
+        cli: 'forceios',
+        templateId: 'iOSNativeSwiftTemplate',
+      },
+      {
+        name: 'Android Native Kotlin Template',
+        platform: 'android',
+        language: 'Kotlin',
+        architecture: 'Basic Kotlin',
+        description: 'Basic Kotlin application template',
+        technicalImplementation: ['Kotlin for development'],
+        useCases: ['Standard Android apps'],
+        keyFeatures: ['Kotlin'],
+        modificationGuide: ['Update SOQL queries for different objects'],
+        cli: 'forcedroid',
+        templateId: 'AndroidNativeKotlinTemplate',
+      },
+      {
+        name: 'React Native Template',
+        platform: 'react-native',
+        language: 'JavaScript',
+        architecture: 'React Native',
+        description: 'Basic React Native template',
+        technicalImplementation: ['React Native for cross-platform'],
+        useCases: ['Cross-platform apps'],
+        keyFeatures: ['React Native', 'Cross-platform'],
+        modificationGuide: ['Update API calls for different objects'],
+        cli: 'forcereact',
+        templateId: 'ReactNativeTemplate',
+      },
+    ];
+  }
+}
+
+// Load templates dynamically from TEMPLATES.md
+const TEMPLATES = parseTemplatesFromMarkdown();
 
 export class CreateProjectTool implements Tool {
   readonly name = 'Create Project';
@@ -687,42 +619,31 @@ Ensure you have the correct CLI installed:
       const { template, alternatives, reason } = this.selectBestTemplate(params);
 
       // Generate specific commands
-      // Intelligent directory handling: detect if user wants to create in current directory
+      // Standard directory handling: outputDir is the parent directory, project gets created in outputDir/appName
       let workingDir: string;
-      let projectDirName: string | undefined;
+      let projectDirName: string;
       let projectPath: string;
 
-      if (params.outputDir.startsWith('/')) {
-        // Absolute path specified
-        const absolutePath = params.outputDir;
-        const currentDir = process.cwd();
+      // Handle special case where user wants to create in current directory
+      const currentDir = process.cwd();
 
-        if (absolutePath === currentDir) {
-          // User wants to create in current directory
-          workingDir = currentDir;
-          projectDirName = undefined; // No outputdir needed
-          projectPath = currentDir;
-        } else {
-          // User wants to create in a different absolute path
-          workingDir = dirname(absolutePath);
-          projectDirName = basename(absolutePath);
-          projectPath = absolutePath;
-        }
+      if (params.outputDir === '.' || params.outputDir === currentDir) {
+        // User wants to create in current directory
+        workingDir = currentDir;
+        projectDirName = params.appName;
+        projectPath = join(currentDir, params.appName);
       } else {
-        // Relative path specified - check if it matches current directory
-        const currentDirName = basename(process.cwd());
-
-        if (params.outputDir === currentDirName || params.outputDir === '.') {
-          // User wants to create in current directory
-          workingDir = process.cwd();
-          projectDirName = undefined; // No outputdir needed
-          projectPath = process.cwd();
+        // Standard case: outputDir is the parent directory where we create appName subdirectory
+        if (params.outputDir.startsWith('/')) {
+          // Absolute path
+          workingDir = params.outputDir;
         } else {
-          // User wants to create in a subdirectory
-          workingDir = process.cwd();
-          projectDirName = params.outputDir;
-          projectPath = `${workingDir}/${projectDirName}`;
+          // Relative path - resolve from current directory
+          workingDir = join(currentDir, params.outputDir);
         }
+
+        projectDirName = params.appName;
+        projectPath = join(workingDir, params.appName);
       }
 
       let commands: string[] = [];
@@ -730,28 +651,15 @@ Ensure you have the correct CLI installed:
 
       if (template) {
         // Use template-based creation (preferred)
-        if (projectDirName) {
-          // Creating in a specific subdirectory
-          commands = [
-            `cd "${workingDir}"`,
-            `${template.cli} createWithTemplate \\`,
-            `  --templaterepouri=${template.templateId} \\`,
-            `  --appname="${params.appName}" \\`,
-            `  --packagename=${params.packageId} \\`,
-            `  --organization="${params.organization}" \\`,
-            `  --outputdir="${projectDirName}"`,
-          ];
-        } else {
-          // Creating in current directory
-          commands = [
-            `cd "${workingDir}"`,
-            `${template.cli} createWithTemplate \\`,
-            `  --templaterepouri=${template.templateId} \\`,
-            `  --appname="${params.appName}" \\`,
-            `  --packagename=${params.packageId} \\`,
-            `  --organization="${params.organization}"`,
-          ];
-        }
+        commands = [
+          `cd "${workingDir}"`,
+          `${template.cli} createWithTemplate \\`,
+          `  --templaterepouri=${template.templateId} \\`,
+          `  --appname="${params.appName}" \\`,
+          `  --packagename=${params.packageId} \\`,
+          `  --organization="${params.organization}" \\`,
+          `  --outputdir="${projectDirName}"`,
+        ];
 
         guidance = `# ${template.name} - Recommended Template
 
@@ -790,11 +698,29 @@ ${
 ## 📖 Template Use Cases
 ${template.useCases.map(useCase => `- ${useCase}`).join('\n')}
 
+${
+  template.technicalImplementation.length > 0
+    ? `
+## 🏗️ Technical Implementation
+${template.technicalImplementation.map(detail => `- ${detail}`).join('\n')}
+`
+    : ''
+}
+
+${
+  template.modificationGuide.length > 0
+    ? `
+## 🔧 Customization Guide
+${template.modificationGuide.map(guide => `- ${guide}`).join('\n')}
+`
+    : ''
+}
+
 ## ⚡ Next Steps
 1. Run the commands above to create your project
 2. Navigate to project: \`cd "${projectPath}"\`
-3. Configure Connected App credentials using \`project-configure-connection\` tool
-4. Build and test using \`build-run-on-simulator\` tool
+3. Configure Connected App credentials using \`create-configuration\` tool
+4. Build and test using \`build-project\` and \`deploy-app\` tools
 
 ${template.platform === 'ios' ? `5. Open in Xcode: \`open "${projectPath}/${params.appName}.xcworkspace"\`` : ''}
 ${template.platform === 'android' ? `5. Open in Android Studio: \`open "${projectPath}"\`` : ''}
@@ -832,28 +758,15 @@ ${template.description}`;
 
         const cliName = cliMap[params.platform as keyof typeof cliMap];
 
-        if (projectDirName) {
-          // Creating in a specific subdirectory
-          commands = [
-            `cd "${workingDir}"`,
-            `${cliName} create \\`,
-            `  --apptype=${appType} \\`,
-            `  --appname="${params.appName}" \\`,
-            `  --packagename=${params.packageId} \\`,
-            `  --organization="${params.organization}" \\`,
-            `  --outputdir="${projectDirName}"`,
-          ];
-        } else {
-          // Creating in current directory
-          commands = [
-            `cd "${workingDir}"`,
-            `${cliName} create \\`,
-            `  --apptype=${appType} \\`,
-            `  --appname="${params.appName}" \\`,
-            `  --packagename=${params.packageId} \\`,
-            `  --organization="${params.organization}"`,
-          ];
-        }
+        commands = [
+          `cd "${workingDir}"`,
+          `${cliName} create \\`,
+          `  --apptype=${appType} \\`,
+          `  --appname="${params.appName}" \\`,
+          `  --packagename=${params.packageId} \\`,
+          `  --organization="${params.organization}" \\`,
+          `  --outputdir="${projectDirName}"`,
+        ];
 
         guidance = `# Basic ${params.platform.toUpperCase()} Project Creation
 

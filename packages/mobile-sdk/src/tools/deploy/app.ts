@@ -16,12 +16,35 @@ import {
 import { BuildManager } from '../../utils/buildManager.js';
 import { DeviceManager } from '../../utils/deviceManager.js';
 import { FileUtils } from '../../utils/fileUtils.js';
+import { CommandRunner } from '../../utils/commandRunner.js';
+
+interface DeploymentResult {
+  success: boolean;
+  platform?: string;
+  error?: string;
+  deviceInfo?: { deviceId: string; deviceName: string };
+  appPath?: string;
+  bundleId?: string;
+  packageName?: string;
+  processId?: string;
+  isRunning?: boolean;
+  message?: string;
+  suggestion?: string;
+  installSuccess?: boolean;
+  searchedIn?: string;
+  actions?: {
+    deviceSelected: string;
+    appInstalled: boolean;
+    appLaunched: boolean;
+    appVerified: boolean;
+  };
+}
 
 export class DeployAppTool implements Tool {
   readonly name = 'Deploy App';
   readonly toolId = 'deploy-app';
   readonly description =
-    'Provides step-by-step guidance for deploying and verifying Mobile SDK apps on simulators/emulators. Generates platform-specific deployment and verification commands.';
+    'Automatically deploys Mobile SDK apps to simulators/emulators. Finds built apps, selects available devices (preferring running ones), and performs complete deployment including installation, launch, and verification.';
   readonly inputSchema = DeployGuidanceRequest;
   readonly outputSchema = DeployGuidanceResponse;
 
@@ -67,27 +90,16 @@ export class DeployAppTool implements Tool {
         };
       }
 
-      // Generate platform-specific guidance
-      let guidance: string;
-      let commands: string[];
-      let verificationCommands: string[];
-      let deviceInfo: { deviceId: string; deviceName: string } | undefined;
+      // Automatically deploy the app
+      let deployResult: DeploymentResult;
 
       switch (platform) {
         case 'ios': {
-          const iosResult = await this.generateIOSDeployGuidance(params);
-          guidance = iosResult.guidance;
-          commands = iosResult.commands;
-          verificationCommands = iosResult.verificationCommands;
-          deviceInfo = iosResult.deviceInfo;
+          deployResult = await this.autoDeployIOS(params);
           break;
         }
         case 'android': {
-          const androidResult = await this.generateAndroidDeployGuidance(params);
-          guidance = androidResult.guidance;
-          commands = androidResult.commands;
-          verificationCommands = androidResult.verificationCommands;
-          deviceInfo = androidResult.deviceInfo;
+          deployResult = await this.autoDeployAndroid(params);
           break;
         }
         default:
@@ -98,7 +110,7 @@ export class DeployAppTool implements Tool {
                 text: JSON.stringify(
                   {
                     success: false,
-                    error: `Platform '${platform}' deploy guidance not yet implemented`,
+                    error: `Platform '${platform}' auto-deploy not yet implemented`,
                   },
                   null,
                   2
@@ -112,18 +124,7 @@ export class DeployAppTool implements Tool {
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify(
-              {
-                success: true,
-                platform,
-                guidance,
-                commands,
-                verificationCommands,
-                deviceInfo,
-              },
-              null,
-              2
-            ),
+            text: JSON.stringify(deployResult, null, 2),
           },
         ],
       };
@@ -133,10 +134,340 @@ export class DeployAppTool implements Tool {
         content: [
           {
             type: 'text' as const,
-            text: `Error generating deploy guidance: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            text: `Error deploying app: ${error instanceof Error ? error.message : 'Unknown error'}`,
           },
         ],
       };
+    }
+  }
+
+  /**
+   * Automatically deploy an iOS app
+   */
+  private async autoDeployIOS(params: DeployGuidanceRequestType): Promise<DeploymentResult> {
+    try {
+      const { projectPath } = params;
+
+      // Step 1: Find the built app
+      let appPath = params.appPath;
+      if (!appPath) {
+        console.log('🔍 Searching for built iOS app...');
+        appPath = await BuildManager.findBuiltIOSApp(projectPath);
+        if (!appPath) {
+          return {
+            success: false,
+            error:
+              'No built iOS app found. Please build the project first using build-project tool.',
+            suggestion: 'Run the build-project tool to build your iOS app first.',
+            searchedIn: projectPath,
+          };
+        }
+        console.log(`✅ Found iOS app: ${appPath}`);
+      }
+
+      // Step 2: Extract bundle ID
+      let bundleId = params.bundleId;
+      if (!bundleId) {
+        bundleId = await BuildManager.getIOSBundleId(appPath);
+        if (!bundleId) {
+          return {
+            success: false,
+            error: 'Could not extract bundle ID from app. Please provide bundleId parameter.',
+            appPath,
+          };
+        }
+      }
+
+      // Step 3: Select and start device
+      const deviceInfo = await this.selectAndStartIOSDevice(params.targetDevice);
+      if (!deviceInfo) {
+        return {
+          success: false,
+          error: 'No iOS simulators available. Please install Xcode simulators.',
+        };
+      }
+
+      // Step 4: Install the app
+      const installResult = await CommandRunner.run('xcrun', [
+        'simctl',
+        'install',
+        deviceInfo.deviceId,
+        appPath,
+      ]);
+
+      if (!installResult.success) {
+        return {
+          success: false,
+          error: `Failed to install app: ${installResult.stderr}`,
+          deviceInfo,
+          appPath,
+          bundleId,
+        };
+      }
+
+      // Step 5: Launch the app
+      const launchResult = await CommandRunner.run('xcrun', [
+        'simctl',
+        'launch',
+        deviceInfo.deviceId,
+        bundleId,
+      ]);
+
+      if (!launchResult.success) {
+        return {
+          success: false,
+          error: `Failed to launch app: ${launchResult.stderr}`,
+          deviceInfo,
+          appPath,
+          bundleId,
+          installSuccess: true,
+        };
+      }
+
+      // Extract process ID from launch result
+      const pidMatch = launchResult.stdout.match(/: (\d+)/);
+      const processId = pidMatch ? pidMatch[1] : undefined;
+
+      // Step 6: Verify the app is running
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Give it a moment to start
+      const verifyResult = await CommandRunner.run('xcrun', [
+        'simctl',
+        'spawn',
+        deviceInfo.deviceId,
+        'ps',
+        'aux',
+      ]);
+
+      const isRunning = verifyResult.success && verifyResult.stdout.includes(bundleId);
+
+      return {
+        success: true,
+        platform: 'ios',
+        deviceInfo,
+        appPath,
+        bundleId,
+        processId,
+        isRunning,
+        message: `Successfully deployed and launched ${bundleId} on ${deviceInfo.deviceName}`,
+        actions: {
+          deviceSelected: deviceInfo.deviceName,
+          appInstalled: true,
+          appLaunched: true,
+          appVerified: isRunning,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `iOS deployment failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
+  }
+
+  /**
+   * Automatically deploy an Android app
+   */
+  private async autoDeployAndroid(params: DeployGuidanceRequestType): Promise<DeploymentResult> {
+    try {
+      const { projectPath } = params;
+
+      // Step 1: Find the built APK
+      let appPath = params.appPath;
+      if (!appPath) {
+        console.log('🔍 Searching for built Android APK...');
+        appPath = await BuildManager.findBuiltAndroidApk(projectPath, 'debug');
+        if (!appPath) {
+          return {
+            success: false,
+            error:
+              'No built Android APK found. Please build the project first using build-project tool.',
+            suggestion: 'Run the build-project tool to build your Android app first.',
+            searchedIn: projectPath,
+          };
+        }
+        console.log(`✅ Found Android APK: ${appPath}`);
+      }
+
+      // Step 2: Extract package name
+      let packageName = params.bundleId;
+      if (!packageName) {
+        packageName = await BuildManager.getAndroidPackageName(projectPath);
+        if (!packageName) {
+          return {
+            success: false,
+            error:
+              'Could not extract package name from project. Please provide bundleId parameter.',
+            appPath,
+          };
+        }
+      }
+
+      // Step 3: Select and start device
+      const deviceInfo = await this.selectAndStartAndroidDevice(params.targetDevice);
+      if (!deviceInfo) {
+        return {
+          success: false,
+          error: 'No Android emulators available. Please create Android AVDs.',
+        };
+      }
+
+      // Step 4: Install the APK
+      const installResult = await CommandRunner.run('adb', ['install', '-r', appPath]);
+
+      if (!installResult.success) {
+        return {
+          success: false,
+          error: `Failed to install APK: ${installResult.stderr}`,
+          deviceInfo,
+          appPath,
+          packageName,
+        };
+      }
+
+      // Step 5: Launch the app
+      const launchResult = await CommandRunner.run('adb', [
+        'shell',
+        'am',
+        'start',
+        '-n',
+        `${packageName}/.MainActivity`,
+      ]);
+
+      if (!launchResult.success) {
+        return {
+          success: false,
+          error: `Failed to launch app: ${launchResult.stderr}`,
+          deviceInfo,
+          appPath,
+          packageName,
+          installSuccess: true,
+        };
+      }
+
+      // Step 6: Verify the app is running
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Give it a moment to start
+      const verifyResult = await CommandRunner.run('adb', ['shell', 'ps']);
+
+      const isRunning = verifyResult.success && verifyResult.stdout.includes(packageName);
+
+      return {
+        success: true,
+        platform: 'android',
+        deviceInfo,
+        appPath,
+        packageName,
+        isRunning,
+        message: `Successfully deployed and launched ${packageName} on ${deviceInfo.deviceName}`,
+        actions: {
+          deviceSelected: deviceInfo.deviceName,
+          appInstalled: true,
+          appLaunched: true,
+          appVerified: isRunning,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Android deployment failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
+    }
+  }
+
+  /**
+   * Select and start the best available iOS device
+   * Prefers running devices, then fallback to available devices
+   */
+  private async selectAndStartIOSDevice(
+    targetDevice?: string
+  ): Promise<{ deviceId: string; deviceName: string } | null> {
+    try {
+      const devices = await DeviceManager.listIOSSimulators();
+
+      // If specific device was requested, try to use it
+      if (targetDevice) {
+        const requestedDevice = devices.find(
+          device => device.name === targetDevice && device.available
+        );
+        if (requestedDevice) {
+          if (requestedDevice.state === 'booted') {
+            return { deviceId: requestedDevice.id, deviceName: requestedDevice.name };
+          } else {
+            return await DeviceManager.startIOSSimulator(requestedDevice.name);
+          }
+        }
+      }
+
+      // Find the best device automatically
+      // 1. Prefer already booted devices
+      const bootedDevices = devices.filter(device => device.state === 'booted' && device.available);
+      if (bootedDevices.length > 0) {
+        const device = bootedDevices[0];
+        return { deviceId: device.id, deviceName: device.name };
+      }
+
+      // 2. Start an available iPhone (preferred)
+      const availableIphones = devices.filter(
+        device => device.available && device.name.toLowerCase().includes('iphone')
+      );
+      if (availableIphones.length > 0) {
+        return await DeviceManager.startIOSSimulator(availableIphones[0].name);
+      }
+
+      // 3. Start any available device
+      const availableDevices = devices.filter(device => device.available);
+      if (availableDevices.length > 0) {
+        return await DeviceManager.startIOSSimulator(availableDevices[0].name);
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error selecting iOS device: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Select and start the best available Android device
+   * Prefers running devices, then fallback to available devices
+   */
+  private async selectAndStartAndroidDevice(
+    targetDevice?: string
+  ): Promise<{ deviceId: string; deviceName: string } | null> {
+    try {
+      const devices = await DeviceManager.listAndroidEmulators();
+
+      // If specific device was requested, try to use it
+      if (targetDevice) {
+        const requestedDevice = devices.find(
+          device => device.name === targetDevice && device.available
+        );
+        if (requestedDevice) {
+          if (requestedDevice.state === 'booted') {
+            return { deviceId: requestedDevice.id, deviceName: requestedDevice.name };
+          } else {
+            return await DeviceManager.startAndroidEmulator(requestedDevice.name);
+          }
+        }
+      }
+
+      // Find the best device automatically
+      // 1. Prefer already booted devices
+      const bootedDevices = devices.filter(device => device.state === 'booted' && device.available);
+      if (bootedDevices.length > 0) {
+        const device = bootedDevices[0];
+        return { deviceId: device.id, deviceName: device.name };
+      }
+
+      // 2. Start any available device
+      const availableDevices = devices.filter(device => device.available);
+      if (availableDevices.length > 0) {
+        return await DeviceManager.startAndroidEmulator(availableDevices[0].name);
+      }
+
+      return null;
+    } catch (error) {
+      console.error(`Error selecting Android device: ${error}`);
+      return null;
     }
   }
 

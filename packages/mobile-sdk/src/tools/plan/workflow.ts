@@ -109,7 +109,8 @@ export class PlanWorkflowTool implements Tool {
       {
         id: 'check-env',
         title: 'Verify Development Environment',
-        description: 'Ensure Node.js, Git, and platform tools are installed and up-to-date',
+        description:
+          'EXECUTE: Call plan-environment tool to check for required development tools (Node.js, CLIs, platform SDKs). Follow any installation instructions provided before proceeding.',
         status: 'pending',
         dependencies: [],
         toolCall: 'plan-environment',
@@ -119,7 +120,8 @@ export class PlanWorkflowTool implements Tool {
       {
         id: 'connected-app-guidance',
         title: 'Get Connected App Creation Guidance',
-        description: 'Receive step-by-step instructions for creating Salesforce Connected App',
+        description:
+          'EXECUTE: Call create-connected-app tool without parameters to receive detailed step-by-step instructions for creating a Salesforce Connected App in the UI.',
         status: 'pending',
         dependencies: ['check-env'],
         toolCall: 'create-connected-app',
@@ -129,7 +131,8 @@ export class PlanWorkflowTool implements Tool {
       {
         id: 'create-connected-app',
         title: 'Create Connected App in Salesforce UI',
-        description: 'Manually create Connected App following provided guidance',
+        description:
+          'USER ACTION: Instruct user to follow the provided guidance to manually create Connected App in Salesforce Setup, then collect Consumer Key and Callback URL.',
         status: 'pending',
         dependencies: ['connected-app-guidance'],
         manualStep: true,
@@ -139,7 +142,8 @@ export class PlanWorkflowTool implements Tool {
       {
         id: 'validate-credentials',
         title: 'Validate Connected App Credentials',
-        description: 'Verify Consumer Key and Callback URL format and compatibility',
+        description:
+          'EXECUTE: Call create-connected-app tool with user-provided consumerKey and callbackUrl to validate format and compatibility.',
         status: 'pending',
         dependencies: ['create-connected-app'],
         toolCall: 'create-connected-app',
@@ -149,7 +153,8 @@ export class PlanWorkflowTool implements Tool {
       {
         id: 'scaffold-project',
         title: `Create ${platform ? platform.toUpperCase() : 'Mobile'} Project Structure`,
-        description: 'Generate project using intelligent template selection',
+        description:
+          'EXECUTE: Call create-project tool with platform, appName, packageId, and organization. Follow the generated commands to create the project structure.',
         status: 'pending',
         dependencies: ['validate-credentials'],
         toolCall: 'create-project',
@@ -159,7 +164,8 @@ export class PlanWorkflowTool implements Tool {
       {
         id: 'configure-oauth',
         title: 'Configure OAuth Credentials',
-        description: 'Inject Connected App credentials into project configuration files',
+        description:
+          'EXECUTE: Call create-configuration tool with project path, consumerKey, callbackUrl, and optional loginUrl to inject credentials into project files.',
         status: 'pending',
         dependencies: ['scaffold-project', 'validate-credentials'],
         toolCall: 'create-configuration',
@@ -167,13 +173,25 @@ export class PlanWorkflowTool implements Tool {
         rationale: 'Links Salesforce authentication to mobile app project',
       },
       {
-        id: 'validate-setup',
-        title: 'Build and Test Authentication',
-        description: 'Build app, deploy to simulator, and verify login flow works',
+        id: 'build-app',
+        title: 'Build Application',
+        description:
+          'EXECUTE: Call build-project tool with project path to compile the configured app. Follow guidance to resolve any build errors.',
         status: 'pending',
         dependencies: ['configure-oauth'],
         toolCall: 'build-project',
-        estimatedMinutes: 10,
+        estimatedMinutes: 5,
+        rationale: 'Ensures project configuration is correct and code compiles',
+      },
+      {
+        id: 'validate-setup',
+        title: 'Deploy and Test Authentication',
+        description:
+          'EXECUTE: Call deploy-app tool with project path to deploy app to simulator. Verify the app launches and login flow works correctly.',
+        status: 'pending',
+        dependencies: ['build-app'],
+        toolCall: 'deploy-app',
+        estimatedMinutes: 8,
         rationale: 'Validates entire setup before custom development begins',
       },
     ];
@@ -183,10 +201,11 @@ export class PlanWorkflowTool implements Tool {
       todos.splice(1, 0, {
         id: 'list-simulators',
         title: 'Check Available Simulators',
-        description: 'List available iOS/Android simulators for testing',
+        description:
+          'EXECUTE: Call plan-devices tool to list available iOS/Android simulators. Note any preferred devices for testing.',
         status: 'pending',
         dependencies: ['check-env'],
-        toolCall: 'simulator-list-devices',
+        toolCall: 'plan-devices',
         optional: true,
         estimatedMinutes: 1,
         rationale: 'Ensures you have a working simulator for testing',
@@ -212,10 +231,11 @@ export class PlanWorkflowTool implements Tool {
       {
         id: 'analyze-project',
         title: 'Analyze Current Project Structure',
-        description: 'Detect platform, template type, and current configuration',
+        description:
+          'EXECUTE: Call build-project tool with project path to analyze current project structure, detect platform, and understand existing architecture.',
         status: 'pending',
         dependencies: [],
-        toolCall: 'build-run-on-simulator',
+        toolCall: 'build-project',
         estimatedMinutes: 2,
         rationale: 'Understand current architecture before adding features',
       },
@@ -226,7 +246,8 @@ export class PlanWorkflowTool implements Tool {
         {
           id: 'generate-sync-code',
           title: 'Generate MobileSync Implementation',
-          description: 'Create files for offline data synchronization',
+          description:
+            'LLM ACTION: Generate Swift/Kotlin/JavaScript files for offline data synchronization based on user requirements and project analysis.',
           status: 'pending',
           dependencies: ['analyze-project'],
           manualStep: true,
@@ -236,7 +257,7 @@ export class PlanWorkflowTool implements Tool {
         {
           id: 'integrate-files',
           title: 'Add Files to Project',
-          description: 'Integrate generated files into build system',
+          description: `EXECUTE: Call ${platform === 'ios' ? 'create-add-files' : 'build-project'} tool with generated file paths to integrate new code into the build system.`,
           status: 'pending',
           dependencies: ['generate-sync-code'],
           toolCall: platform === 'ios' ? 'create-add-files' : 'build-project',
@@ -249,7 +270,8 @@ export class PlanWorkflowTool implements Tool {
         {
           id: 'generate-auth-code',
           title: 'Generate Custom Authentication UI',
-          description: 'Create custom login screen components',
+          description:
+            'LLM ACTION: Generate custom login screen components with proper branding and authentication flow based on platform and user requirements.',
           status: 'pending',
           dependencies: ['analyze-project'],
           manualStep: true,
@@ -259,7 +281,7 @@ export class PlanWorkflowTool implements Tool {
         {
           id: 'integrate-files',
           title: 'Add Files to Project',
-          description: 'Integrate authentication files into build system',
+          description: `EXECUTE: Call ${platform === 'ios' ? 'create-add-files' : 'build-project'} tool with generated authentication file paths to integrate into build system.`,
           status: 'pending',
           dependencies: ['generate-auth-code'],
           toolCall: platform === 'ios' ? 'create-add-files' : 'build-project',
@@ -272,7 +294,8 @@ export class PlanWorkflowTool implements Tool {
         {
           id: 'generate-feature-code',
           title: 'Generate Feature Implementation',
-          description: 'Create files for the requested functionality',
+          description:
+            'LLM ACTION: Generate implementation files for the requested functionality based on user requirements and current project architecture.',
           status: 'pending',
           dependencies: ['analyze-project'],
           manualStep: true,
@@ -282,7 +305,7 @@ export class PlanWorkflowTool implements Tool {
         {
           id: 'integrate-files',
           title: 'Add Files to Project',
-          description: 'Integrate generated files into build system',
+          description: `EXECUTE: Call ${platform === 'ios' ? 'create-add-files' : 'build-project'} tool with generated feature file paths to integrate into build system.`,
           status: 'pending',
           dependencies: ['generate-feature-code'],
           toolCall: platform === 'ios' ? 'create-add-files' : 'build-project',
@@ -292,16 +315,30 @@ export class PlanWorkflowTool implements Tool {
       );
     }
 
-    todos.push({
-      id: 'test-integration',
-      title: 'Build and Test Enhanced App',
-      description: 'Verify new functionality works correctly',
-      status: 'pending',
-      dependencies: ['integrate-files'],
-      toolCall: 'build-run-on-simulator',
-      estimatedMinutes: 5,
-      rationale: 'Validates that new features integrate without breaking existing functionality',
-    });
+    todos.push(
+      {
+        id: 'build-enhanced-app',
+        title: 'Build Enhanced App',
+        description:
+          'EXECUTE: Call build-project tool with project path to compile app with new functionality. Address any build errors.',
+        status: 'pending',
+        dependencies: ['integrate-files'],
+        toolCall: 'build-project',
+        estimatedMinutes: 3,
+        rationale: 'Ensures new code compiles without build errors',
+      },
+      {
+        id: 'test-integration',
+        title: 'Deploy and Test Enhanced App',
+        description:
+          'EXECUTE: Call deploy-app tool to deploy enhanced app to simulator. Test new functionality and verify existing features still work.',
+        status: 'pending',
+        dependencies: ['build-enhanced-app'],
+        toolCall: 'deploy-app',
+        estimatedMinutes: 5,
+        rationale: 'Validates that new features integrate without breaking existing functionality',
+      }
+    );
 
     const totalMinutes = todos.reduce((sum, todo) => sum + (todo.estimatedMinutes || 0), 0);
     const estimatedTime = `${Math.floor(totalMinutes / 60) > 0 ? Math.floor(totalMinutes / 60) + 'h ' : ''}${totalMinutes % 60}min`;
@@ -383,6 +420,23 @@ export class PlanWorkflowTool implements Tool {
           ? `Execute '${todos[0].id}' step to begin workflow`
           : 'No actions required';
 
+      const executionGuide = {
+        instructions: [
+          'Follow todos in dependency order - only start a todo when all dependencies are completed',
+          'EXECUTE: means call the specified MCP tool with appropriate parameters',
+          'LLM ACTION: means generate code or content based on requirements',
+          'USER ACTION: means instruct user to perform manual steps',
+          'Check toolCall field for exact MCP tool to execute',
+          'Use rationale to understand why each step is necessary',
+          'Mark todos as completed only after successful execution',
+        ],
+        actionTypes: {
+          EXECUTE: 'Call the specified MCP tool with required parameters',
+          'LLM ACTION': 'Generate code/content using AI capabilities',
+          'USER ACTION': 'Guide user through manual steps in external systems',
+        },
+      };
+
       return {
         content: [
           {
@@ -393,6 +447,7 @@ export class PlanWorkflowTool implements Tool {
                 goal: params.goal,
                 summary,
                 estimatedTime,
+                executionGuide,
                 todos,
                 utilityTools,
                 nextAction,

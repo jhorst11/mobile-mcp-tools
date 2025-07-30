@@ -477,26 +477,179 @@ export class BuildManager {
   /**
    * Find the built iOS app
    */
-  private static async findBuiltIOSApp(projectPath: string): Promise<string | undefined> {
+  static async findBuiltIOSApp(projectPath: string): Promise<string | undefined> {
     try {
+      console.log(`🔍 Searching for iOS app in: ${projectPath}`);
+
+      // Get the home directory for DerivedData search
+      const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+      const systemDerivedDataPath = join(homeDir, 'Library/Developer/Xcode/DerivedData');
+
+      // First try to find in the standard build directory structure
+      const standardPaths = [
+        join(projectPath, 'build/Debug-iphonesimulator'),
+        join(projectPath, 'build/Release-iphonesimulator'),
+        join(projectPath, 'DerivedData'),
+        systemDerivedDataPath, // Add system DerivedData path
+      ];
+
+      for (const searchPath of standardPaths) {
+        console.log(`   Checking standard path: ${searchPath}`);
+        if (await FileUtils.exists(searchPath)) {
+          console.log(`   ✅ Path exists, searching for .app files...`);
+          const result = await CommandRunner.run('find', [
+            searchPath,
+            '-name',
+            '*.app',
+            '-type',
+            'd',
+          ]);
+          if (result.success) {
+            const apps = result.stdout.split('\n').filter(line => line.trim().length > 0);
+            if (apps.length > 0) {
+              console.log(`   ✅ Found app in standard path: ${apps[0]}`);
+              // For DerivedData, prefer the most recently modified app
+              if (searchPath.includes('DerivedData')) {
+                const sortedApps = await this.sortAppsByModificationTime(apps);
+                console.log(`   📅 Using most recent app: ${sortedApps[0]}`);
+                return sortedApps[0];
+              }
+              return apps[0];
+            }
+          }
+        } else {
+          console.log(`   ❌ Path does not exist`);
+        }
+      }
+
+      // Enhanced fallback: Also search common Xcode build locations
+      const additionalSearchPaths = [
+        '/tmp', // Sometimes Xcode uses temp directories
+        join(homeDir, 'Library/Developer/Xcode/DerivedData'), // Explicit DerivedData search
+      ];
+
+      console.log(`   Extended search in additional Xcode locations...`);
+      for (const searchPath of additionalSearchPaths) {
+        if (await FileUtils.exists(searchPath)) {
+          console.log(`   Searching in: ${searchPath}`);
+          const result = await CommandRunner.run('find', [
+            searchPath,
+            '-name',
+            '*.app',
+            '-type',
+            'd',
+            '-path',
+            '*iphonesimulator*',
+          ]);
+          if (result.success) {
+            const apps = result.stdout.split('\n').filter(line => line.trim().length > 0);
+            if (apps.length > 0) {
+              console.log(`   ✅ Found ${apps.length} apps in ${searchPath}`);
+              // Sort by modification time and take the most recent
+              const sortedApps = await this.sortAppsByModificationTime(apps);
+              console.log(`   📅 Using most recent app: ${sortedApps[0]}`);
+              return sortedApps[0];
+            }
+          }
+        }
+      }
+
+      // Final fallback: Search the entire project directory for .app files
+      console.log(`   Final fallback: Searching entire project for .app files...`);
       const result = await CommandRunner.run('find', [projectPath, '-name', '*.app', '-type', 'd']);
 
       if (result.success) {
         const apps = result.stdout
           .split('\n')
-          .filter(line => line.trim().length > 0 && line.includes('Debug-iphonesimulator'));
-        return apps[0] || undefined;
+          .filter(line => line.trim().length > 0)
+          // Prefer simulator builds, but accept any .app if that's all we have
+          .sort((a, b) => {
+            const aIsSimulator =
+              a.includes('iphonesimulator') || a.includes('Debug') || a.includes('Release');
+            const bIsSimulator =
+              b.includes('iphonesimulator') || b.includes('Debug') || b.includes('Release');
+            if (aIsSimulator && !bIsSimulator) return -1;
+            if (!aIsSimulator && bIsSimulator) return 1;
+            return 0;
+          });
+
+        if (apps.length > 0) {
+          console.log(`   ✅ Found ${apps.length} .app files, using: ${apps[0]}`);
+          if (apps.length > 1) {
+            console.log(`   Other apps found: ${apps.slice(1).join(', ')}`);
+          }
+          return apps[0];
+        } else {
+          console.log(`   ❌ No .app files found in project`);
+        }
+      } else {
+        console.log(`   ❌ Find command failed: ${result.stderr}`);
       }
-    } catch {
-      // Ignore errors
+
+      // Ultimate debugging: Let's see what files ARE in the project
+      console.log(`   🔍 DEBUG: Let's see what's actually in the project...`);
+      const debugResult = await CommandRunner.run('find', [
+        projectPath,
+        '-type',
+        'f',
+        '-name',
+        '*',
+      ]);
+      if (debugResult.success) {
+        const allFiles = debugResult.stdout.split('\n').filter(line => line.trim().length > 0);
+        console.log(`   📁 Total files found: ${allFiles.length}`);
+        const buildRelatedFiles = allFiles.filter(
+          file =>
+            file.includes('build') ||
+            file.includes('Build') ||
+            file.includes('DerivedData') ||
+            file.includes('.app') ||
+            file.includes('Debug') ||
+            file.includes('Release')
+        );
+        if (buildRelatedFiles.length > 0) {
+          console.log(`   🔨 Build-related files found:`);
+          buildRelatedFiles.slice(0, 10).forEach(file => console.log(`      ${file}`));
+          if (buildRelatedFiles.length > 10) {
+            console.log(`      ... and ${buildRelatedFiles.length - 10} more`);
+          }
+        } else {
+          console.log(`   ❌ No build-related files found`);
+        }
+      }
+    } catch (error) {
+      console.log(`   ❌ Error during search: ${error}`);
     }
     return undefined;
   }
 
   /**
+   * Sort apps by modification time (most recent first)
+   */
+  private static async sortAppsByModificationTime(apps: string[]): Promise<string[]> {
+    try {
+      const appsWithTime = await Promise.all(
+        apps.map(async app => {
+          try {
+            const result = await CommandRunner.run('stat', ['-f', '%m', app]);
+            const modTime = result.success ? parseInt(result.stdout.trim()) : 0;
+            return { app, modTime };
+          } catch {
+            return { app, modTime: 0 };
+          }
+        })
+      );
+
+      return appsWithTime.sort((a, b) => b.modTime - a.modTime).map(item => item.app);
+    } catch {
+      return apps; // Fallback to original order
+    }
+  }
+
+  /**
    * Get iOS bundle identifier
    */
-  private static async getIOSBundleId(appPath: string): Promise<string | undefined> {
+  static async getIOSBundleId(appPath: string): Promise<string | undefined> {
     try {
       const plistPath = join(appPath, 'Info.plist');
       const result = await CommandRunner.run('plutil', ['-p', plistPath]);
@@ -514,22 +667,48 @@ export class BuildManager {
   /**
    * Find the built Android APK
    */
-  private static async findBuiltAndroidApk(
+  static async findBuiltAndroidApk(
     projectPath: string,
     configuration: 'debug' | 'release'
   ): Promise<string | undefined> {
     try {
       const configName = configuration === 'debug' ? 'debug' : 'release';
-      const result = await CommandRunner.run('find', [
-        projectPath,
-        '-name',
-        `*${configName}.apk`,
-        '-type',
-        'f',
-      ]);
+
+      // First try specific patterns for the configuration
+      const patterns = [`*${configName}.apk`, `*-${configName}.apk`, `app-${configName}.apk`];
+
+      for (const pattern of patterns) {
+        const result = await CommandRunner.run('find', [
+          projectPath,
+          '-name',
+          pattern,
+          '-type',
+          'f',
+        ]);
+
+        if (result.success) {
+          const apks = result.stdout.split('\n').filter(line => line.trim().length > 0);
+          if (apks.length > 0) {
+            return apks[0];
+          }
+        }
+      }
+
+      // Fallback: Search for any APK files and prefer the ones with the right configuration
+      const result = await CommandRunner.run('find', [projectPath, '-name', '*.apk', '-type', 'f']);
 
       if (result.success) {
-        const apks = result.stdout.split('\n').filter(line => line.trim().length > 0);
+        const apks = result.stdout
+          .split('\n')
+          .filter(line => line.trim().length > 0)
+          // Prefer APKs with the requested configuration
+          .sort((a, b) => {
+            const aMatches = a.toLowerCase().includes(configName);
+            const bMatches = b.toLowerCase().includes(configName);
+            if (aMatches && !bMatches) return -1;
+            if (!aMatches && bMatches) return 1;
+            return 0;
+          });
         return apks[0] || undefined;
       }
     } catch {
@@ -541,7 +720,7 @@ export class BuildManager {
   /**
    * Get Android package name from manifest
    */
-  private static async getAndroidPackageName(projectPath: string): Promise<string | undefined> {
+  static async getAndroidPackageName(projectPath: string): Promise<string | undefined> {
     try {
       // Try to find AndroidManifest.xml
       const manifestResult = await CommandRunner.run('find', [
