@@ -114,6 +114,30 @@ export class QuickActionConfigurationTool implements Tool {
       - No automatic record context
       - Best for standalone actions or creating new records
 
+      ## Mobile-Specific Considerations
+
+      When developing LWC components for Quick Actions in mobile environments, consider these key aspects:
+
+      ### Touch-Friendly Design
+      - Ensure buttons and interactive elements are appropriately sized for touch input
+      - Provide adequate spacing between clickable elements
+      - Use clear visual feedback for user interactions
+
+      ### Performance Optimization
+      - Minimize the component's initial load time
+      - Optimize for slower mobile network connections
+      - Use efficient data loading patterns
+
+      ### Screen Size Adaptation
+      - Design components to work effectively on various mobile screen sizes
+      - Consider both phone and tablet form factors
+      - Use responsive design principles
+
+      ### Navigation Patterns
+      - Follow mobile-first navigation patterns
+      - Ensure clear entry and exit points for the Quick Action
+      - Provide intuitive user flows for mobile users
+
       ## Quick Action Metadata Guidance
 
       - Use the provided metadata examples as a guide, DO NOT add any additional elements.
