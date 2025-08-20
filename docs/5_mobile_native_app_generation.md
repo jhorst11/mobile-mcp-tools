@@ -55,6 +55,22 @@ This transformation democratizes access to the pinnacle of mobile user experienc
 3. **IDE as Guide**: The development environment becomes an intelligent partner that transforms intent into working software
 4. **Apps That Talk Back**: Generated applications provide immediate user experience feedback to developers, enabling fast iteration cycles and experience-driven refinement
 
+### Agentic Philosophy: LLM-Led Execution
+
+**Let LLMs drive creativity and decision-making.** We optimize for agentic flows that guide LLMs to act directly, especially where automation through code would constrain adaptability or be too costly to maintain. MCP tools should primarily provide context, constraints, and next-step guidance, enabling the LLM to plan and execute tasks end-to-end.
+
+- **Guide, don’t over-abstract**: Prefer information-forward tools that teach the LLM how to proceed rather than doing everything on its behalf.
+- **Enable self-healing**: Preserve access to raw outputs (stdout/stderr, exit codes, JSON) from downstream tools so the LLM can diagnose and recover from errors.
+- **Use guardrails sparingly**: Add algorithmic guardrails only where correctness or safety requires deterministic behavior.
+
+### Treat LLMs as Counterparts to Humans
+
+We design agentic interactions as if LLMs have the same knowledge expectations and call-to-action requirements as human developers.
+
+- **Human-parity tasking**: Instruct LLMs the way we would instruct humans; collaborate and iterate to reach the desired outcome.
+- **Leverage existing IP and workflows**: Favor tools, docs, and CLIs already used by humans so we can reuse proven assets and cover existing use cases with minimal refactoring.
+- **Consistency of interfaces**: Documentation, help systems, and CLI UX should remain useful to both humans and LLMs.
+
 ### Machine-Actionable Documentation and Metadata
 
 **Philosophy**: "Don't build tools, tell the LLM how to use what we already have."
@@ -102,6 +118,23 @@ We embrace and extend all of these documentation outlets as sources of rich, con
 - **Intelligent Orchestration**: Agents determine when and how to invoke CLI operations based on user intent, but rely on CLI precision for execution
 - **Deterministic Base + Creative Extension**: Start with CLI-generated, working foundations, then layer agent-driven features and customizations on top
 - **Error-Resistant Foundation**: CLIs provide tested, reliable base functionality, reducing the surface area where agents need to handle edge cases
+
+#### CLIs Are the APIs for LLMs
+
+We treat command-line interfaces as the primary “APIs” that LLMs will use to achieve algorithmic execution within broader, creative workflows.
+
+- **Self-contained execution**: CLIs encapsulate their technology stacks, minimizing environment orchestration burden on the LLM.
+- **Declarative inputs**: Command-line arguments supply the salient configuration the LLM needs without exposing internal implementation details.
+- **Self-describing**: LLMs can query `--help` (and prefer `--json` when available) to learn capabilities and parameters without human intervention.
+- **Human-aligned**: CLIs mirror how human counterparts accomplish the same outcomes, reinforcing the “LLMs as teammates” model.
+
+#### Tool Design Mode
+
+- **Instruction-First Tools (Tell the LLM how to work)**: Tools return steps, commands, arguments, file paths, and references to documentation; the LLM executes and reasons, maintaining agency and adaptability. This project is intentionally focused on this mode—tools direct the LLM to the right CLI(s), arguments, and docs rather than hiding execution behind automation through code.
+
+- **Surface raw outputs**: When instruction-first tools advise CLI usage and the LLM executes them, preserve stdout/stderr, exit codes, and structured outputs for self-healing.
+- **Automate only when necessary**: Add deterministic checks or automation only for safety-critical, compliance-bound, or highly repetitive operations.
+- **Exploit self-describing CLIs (instruction-first context)**: Encourage discovery via `--help` and machine-readable flags so guidance stays thin and resilient to change.
 
 ---
 
@@ -201,10 +234,10 @@ By the end of each Design/Iterate phase, the user validates implemented features
 
 #### Project Creation and Setup
 
-- **Template-Based Project Generation**: Use `forceios`/`forcedroid` CLI tools to generate boilerplate app projects from Mobile SDK templates through keyword substitution
-- **Connected App Integration**: CLI tools configure OAuth parameters in generated project files using provided Connected App credentials
-- **Dependency Configuration**: Generated projects include properly configured CocoaPods/Swift Package Manager (iOS) or Gradle (Android) dependencies
-- **Ready-to-Build Foundation**: CLI output creates immediately buildable projects using native platform build systems
+- **Template-Based Project Generation**: Guide LLM through using `forceios`/`forcedroid` CLI tools to generate boilerplate app projects from Mobile SDK templates through keyword substitution
+- **Connected App Integration**: Direct LLM to configure OAuth parameters in generated project files using provided Connected App credentials via CLI tool parameters
+- **Dependency Configuration**: Instruct LLM on ensuring generated projects include properly configured CocoaPods/Swift Package Manager (iOS) or Gradle (Android) dependencies
+- **Ready-to-Build Foundation**: Guide LLM to verify CLI output creates immediately buildable projects using native platform build systems
 
 ### Phase 2: Design/Iterate
 
@@ -274,11 +307,11 @@ By the end of each Design/Iterate phase, the user validates implemented features
 
 Build capabilities are embedded throughout the Design/Iterate phase rather than being a separate phase:
 
-- **Continuous Build Validation**: Every task completion includes automated build verification using native platform build tools (Xcode for iOS, Gradle for Android)
-- **Build-First Approach**: Code changes are immediately validated through platform build process before user review
-- **Native Build System Integration**: Direct orchestration of Xcode compilation/linking (iOS) and Gradle compilation/packaging (Android)
-- **Build Error Recovery**: Build failures trigger automatic error recovery task insertion using unified task list management
-- **CLI Tool Separation**: `forceios`/`forcedroid` handle project generation only; build validation uses native platform tooling
+- **Continuous Build Validation**: Guide LLM through build verification using native platform build tools (Xcode for iOS, Gradle for Android) after every task completion
+- **Build-First Approach**: Direct LLM to validate code changes through platform build process before user review
+- **Native Build System Integration**: Provide LLM with Xcode compilation/linking (iOS) and Gradle compilation/packaging (Android) command guidance
+- **Build Error Recovery**: Instruct LLM on error recovery task insertion using unified task list management when build failures occur
+- **CLI Tool Separation**: Guide LLM to use `forceios`/`forcedroid` for project generation only; build validation uses native platform tooling
 
 **Build Workflow Integration:**
 
@@ -295,15 +328,15 @@ Build capabilities are embedded throughout the Design/Iterate phase rather than 
 
 **Overall Goal**: Provide developers with fast feedback on their app changes by building, deploying, and launching to virtual devices, enabling quick assessment of implementation details and user experience-driven iteration.
 
-**Core Functionality**: Leverage existing CLI tooling to rapidly deploy app projects to configured virtual devices (iOS simulator, Android emulator), allowing developers to immediately see and interact with their changes.
+**Core Functionality**: Guide LLM through leveraging existing CLI tooling to rapidly deploy app projects to configured virtual devices (iOS simulator, Android emulator), allowing developers to immediately see and interact with their changes.
 
-- **CLI-Driven Deployment**: Utilize the `@salesforce/lwc-dev-mobile` Salesforce CLI plugin to automatically launch app projects to virtual devices
-- **Fast Feedback Loop**: Enable immediate visual and interactive feedback on implementation changes, supporting experience-driven decision making
-- **Virtual Device Integration**: Seamless deployment to iOS simulators and Android emulators for rapid testing and validation
-- **User Experience Focus**: Prioritize developer assessment of user experience and interface changes over automated debugging
-- **Iterative Validation**: Support quick build-deploy-test cycles that inform the next round of Design/Iterate phase improvements
+- **CLI-Driven Deployment**: Direct LLM to utilize the `@salesforce/lwc-dev-mobile` Salesforce CLI plugin to launch app projects to virtual devices
+- **Fast Feedback Loop**: Provide LLM with methods to enable immediate visual and interactive feedback on implementation changes, supporting experience-driven decision making
+- **Virtual Device Integration**: Guide LLM through seamless deployment to iOS simulators and Android emulators for rapid testing and validation
+- **User Experience Focus**: Direct LLM to prioritize developer assessment of user experience and interface changes over automated debugging
+- **Iterative Validation**: Instruct LLM on quick build-deploy-test cycles that inform the next round of Design/Iterate phase improvements
 
-**Implementation Details**: The CLI tooling functionality exists but requires restoration, as `@salesforce/lwc-dev-mobile` is currently deprecated and sparsely documented. The MCP server tools will orchestrate this CLI plugin to provide automated virtual device deployment.
+**Implementation Details**: The CLI tooling functionality exists but requires restoration, as `@salesforce/lwc-dev-mobile` is currently deprecated and sparsely documented. The MCP server tools will guide the LLM through this CLI plugin usage to enable virtual device deployment.
 
 ---
 
@@ -468,27 +501,27 @@ npx -y @salesforce/mobile-native-mcp-server
 
 ### Design Tools
 
-| Annotation        | Value   | Notes                                                           |
-| :---------------- | :------ | :-------------------------------------------------------------- |
-| `readOnlyHint`    | `true`  | Generate specifications without modifying environment           |
-| `destructiveHint` | `false` | Specification generation is non-destructive                     |
-| `idempotentHint`  | `true`  | Same input produces consistent design specifications            |
-| `openWorldHint`   | `false` | Operates on provided requirements without external dependencies |
+| Annotation        | Value   | Notes                                                             |
+| :---------------- | :------ | :---------------------------------------------------------------- |
+| `readOnlyHint`    | `true`  | Provide guidance and specifications without modifying environment |
+| `destructiveHint` | `false` | Specification generation is non-destructive                       |
+| `idempotentHint`  | `true`  | Same input produces consistent design specifications              |
+| `openWorldHint`   | `false` | Operates on provided requirements without external dependencies   |
 
 ### Execution Tools
 
-| Annotation        | Value   | Notes                                                                |
-| :---------------- | :------ | :------------------------------------------------------------------- |
-| `readOnlyHint`    | `false` | Creates and modifies mobile application projects                     |
-| `destructiveHint` | `false` | Creates new projects but doesn't modify existing unrelated files     |
-| `idempotentHint`  | `false` | Project creation and feature implementation modify file system state |
-| `openWorldHint`   | `true`  | Interacts with CLI tools, file system, and documentation sources     |
+| Annotation        | Value   | Notes                                                                 |
+| :---------------- | :------ | :-------------------------------------------------------------------- |
+| `readOnlyHint`    | `false` | Guides LLM through creating and modifying mobile application projects |
+| `destructiveHint` | `false` | Creates new projects but doesn't modify existing unrelated files      |
+| `idempotentHint`  | `false` | Project creation and feature implementation modify file system state  |
+| `openWorldHint`   | `true`  | Interacts with CLI tools, file system, and documentation sources      |
 
 ### Deployment Tools
 
 | Annotation        | Value   | Notes                                                                   |
 | :---------------- | :------ | :---------------------------------------------------------------------- |
-| `readOnlyHint`    | `false` | Deploys applications to virtual devices                                 |
+| `readOnlyHint`    | `false` | Guides LLM through deploying applications to virtual devices            |
 | `destructiveHint` | `false` | Deployment doesn't destroy existing applications                        |
 | `idempotentHint`  | `false` | Deployment creates new application instances                            |
 | `openWorldHint`   | `true`  | Requires interaction with deployment infrastructure and virtual devices |
@@ -567,39 +600,39 @@ Implemented contact list feature with search and detail navigation capabilities.
 
 ### Plan Phase Tools
 
-- **Environment Validator**: Leverages `@salesforce/lwc-dev-mobile-core` CLI plugin to validate development tools for chosen mobile platform
-- **Template Discoverer**: Analyzes user intent and recommends optimal `forceios` or `forcedroid` project templates using collection-level metadata
-- **Template Metadata Manager**: Accesses self-describing template information including feature descriptions and implementation considerations
-- **Connected App Configurator**: Gathers required Connected App Client ID and Callback URI for project creation
-- **Project Generator**: Uses `forceios`/`forcedroid` CLI tools to generate boilerplate projects from templates via keyword substitution
-- **Template Configuration Manager**: Handles parameter substitution and dependency setup in generated project files
-- **Project Validation Controller**: Validates generated skeletal project builds and deploys successfully with login verification using native platform build tools
+- **Environment Validation Guide**: Provides LLM with step-by-step instructions for validating development tools using `@salesforce/lwc-dev-mobile-core` CLI plugin commands, including troubleshooting guidance and environment setup verification
+- **Template Discovery Assistant**: Gives LLM access to template metadata and selection criteria for choosing optimal `forceios` or `forcedroid` project templates based on user requirements and use cases
+- **Template Metadata Provider**: Delivers comprehensive template information to the LLM including feature descriptions, implementation considerations, and extension patterns for informed decision-making
+- **Connected App Configuration Guide**: Directs LLM through the process of gathering required Connected App Client ID and Callback URI, with setup instructions and validation steps
+- **Project Generation Guide**: Provides LLM with precise `forceios`/`forcedroid` CLI commands and parameter guidance for generating boilerplate projects from templates via keyword substitution
+- **Configuration Instruction Provider**: Guides LLM through parameter substitution and dependency setup in generated project files with specific file paths and configuration examples
+- **Project Validation Instructor**: Directs LLM through validation steps for generated skeletal projects using native platform build tools, including build verification and login testing procedures
 
 ### Design/Iterate Phase Tools
 
-- **Task Planning Orchestrator**: Analyzes user requirements, documentation, and changelog history to create sequential task lists with granularity guidance
-- **Task Granularity Advisor**: Provides LLM with task sizing recommendations and decomposition strategies to ensure optimal task scoping
-- **Dynamic Task List Manager**: Unified mechanism for all task list adjustments including:
-  - User feedback integration (new tasks from change requests)
-  - Task decomposition (complex tasks broken into smaller tasks)
-  - Error recovery task insertion (build failure fixes)
-  - Task prioritization and dependency management
-- **Changelog Manager**: Creates and maintains sequential changelog files with structured metadata and design rationale
-- **Iterative Task Executor**: Manages individual task execution cycles including code updates and test implementation
-- **Integrated Build Manager**: Orchestrates continuous build validation throughout task execution using native platform build systems (Xcode/Gradle)
-- **Build Validation Controller**: Ensures app remains in buildable/deployable state after each task completion with error recovery capabilities
-- **Error Recovery Manager**: Handles build failures and implements rollback to previous stable states when necessary
-- **Feature Implementer**: Adds requested functionality guided by design documents and documentation
-- **Documentation Grounding Engine**: Provides real-time access to Mobile SDK documentation
+- **Task Planning Guide**: Provides LLM with methodologies for analyzing user requirements, documentation, and changelog history to create sequential task lists with granularity guidance and execution strategies
+- **Task Granularity Advisor**: Supplies LLM with task sizing criteria, decomposition strategies, and complexity assessment guidelines to ensure optimal task scoping
+- **Dynamic Task List Instructor**: Guides LLM through unified task list management approaches including:
+  - User feedback integration (converting change requests into new tasks)
+  - Task decomposition (breaking complex tasks into manageable steps)
+  - Error recovery task insertion (generating build failure fixes)
+  - Task prioritization and dependency management strategies
+- **Changelog Documentation Guide**: Directs LLM through creating and maintaining sequential changelog files with structured metadata templates and design rationale formats
+- **Iterative Task Execution Guide**: Provides LLM with task execution methodologies including code update patterns and test implementation strategies
+- **Build Integration Instructor**: Guides LLM through continuous build validation using native platform build systems (Xcode/Gradle) with specific commands and validation steps
+- **Build Validation Guide**: Directs LLM through keeping apps in buildable/deployable state after each task completion with error recovery procedures
+- **Error Recovery Instructor**: Provides LLM with build failure diagnosis techniques and rollback procedures to previous stable states
+- **Feature Implementation Assistant**: Supplies LLM with implementation patterns and guidance based on design documents and Mobile SDK documentation
+- **Documentation Access Provider**: Delivers real-time Mobile SDK documentation sections relevant to current implementation context
 
 ### Run Phase Tools - Live Feedback Ecosystem
 
-- **Deployment Orchestrator**: Manages application deployment to virtual devices and physical devices with live monitoring
-- **Live Feedback Engine**: Captures and streams structured runtime events from running applications (logs, errors, analytics, network requests, auth issues, SDK misconfigurations)
-- **Real-Time Diagnostic Assistant**: Uses live feedback to provide immediate troubleshooting and issue resolution suggestions
-- **Validation Engine**: Verifies application functionality and user authentication while monitoring runtime health
-- **Intelligent Error Recovery**: Automatically diagnoses common issues and provides specific fixes based on runtime feedback
-- **Handoff Coordinator**: Prepares final application deliverables with established feedback loop for ongoing development
+- **Deployment Guide**: Provides LLM with step-by-step instructions for deploying applications to virtual devices and physical devices, including monitoring setup and validation procedures
+- **Live Feedback Interpreter**: Supplies LLM with real-time structured runtime events from running applications (logs, errors, analytics, network requests, auth issues, SDK misconfigurations) and interpretation guidance
+- **Real-Time Diagnostic Guide**: Delivers immediate troubleshooting methodologies and issue resolution strategies to the LLM based on live feedback patterns
+- **Validation Instruction Provider**: Guides LLM through application functionality verification and user authentication testing while monitoring runtime health indicators
+- **Error Recovery Advisor**: Provides LLM with diagnostic patterns for common issues and specific fix recommendations based on runtime feedback analysis
+- **Handoff Documentation Guide**: Directs LLM through preparing final application deliverables with established feedback loop documentation for ongoing development
 
 ## Documentation Integration Strategy
 
