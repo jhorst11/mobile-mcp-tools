@@ -424,7 +424,17 @@ Tools guide the LLM through:
 
 **Important**: The features listed below are **planned for future iterations**, not permanently out of scope. As this living document evolves, these sections will be moved into active implementation phases and detailed accordingly.
 
-### Enhanced Connected App Management _(Next Priority)_
+### Comprehensive Environment Setup _(Next Priority)_
+
+**Implementation Details**: See [Comprehensive Environment Setup and Validation](./5_mobile_native_app_generation.md#comprehensive-environment-setup-and-validation) in the main design document for detailed implementation specifications.
+
+- **Salesforce CLI Installation Validation**: Automated detection and installation guidance for the Salesforce CLI itself, including platform-specific installation instructions and npm-based installation workflows
+- **Required Plugin Management**: Automated verification and installation of all required Salesforce CLI plugins (`sfdx-mobilesdk-plugin`, `@salesforce/lwc-dev-mobile`, `@salesforce/lwc-dev-mobile-core`)
+- **Third-Party Tool Validation**: Comprehensive environment checks for Xcode, Android Studio, Java, and other platform-specific development tools using existing `@salesforce/lwc-dev-mobile-core` capabilities
+
+**Tool Specification**: Implemented via the [`sfmobile-native-environment-validation`](./5_mobile_native_app_generation.md#sfmobile-native-environment-validation) tool with comprehensive first-party CLI validation while maintaining instruction-first principles.
+
+### Enhanced Connected App Management _(High Priority)_
 
 - Automatic Connected App discovery in user environment
 - Connected App creation guidance for new users

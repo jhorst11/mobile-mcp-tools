@@ -600,7 +600,7 @@ Implemented contact list feature with search and detail navigation capabilities.
 
 ### Plan Phase Tools
 
-- **Environment Validation Guide**: Provides LLM with step-by-step instructions for validating development tools using `@salesforce/lwc-dev-mobile-core` CLI plugin commands, including troubleshooting guidance and environment setup verification
+- **Environment Validation**: [`sfmobile-native-environment-validation`](#sfmobile-native-environment-validation) tool provides comprehensive development environment setup and validation, including Salesforce CLI installation, required plugin management, and third-party tool validation integration
 - **Template Discovery Assistant**: Gives LLM access to template metadata and selection criteria for choosing optimal `sfdx-mobilesdk-plugin` project templates based on user requirements and use cases
 - **Template Metadata Provider**: Delivers comprehensive template information to the LLM including feature descriptions, implementation considerations, and extension patterns for informed decision-making
 - **Connected App Configuration Guide**: Directs LLM through the process of gathering required Connected App Client ID and Callback URI, with setup instructions and validation steps
@@ -695,6 +695,12 @@ const mobileNativeDocsConfig: DocumentationConfig = {
   mcpServerName: 'sfdc-mobile-native-mcp-server',
   documents: [
     {
+      id: 'salesforce-cli-installation',
+      name: 'Salesforce CLI Installation Guide',
+      url: 'https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_install_cli.htm',
+      type: 'html',
+    },
+    {
       id: 'sfdx-mobilesdk-plugin-ios-reference',
       name: 'Salesforce Mobile SDK Plugin iOS Reference',
       url: 'https://www.npmjs.com/package/sfdx-mobilesdk-plugin',
@@ -720,6 +726,18 @@ const mobileNativeDocsConfig: DocumentationConfig = {
     },
   ],
   toolMappings: [
+    {
+      toolName: 'environmentValidation',
+      documents: [
+        {
+          documentId: 'salesforce-cli-installation',
+          // No selector - returns whole document
+          label: 'Salesforce CLI Installation Guide',
+        },
+      ],
+      description:
+        'Complete guide for validating and installing Salesforce CLI and required plugins',
+    },
     {
       toolName: 'createiOSProject',
       documents: [
@@ -1271,6 +1289,223 @@ This project adheres to security best practices established for MCP servers in t
 - **Experience Cloud Integration**: Native app templates with Experience Cloud connectivity
 - **Agentforce Integration**: Templates with embedded Agentforce agent capabilities
 - **Salesforce Data Cloud**: Advanced sync and analytics integration templates
+
+## Comprehensive Environment Setup and Validation
+
+### Salesforce CLI Foundation Requirements
+
+**Priority**: Critical foundation for all mobile native workflows.
+
+**Scope**: Ensure Salesforce CLI and required plugins are properly installed and validated before proceeding with mobile app development workflows.
+
+#### Salesforce CLI Installation Validation
+
+- **Detection Strategy**: Use `sf --version` command to verify Salesforce CLI availability
+- **Installation Guidance**: Leverage official Salesforce CLI installation documentation (`developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_install_cli.htm`) for platform-specific installation instructions
+- **Installation Options**:
+  - **OS-native Installation**: Guide users through platform-specific installer downloads (macOS, Windows) without automated installation
+  - **npm-based Installation**: LLM-guided npm installation workflow (`npm install @salesforce/cli --global`) with Node.js prerequisite validation
+  - **Workflow Termination**: Graceful termination with clear messaging when prerequisites cannot be met
+- **Validation Workflow**: Post-installation verification using `sf --version` with error reporting and troubleshooting guidance
+
+#### Required Plugin Management
+
+**Plugin Requirements**: All Salesforce CLI plugins essential for mobile native development must be validated and installed:
+
+- `sfdx-mobilesdk-plugin`: iOS/Android project generation and management
+- `@salesforce/lwc-dev-mobile`: Deployment and device management
+- `@salesforce/lwc-dev-mobile-core`: Environment validation and core mobile development tools
+
+**Installation Workflow**:
+
+- **Plugin Detection**: Use `sf plugins inspect <plugin-name> --json` for each required plugin
+- **Automated Installation**: Execute `sf plugins install <plugin-name>` for missing plugins
+- **Validation Strategy**: Verify plugin installation success through exit codes and JSON response analysis
+- **Error Handling**: Provide clear guidance for plugin installation failures with troubleshooting steps
+
+#### Integration with Existing Third-Party Validation
+
+**Coordination Strategy**: Seamlessly integrate Salesforce CLI validation with existing third-party tool validation capabilities:
+
+- **Pre-requisite Ordering**: Validate Salesforce CLI and plugins before invoking `@salesforce/lwc-dev-mobile-core` for third-party tool validation
+- **Unified Workflow**: Present environment validation as single cohesive process despite multiple validation layers
+- **Error Recovery**: Provide coordinated troubleshooting guidance across both first-party and third-party tool issues
+
+### MCP Server Tool Specification
+
+#### `sfmobile-native-environment-validation`
+
+**Purpose**: Provides comprehensive environment validation and setup guidance for Salesforce CLI and required plugins
+
+**Input Schema**:
+
+```typescript
+{
+  platform: 'macOS' | 'Windows' | 'Linux';
+  targetMobilePlatform: 'iOS' | 'Android' | 'both';
+  skipUserPrompts?: boolean; // For automated environments
+}
+```
+
+**Output**: Instruction-first environment validation guidance including:
+
+- Salesforce CLI detection and installation workflows
+- Required plugin verification and installation commands
+- Platform-specific installation guidance with user choice preservation
+- Integration with third-party tool validation
+- Error recovery and troubleshooting steps
+
+**Example Output**:
+
+````markdown
+# Mobile Native Environment Validation Workflow
+
+## Step 1: Validate Salesforce CLI Installation
+
+First, check if the Salesforce CLI is available:
+
+```bash
+sf --version
+```
+
+**Expected Success**: Command returns version information (e.g., "@salesforce/cli/2.xx.x")
+**If Command Not Found**: Salesforce CLI is not installed. Proceed with installation guidance.
+
+### Salesforce CLI Installation Workflow
+
+**Step 1: Check Node.js Availability**
+
+First, check if Node.js environment is available for automated installation:
+
+```bash
+node --version
+```
+
+**If Node.js Available (Version 18+)**: Proceed with automated npm installation:
+
+```bash
+npm install @salesforce/cli --global
+```
+
+This is the preferred path as it enables automated installation without user intervention.
+
+**If Node.js Not Available**: Present user with manual installation options:
+
+**Option A: OS-Native Installation (Recommended for Manual Setup)**
+
+- macOS: Download installer from https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_install_cli.htm
+- Windows: Download and run Windows installer
+- Manual installation required - workflow cannot proceed automatically
+
+**Option B: Install Node.js First, Then Automate CLI**
+
+- Guide user to install Node.js LTS from https://nodejs.org
+- After Node.js installation, return to automated npm installation path above
+
+**Option C: Cancel Workflow**
+
+- Inform user that mobile native development requires Salesforce CLI
+- Terminate workflow gracefully with clear next steps
+
+### Post-Installation Verification
+
+After any installation method:
+
+```bash
+sf --version
+```
+
+**Success Criteria**: Command returns version information
+**Failure**: Terminate workflow with installation troubleshooting guidance
+
+## Step 2: Validate Required Plugins
+
+Check each required plugin installation:
+
+### Plugin 1: sfdx-mobilesdk-plugin
+
+```bash
+sf plugins inspect sfdx-mobilesdk-plugin --json
+```
+
+**Expected Success**: Zero exit code, JSON response without "error" property
+**If Missing**: Install with user consent:
+
+```bash
+sf plugins install sfdx-mobilesdk-plugin
+```
+
+### Plugin 2: @salesforce/lwc-dev-mobile
+
+```bash
+sf plugins inspect @salesforce/lwc-dev-mobile --json
+```
+
+**If Missing**: Install with:
+
+```bash
+sf plugins install @salesforce/lwc-dev-mobile
+```
+
+### Plugin 3: @salesforce/lwc-dev-mobile-core
+
+```bash
+sf plugins inspect @salesforce/lwc-dev-mobile-core --json
+```
+
+**If Missing**: Install with:
+
+```bash
+sf plugins install @salesforce/lwc-dev-mobile-core
+```
+
+## Step 3: Third-Party Tool Validation
+
+With Salesforce CLI and plugins confirmed, proceed to third-party validation:
+
+```bash
+sf force lightning local setup --platform=ios
+```
+
+**For Android target platforms**:
+
+```bash
+sf force lightning local setup --platform=android
+```
+
+## Environment Validation Complete
+
+**Success Criteria**:
+
+- ✅ Salesforce CLI installed and functional
+- ✅ All required plugins installed
+- ✅ Platform-specific tools validated (Xcode/Android Studio)
+
+**Next Step**: Proceed with `sfmobile-native-template-discovery`
+
+## Error Recovery
+
+**Common Issues**:
+
+- Node.js version conflicts: Guide user to Node.js LTS installation
+- Plugin installation failures: Check network connectivity, retry with --verbose
+- Third-party tool issues: Refer to platform-specific installation guides
+
+**Workflow Termination Scenarios**:
+
+- User declines CLI installation
+- Node.js unavailable for npm installation method
+- Critical plugin installation failures
+````
+
+### Implementation Strategy
+
+The `sfmobile-native-environment-validation` tool specified above represents the concrete implementation of environment validation capabilities while maintaining instruction-first approach:
+
+- **Documentation Integration**: Leverage official Salesforce documentation through local documentation store
+- **User Choice Preservation**: Maintain user agency in installation decisions with clear workflow termination options
+- **Error Transparency**: Surface all CLI output (stdout/stderr, exit codes) for LLM self-healing capabilities
+- **Platform Awareness**: Provide platform-specific guidance (macOS, Windows, Linux) based on user environment
 
 ## Quality and Reliability Enhancement
 
