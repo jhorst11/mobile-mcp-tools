@@ -30,7 +30,7 @@
 - User is using Cursor IDE for agentic development
 - Pre-installed tools:
   - `@salesforce/mobile-native-mcp-server` MCP server
-  - Salesforce CLI with `@salesforce/lwc-dev-mobile` and `@salesforce/lwc-dev-mobile-core` plugins
+  - Salesforce CLI with `sfdx-mobilesdk-plugin`, `@salesforce/lwc-dev-mobile`, and `@salesforce/lwc-dev-mobile-core` plugins
   - Supported version of Xcode
 - User has a pre-configured Salesforce Connected App with known Client ID and Callback URI
 
