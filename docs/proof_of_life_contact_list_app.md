@@ -145,7 +145,8 @@ First, analyze the user request to identify key features:
 
 **Output**: Instruction-first guidance including:
 
-- CLI command: `<ServerRoot>/node_modules/.bin/forceios listTemplates --templatesource=<ServerRoot>/resources/iosTemplates --json`
+- Plugin verification: `sf plugins inspect sfdx-mobilesdk-plugin --json` (install with `sf plugins install sfdx-mobilesdk-plugin` if needed)
+- CLI command: `sf mobilesdk ios listtemplates --templatesource=<ServerRoot>/resources/iosTemplates --json`
 - Template metadata interpretation guidance
 - Selection criteria for Contact list requirements
 - Next steps for project generation
@@ -167,7 +168,7 @@ First, analyze the user request to identify key features:
 
 **Output**: Instruction-first guidance including:
 
-- CLI command: `<ServerRoot>/node_modules/.bin/forceios createWithTemplate --templateSource=<ServerRoot>/resources/iosTemplates --template=<selectedTemplate> --projectname=<projectName>`
+- CLI command: `sf mobilesdk ios createwithtemplate --templateSource=<ServerRoot>/resources/iosTemplates --template=<selectedTemplate> --projectname=<projectName>`
 - Connected App configuration steps if credentials provided
 - File modification instructions for OAuth setup
 - Next steps for build validation

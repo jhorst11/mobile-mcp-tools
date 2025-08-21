@@ -112,7 +112,7 @@ We embrace and extend all of these documentation outlets as sources of rich, con
 
 **Division of Labor**: CLIs handle the algorithmically repeatable, well-defined operations while agents focus on the creative, feature-specific challenges that require reasoning and adaptation.
 
-- **Algorithmic Foundation**: Leverage CLI tools (`forceios`, `forcedroid`) for deterministic, repeatable operations like project generation, dependency setup, and file templating
+- **Algorithmic Foundation**: Leverage CLI tools (`sfdx-mobilesdk-plugin`) for deterministic, repeatable operations like project generation, dependency setup, and file templating
 - **Predictable Scaffolding**: Use CLIs to establish the proven, tested structural foundation that agents can confidently build upon
 - **Agent Focus on Value**: By offloading repetitive, algorithmic tasks to CLIs, agents can concentrate on the complex work of feature integration, user experience design, and adaptive problem-solving
 - **Intelligent Orchestration**: Agents determine when and how to invoke CLI operations based on user intent, but rely on CLI precision for execution
@@ -211,10 +211,10 @@ By the end of each Design/Iterate phase, the user validates implemented features
 
 #### Template Selection
 
-- Determine optimal `forceios` or `forcedroid` project template based on user requirements
+- Determine optimal `sfdx-mobilesdk-plugin` project template based on user requirements
 - Templates sourced from existing SalesforceMobileSDK-Templates repo or new template collection
 - **CLI Enhancements Required**:
-  - Support for template collection URIs in `forceios` and `forcedroid`
+  - Support for template collection URIs in `sfdx-mobilesdk-plugin`
   - Collection-level metadata for template registry/directory
   - Template-specific metadata for self-describing projects
 
@@ -234,7 +234,7 @@ By the end of each Design/Iterate phase, the user validates implemented features
 
 #### Project Creation and Setup
 
-- **Template-Based Project Generation**: Guide LLM through using `forceios`/`forcedroid` CLI tools to generate boilerplate app projects from Mobile SDK templates through keyword substitution
+- **Template-Based Project Generation**: Guide LLM through using `sfdx-mobilesdk-plugin` CLI tools to generate boilerplate app projects from Mobile SDK templates through keyword substitution
 - **Connected App Integration**: Direct LLM to configure OAuth parameters in generated project files using provided Connected App credentials via CLI tool parameters
 - **Dependency Configuration**: Instruct LLM on ensuring generated projects include properly configured CocoaPods/Swift Package Manager (iOS) or Gradle (Android) dependencies
 - **Ready-to-Build Foundation**: Guide LLM to verify CLI output creates immediately buildable projects using native platform build systems
@@ -311,7 +311,7 @@ Build capabilities are embedded throughout the Design/Iterate phase rather than 
 - **Build-First Approach**: Direct LLM to validate code changes through platform build process before user review
 - **Native Build System Integration**: Provide LLM with Xcode compilation/linking (iOS) and Gradle compilation/packaging (Android) command guidance
 - **Build Error Recovery**: Instruct LLM on error recovery task insertion using unified task list management when build failures occur
-- **CLI Tool Separation**: Guide LLM to use `forceios`/`forcedroid` for project generation only; build validation uses native platform tooling
+- **CLI Tool Separation**: Guide LLM to use `sfdx-mobilesdk-plugin` for project generation only; build validation uses native platform tooling
 
 **Build Workflow Integration:**
 
@@ -371,7 +371,7 @@ sequenceDiagram
 
     Note over MCPClient,RunTools: Post-Plan Checkpoint
     MCPClient->>PlanTools: Create skeletal project
-    PlanTools->>CLI: forceios/forcedroid create project
+    PlanTools->>CLI: sfdx-mobilesdk-plugin create project
     CLI-->>PlanTools: Working skeletal app
     MCPClient->>RunTools: Deploy and validate login
     RunTools->>CLI: Deploy to virtual device
@@ -601,10 +601,10 @@ Implemented contact list feature with search and detail navigation capabilities.
 ### Plan Phase Tools
 
 - **Environment Validation Guide**: Provides LLM with step-by-step instructions for validating development tools using `@salesforce/lwc-dev-mobile-core` CLI plugin commands, including troubleshooting guidance and environment setup verification
-- **Template Discovery Assistant**: Gives LLM access to template metadata and selection criteria for choosing optimal `forceios` or `forcedroid` project templates based on user requirements and use cases
+- **Template Discovery Assistant**: Gives LLM access to template metadata and selection criteria for choosing optimal `sfdx-mobilesdk-plugin` project templates based on user requirements and use cases
 - **Template Metadata Provider**: Delivers comprehensive template information to the LLM including feature descriptions, implementation considerations, and extension patterns for informed decision-making
 - **Connected App Configuration Guide**: Directs LLM through the process of gathering required Connected App Client ID and Callback URI, with setup instructions and validation steps
-- **Project Generation Guide**: Provides LLM with precise `forceios`/`forcedroid` CLI commands and parameter guidance for generating boilerplate projects from templates via keyword substitution
+- **Project Generation Guide**: Provides LLM with precise `sfdx-mobilesdk-plugin` CLI commands and parameter guidance for generating boilerplate projects from templates via keyword substitution
 - **Configuration Instruction Provider**: Guides LLM through parameter substitution and dependency setup in generated project files with specific file paths and configuration examples
 - **Project Validation Instructor**: Directs LLM through validation steps for generated skeletal projects using native platform build tools, including build verification and login testing procedures
 
@@ -695,15 +695,15 @@ const mobileNativeDocsConfig: DocumentationConfig = {
   mcpServerName: 'sfdc-mobile-native-mcp-server',
   documents: [
     {
-      id: 'forceios-cli-reference',
-      name: 'Force iOS CLI Reference',
-      url: 'https://developer.salesforce.com/docs/atlas.en-us.mobile_sdk.meta/mobile_sdk/native_ios_tools_forceios.htm',
+      id: 'sfdx-mobilesdk-plugin-ios-reference',
+      name: 'Salesforce Mobile SDK Plugin iOS Reference',
+      url: 'https://www.npmjs.com/package/sfdx-mobilesdk-plugin',
       type: 'html',
     },
     {
-      id: 'forcedroid-cli-reference',
-      name: 'Force Android CLI Reference',
-      url: 'https://developer.salesforce.com/docs/atlas.en-us.mobile_sdk.meta/mobile_sdk/native_android_tools_forcedroid.htm',
+      id: 'sfdx-mobilesdk-plugin-android-reference',
+      name: 'Salesforce Mobile SDK Plugin Android Reference',
+      url: 'https://www.npmjs.com/package/sfdx-mobilesdk-plugin',
       type: 'html',
     },
     {
@@ -724,7 +724,7 @@ const mobileNativeDocsConfig: DocumentationConfig = {
       toolName: 'createiOSProject',
       documents: [
         {
-          documentId: 'forceios-cli-reference',
+          documentId: 'sfdx-mobilesdk-plugin-ios-reference',
           selector: '.main .create-section',
           label: 'CLI Commands',
         },
@@ -735,13 +735,13 @@ const mobileNativeDocsConfig: DocumentationConfig = {
         },
       ],
       description:
-        'Instructions for creating iOS projects using forceios CLI and available templates',
+        'Instructions for creating iOS projects using sfdx-mobilesdk-plugin CLI and available templates',
     },
     {
       toolName: 'createAndroidProject',
       documents: [
         {
-          documentId: 'forcedroid-cli-reference',
+          documentId: 'sfdx-mobilesdk-plugin-android-reference',
           selector: '.main .create-section',
           label: 'CLI Commands',
         },
@@ -752,7 +752,7 @@ const mobileNativeDocsConfig: DocumentationConfig = {
         },
       ],
       description:
-        'Instructions for creating Android projects using forcedroid CLI and available templates',
+        'Instructions for creating Android projects using sfdx-mobilesdk-plugin CLI and available templates',
     },
     {
       toolName: 'configureAuthentication',
@@ -932,7 +932,7 @@ Based on your requirements:
 
 Run the following command:
 \`\`\`bash
-forceios create --name ${requirements.name} --template ${requirements.template}
+sf mobilesdk ios create --name ${requirements.name} --template ${requirements.template}
 \`\`\`
 
 Next steps: ${this.generateNextSteps(requirements)}`,
@@ -1125,18 +1125,18 @@ _Priority_: Critical for preventing API hallucination and ensuring generated cod
 
 ## CLI Tool Integration
 
-### Force iOS Integration
+### Salesforce Mobile SDK Plugin iOS Integration
 
-- **Project Generation**: `forceios create` generates boilerplate apps from Mobile SDK templates through keyword substitution
-- **Template Support**: `forceios createWithTemplate` enables custom template usage from GitHub repositories
+- **Project Generation**: `sf mobilesdk ios create` generates boilerplate apps from Mobile SDK templates through keyword substitution
+- **Template Support**: `sf mobilesdk ios createwithtemplate` enables custom template usage from GitHub repositories
 - **Configuration Substitution**: Automated parameter replacement in info.plist and project configuration files
 - **Dependency Setup**: Configures CocoaPods or Swift Package Manager dependencies from template specifications
 - **Ready-to-Build Output**: Generates Xcode-compatible projects ready for immediate compilation
 
-### Force Android Integration
+### Salesforce Mobile SDK Plugin Android Integration
 
-- **Project Generation**: `forcedroid create` generates boilerplate apps from Mobile SDK templates through keyword substitution
-- **Template Support**: `forcedroid createWithTemplate` enables custom template usage from GitHub repositories
+- **Project Generation**: `sf mobilesdk android create` generates boilerplate apps from Mobile SDK templates through keyword substitution
+- **Template Support**: `sf mobilesdk android createwithtemplate` enables custom template usage from GitHub repositories
 - **Configuration Substitution**: Automated parameter replacement in Gradle configuration and AndroidManifest.xml files
 - **Dependency Setup**: Configures Gradle dependencies from template specifications
 - **Ready-to-Build Output**: Generates Android Studio-compatible projects ready for immediate compilation
