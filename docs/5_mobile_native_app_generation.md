@@ -1347,6 +1347,23 @@ This project adheres to security best practices established for MCP servers in t
 }
 ```
 
+**Configuration Schema** (Internal MCP server configuration):
+
+```typescript
+interface PluginVersionRequirements {
+  'sfdx-mobilesdk-plugin': string; // e.g., "1.0.0"
+  '@salesforce/lwc-dev-mobile': string; // e.g., "2.1.0"
+  '@salesforce/lwc-dev-mobile-core': string; // e.g., "1.5.0"
+}
+
+// Configurable within MCP server package
+const MINIMUM_PLUGIN_VERSIONS: PluginVersionRequirements = {
+  'sfdx-mobilesdk-plugin': '1.0.0',
+  '@salesforce/lwc-dev-mobile': '2.1.0',
+  '@salesforce/lwc-dev-mobile-core': '1.5.0',
+};
+```
+
 **Output**: Instruction-first environment validation guidance including:
 
 - Salesforce CLI detection and installation workflows
@@ -1420,7 +1437,7 @@ sf --version
 
 ## Step 2: Validate Required Plugins
 
-Check each required plugin installation:
+Check each required plugin installation and version compatibility:
 
 ### Plugin 1: sfdx-mobilesdk-plugin
 
@@ -1429,7 +1446,16 @@ sf plugins inspect sfdx-mobilesdk-plugin --json
 ```
 
 **Expected Success**: Zero exit code, JSON response without "error" property
+**Version Validation**: Extract version from response JSON: `response[0].manifest.version`
+**Required Minimum Version**: 1.0.0 (configurable in MCP server)
+
 **If Missing**: Install with user consent:
+
+```bash
+sf plugins install sfdx-mobilesdk-plugin
+```
+
+**If Version Too Old**: Update plugin:
 
 ```bash
 sf plugins install sfdx-mobilesdk-plugin
@@ -1441,7 +1467,10 @@ sf plugins install sfdx-mobilesdk-plugin
 sf plugins inspect @salesforce/lwc-dev-mobile --json
 ```
 
-**If Missing**: Install with:
+**Version Validation**: Extract version from `response[0].manifest.version`
+**Required Minimum Version**: 2.1.0 (configurable in MCP server)
+
+**If Missing or Outdated**: Install/update with:
 
 ```bash
 sf plugins install @salesforce/lwc-dev-mobile
@@ -1453,11 +1482,38 @@ sf plugins install @salesforce/lwc-dev-mobile
 sf plugins inspect @salesforce/lwc-dev-mobile-core --json
 ```
 
-**If Missing**: Install with:
+**Version Validation**: Extract version from `response[0].manifest.version`
+**Required Minimum Version**: 1.5.0 (configurable in MCP server)
+
+**If Missing or Outdated**: Install/update with:
 
 ```bash
 sf plugins install @salesforce/lwc-dev-mobile-core
 ```
+
+### Version Comparison Logic
+
+For each plugin, compare installed version against minimum required version:
+
+**JSON Response Structure**:
+
+```json
+[
+  {
+    "manifest": {
+      "version": "1.2.3",
+      "name": "plugin-name"
+    }
+  }
+]
+```
+
+**Version Check Process**:
+
+1. Parse installed version from `response[0].manifest.version`
+2. Compare against configured minimum version using semantic version comparison
+3. If installed version < minimum version: trigger update workflow
+4. If plugin install/update fails: terminate workflow with error guidance
 
 ## Step 3: Third-Party Tool Validation
 
@@ -1478,7 +1534,7 @@ sf force lightning local setup --platform=android
 **Success Criteria**:
 
 - ✅ Salesforce CLI installed and functional
-- ✅ All required plugins installed
+- ✅ All required plugins installed and meet minimum version requirements
 - ✅ Platform-specific tools validated (Xcode/Android Studio)
 
 **Next Step**: Proceed with `sfmobile-native-template-discovery`
@@ -1489,6 +1545,8 @@ sf force lightning local setup --platform=android
 
 - Node.js version conflicts: Guide user to Node.js LTS installation
 - Plugin installation failures: Check network connectivity, retry with --verbose
+- Plugin version incompatibility: Force update with `sf plugins install <plugin-name>`
+- Semantic version parsing errors: Validate JSON response structure, check for malformed version strings
 - Third-party tool issues: Refer to platform-specific installation guides
 
 **Workflow Termination Scenarios**:
@@ -1496,6 +1554,8 @@ sf force lightning local setup --platform=android
 - User declines CLI installation
 - Node.js unavailable for npm installation method
 - Critical plugin installation failures
+- Plugin version requirements cannot be satisfied after update attempts
+- Invalid or corrupted plugin installations (malformed JSON responses)
 ````
 
 ### Implementation Strategy
