@@ -37,7 +37,7 @@
 ### Resource Paths
 
 - `<ServerRoot>`: Filesystem path to `@salesforce/mobile-native-mcp-server` package contents
-- Templates located at: `<ServerRoot>/resources/iosTemplates/`
+- Templates located at: `<ServerRoot>/` (each template in its own subdirectory)
 
 ---
 
@@ -146,9 +146,11 @@ First, analyze the user request to identify key features:
 **Output**: Instruction-first guidance including:
 
 - Plugin verification: `sf plugins inspect sfdx-mobilesdk-plugin --json` (install with `sf plugins install sfdx-mobilesdk-plugin` if needed)
-- CLI command: `sf mobilesdk ios listtemplates --templatesource=<ServerRoot>/resources/iosTemplates --json`
-- Template metadata interpretation guidance
-- Selection criteria for Contact list requirements
+- Template discovery workflow:
+  1. Use `sf mobilesdk ios listtemplates --templatesource=<ServerRoot> --doc` to get available iOS templates
+  2. Filter templates by features and use case for Contact list requirements
+  3. Use `sf mobilesdk ios doc --templatesource=<ServerRoot> --template=<templateId>` for detailed template capabilities
+- Selection criteria for Contact list requirements based on features and useCase
 - Next steps for project generation
 
 #### `sfmobile-native-project-generation`
@@ -168,7 +170,7 @@ First, analyze the user request to identify key features:
 
 **Output**: Instruction-first guidance including:
 
-- CLI command: `sf mobilesdk ios createwithtemplate --templateSource=<ServerRoot>/resources/iosTemplates --template=<selectedTemplate> --projectname=<projectName>`
+- CLI command: `sf mobilesdk ios createwithtemplate --templateSource=<ServerRoot> --template=<selectedTemplate> --projectname=<projectName>`
 - Connected App configuration steps if credentials provided
 - File modification instructions for OAuth setup
 - Next steps for build validation
@@ -266,52 +268,139 @@ First, analyze the user request to identify key features:
 
 ## Template Metadata Requirements
 
-### Tier 1: Templates Directory Metadata
+### Template Metadata Structure
 
-**Location**: `<ServerRoot>/resources/iosTemplates/metadata.json`
+**CLI-Accessible Metadata System**:
 
-**Structure**:
+1. **Template Listing**: `sf mobilesdk ios listtemplates --templatesource=<ServerRoot> --doc`
+   - Returns basic metadata for all available iOS templates
+   - Includes: `displayName`, `description`, `useCase`, `features`, `complexity`
+   - Used for initial template discovery and filtering
+
+2. **Detailed Template Documentation**: `sf mobilesdk ios doc --templatesource=<ServerRoot> --template=<templateId>`
+   - Returns complete template metadata including customization points
+   - Used for detailed template evaluation and adaptation planning
+
+**Rationale**: 
+- Leverages existing CLI tooling for template discovery
+- Standardized interface for accessing template metadata
+- No manual file parsing required
+- LLM tools can efficiently discover templates and evaluate suitability through familiar CLI commands
+
+### Template Metadata Schema
 
 ```json
 {
-  "templateRepositoryVersion": "1.0.0",
-  "description": "iOS native app templates for Salesforce Mobile SDK",
-  "lastUpdated": "2024-01-15",
-  "templates": [
-    {
-      "templateId": "salesforce-record-list-ios",
-      "displayName": "Salesforce Record List",
-      "description": "List view with search, detail navigation, and offline support",
-      "tags": ["record-list", "crud", "search", "offline", "contacts", "accounts", "leads"],
-      "complexity": "moderate",
-      "estimatedSetupTime": "15-30 minutes",
-      "supportedRecordTypes": ["Contact", "Account", "Lead", "Opportunity"]
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["templateId", "version", "platform", "displayName", "description", "features", "complexity", "useCase"],
+  "properties": {
+    "templateId": {
+      "type": "string",
+      "description": "Unique identifier for the template (e.g., 'salesforce-record-list-ios')"
+    },
+    "version": {
+      "type": "string",
+      "description": "Template version (e.g., '1.0.0')"
+    },
+    "platform": {
+      "type": "string",
+      "enum": ["ios", "android"],
+      "description": "Target platform for the template"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Human-readable name for the template (e.g., 'Salesforce Record List')"
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of what the template provides and its capabilities"
+    },
+    "useCase": {
+      "type": "string",
+      "description": "Clear guidance on when to use this template (e.g., 'Use this template when you need to display a list of Salesforce records with search and navigation capabilities')"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of feature tags that describe template capabilities (e.g., ['record-list', 'search', 'detail-view', 'offline-sync'])"
+    },
+    "complexity": {
+      "type": "string",
+      "enum": ["simple", "moderate", "advanced"],
+      "description": "Relative complexity level for LLM adaptation and user understanding"
+    },
+
+    "customizationPoints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["feature", "description", "files", "instructions"],
+        "properties": {
+          "feature": {
+            "type": "string",
+            "description": "Feature being customized (e.g., 'record-list', 'oauth-configuration')"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this customization accomplishes"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of file paths that need modification"
+          },
+          "instructions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Step-by-step instructions for implementing the customization"
+          }
+        }
+      },
+      "description": "Key points where the template can be adapted for different use cases"
     }
-  ]
+  }
 }
 ```
 
-### Tier 2: Individual Template Metadata
+### Example Template Metadata Integration
 
-**Location**: `<ServerRoot>/resources/iosTemplates/salesforce-record-list-ios/metadata.json`
+**High-Level Catalog Entry** (from `<ServerRoot>/templates.json`):
+```json
+{
+    "path": "iOSNativeSwiftTemplate",
+    "description": "Swift application using MobileSync, SwiftUI and Combine",
+    "appType": "native_swift",
+    "platforms": ["ios"]
+}
+```
 
-**Structure**:
+**Detailed Template Metadata** (from `<ServerRoot>/iOSNativeSwiftTemplate/template.json`):
 
 ```json
 {
-  "templateId": "salesforce-record-list-ios",
+  "templateId": "iOSNativeSwiftTemplate",
   "version": "1.0.0",
-  "description": "iOS app with Salesforce record list view and basic CRUD operations",
-  "features": ["record-list", "search", "detail-view", "offline-sync"],
-  "defaultRecordType": "Account",
+  "platform": "ios",
+  "displayName": "iOS Native Swift Template",
+  "description": "Swift application using MobileSync, SwiftUI and Combine. Provides a foundation for building Salesforce-connected iOS apps with modern Swift patterns and offline data synchronization.",
+  "useCase": "Use this template when you need to build a native iOS app that connects to Salesforce data. Ideal for record management, data synchronization, and building custom mobile experiences with SwiftUI and Combine.",
+  "features": ["mobile-sync", "swiftui", "combine", "offline-sync", "salesforce-connectivity", "native-ios"],
+  "complexity": "moderate",
   "customizationPoints": [
     {
       "feature": "record-list",
       "description": "Change the record type displayed in the list",
       "files": [
-        "ContactListApp/Services/RecordListService.swift",
-        "ContactListApp/Models/RecordModel.swift",
-        "ContactListApp/Views/RecordListViewController.swift"
+        "iOSNativeSwiftTemplate/Services/RecordListService.swift",
+        "iOSNativeSwiftTemplate/Models/RecordModel.swift",
+        "iOSNativeSwiftTemplate/Views/RecordListViewController.swift"
       ],
       "instructions": [
         "1. Modify SOQL query in RecordListService.swift line 23 to select from Contact instead of Account",
@@ -322,23 +411,40 @@ First, analyze the user request to identify key features:
     {
       "feature": "oauth-configuration",
       "description": "Configure Connected App credentials for Salesforce authentication",
-      "files": ["ContactListApp/Supporting Files/Info.plist"],
+      "files": ["iOSNativeSwiftTemplate/Supporting Files/Info.plist"],
       "instructions": [
         "1. Replace placeholder CLIENT_ID with actual Connected App Consumer Key",
         "2. Replace placeholder CALLBACK_URI with actual Connected App Callback URL"
       ]
     }
-  ],
-  "complexity": "moderate",
-  "requiredXcodeVersion": "15.0+",
-  "targetiOSVersion": "17.0+",
-  "dependencies": {
-    "SalesforceSDKCore": "11.0+",
-    "SalesforceAnalytics": "11.0+",
-    "SalesforceSDKCommon": "11.0+"
-  }
+  ]
 }
 ```
+
+### Template Discovery Workflow
+
+**CLI-Based Discovery Process**:
+
+1. **Template Listing**: Use `sf mobilesdk ios listtemplates --templatesource=<ServerRoot> --doc`
+   - Lists all available iOS templates with basic metadata
+   - Returns: `displayName`, `description`, `useCase`, `features`, `complexity`
+   - Used for initial template filtering and selection
+
+2. **Detailed Template Documentation**: Use `sf mobilesdk ios doc --templatesource=<ServerRoot> --template=<templateId>`
+   - Returns complete template metadata including customization points
+   - Used for detailed template evaluation and adaptation planning
+
+**LLM Tool Behavior**: 
+1. Call `sf mobilesdk ios listtemplates --templatesource=<ServerRoot> --doc` to get available iOS templates
+2. Filter templates by features and use case for Contact list requirements
+3. For selected template, call `sf mobilesdk ios doc --templatesource=<ServerRoot> --template=<templateId>` for full details
+4. Use complete metadata to plan customization and implementation steps
+
+**Benefits**:
+- Leverages existing CLI tooling for template discovery
+- No manual file parsing required
+- Standardized interface for accessing template metadata
+- LLM can efficiently discover and evaluate template suitability through familiar CLI commands
 
 ---
 
@@ -379,9 +485,9 @@ Tools guide the LLM through:
 
 ### Phase 2: Template Infrastructure
 
-1. **iOS template directory structure** with sample "salesforce-record-list-ios" template
-2. **Tier 1 metadata file** for template repository
-3. **Tier 2 metadata file** for record list template with customization guidance
+1. **iOS template directory structure** with sample "iOSNativeSwiftTemplate" template
+2. **Root-level templates.json** catalog file (already exists)
+3. **Individual template.json files** for each template with customization guidance
 4. **Template validation** ensuring buildable Xcode project
 
 ### Phase 3: Feature Adaptation Tools
