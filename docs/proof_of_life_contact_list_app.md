@@ -277,7 +277,7 @@ First, analyze the user request to identify key features:
    - Includes: `displayName`, `description`, `useCase`, `features`, `complexity`
    - Used for initial template discovery and filtering
 
-2. **Detailed Template Documentation**: `sf mobilesdk ios doc --templatesource=<ServerRoot> --template=<templateId>`
+2. **Detailed Template Documentation**: `sf mobilesdk ios listtemplate --templatesource=<ServerRoot> --template=<templateId> --doc`
    - Returns complete template metadata including customization points
    - Used for detailed template evaluation and adaptation planning
 
