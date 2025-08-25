@@ -37,7 +37,7 @@
 ### Resource Paths
 
 - `<ServerRoot>`: Filesystem path to `@salesforce/mobile-native-mcp-server` package contents
-- Templates located at: `<ServerRoot>/` (each template in its own subdirectory)
+- Templates located at: `<ServerRoot>/templates` (each template in its own subdirectory)
 
 ---
 
