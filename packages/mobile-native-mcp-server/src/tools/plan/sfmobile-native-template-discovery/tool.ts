@@ -24,7 +24,7 @@ export class SfmobileNativeTemplateDiscoveryTool implements Tool {
   public readonly title = 'Salesforce Mobile Native Template Discovery Guide';
   public readonly toolId = 'sfmobile-native-template-discovery';
   public readonly description =
-    'Guides LLM through template discovery and selection for Salesforce mobile app development';
+    'INTERNAL TOOL: Used by the workflow orchestrator for template discovery. Do not call directly - use sfmobile-native-workflow-orchestrator instead for mobile app development requests.';
   public readonly inputSchema = TemplateDiscoveryInputSchema;
 
   public register(server: McpServer, annotations: ToolAnnotations): void {

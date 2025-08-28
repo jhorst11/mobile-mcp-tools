@@ -36,7 +36,7 @@ export class SfmobileNativeProjectGenerationTool implements Tool {
   public readonly title = 'Salesforce Mobile Native Project Generation Guide';
   public readonly toolId = 'sfmobile-native-project-generation';
   public readonly description =
-    'Provides LLM instructions for generating a mobile app project from a selected template with OAuth configuration';
+    'INTERNAL TOOL: Used by the workflow orchestrator for project generation. Do not call directly - use sfmobile-native-workflow-orchestrator instead for mobile app development requests.';
   public readonly inputSchema = ProjectGenerationInputSchema;
 
   public register(server: McpServer, annotations: ToolAnnotations): void {
