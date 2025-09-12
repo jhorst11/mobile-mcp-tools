@@ -1,0 +1,29 @@
+{
+    "version": "1.0.0",
+    "state": "initialized",
+    "featureId": "",
+    "specPath": "",
+    "requirementsPath": "",
+    "timestamps": {
+        "created": "",
+        "lastUpdated": "",
+        "requirementsFinalized": "",
+        "prdFinalized": ""
+    },
+    "requirements": {
+        "state": "pending",
+        "completenessScore": 0,
+        "openQuestions": []
+    },
+    "prd": {
+        "state": "pending",
+        "path": "",
+        "completenessScore": 0
+    },
+    "build": {
+        "state": "pending",
+        "tasksGenerated": false,
+        "tasksPath": ""
+    },
+    "changelog": []
+}

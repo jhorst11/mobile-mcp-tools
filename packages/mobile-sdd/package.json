@@ -1,5 +1,5 @@
 {
-  "name": "@salesforce/mobile-web-mcp-server",
+  "name": "@salesforce/mobile-sdd-mcp-server",
   "version": "0.0.1-alpha.1",
   "type": "module",
   "files": [
@@ -7,7 +7,7 @@
     "resources",
     "README.md"
   ],
-  "description": "Salesforce Mobile Web MCP Server",
+  "description": "Salesforce Mobile SDD MCP Server",
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,18 +15,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./schemas/analysisSchema": {
-      "types": "./dist/schemas/analysisSchema.d.ts",
-      "import": "./dist/schemas/analysisSchema.js"
-    },
-    "./schemas/lwcSchema": {
-      "types": "./dist/schemas/lwcSchema.d.ts",
-      "import": "./dist/schemas/lwcSchema.js"
     }
   },
   "bin": {
-    "sfdc-mobile-web-mcp-server": "dist/index.js"
+    "sfdc-mobile-sdd-mcp-server": "dist/index.js"
   },
   "scripts": {
     "build": "tsc ",
@@ -34,12 +26,11 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
-    "update-resources": "tsx src/scripts/update-type-declarations.ts"
+    "lint": "eslint --config ../../eslint.config.mjs \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.2",
-    "@salesforce/eslint-plugin-lwc-graph-analyzer": "^1.0.0",
-    "eslint": "^9.30.0",
     "dedent": "^1.5.3",
     "zod": "^3.25.67"
   },
@@ -47,8 +38,6 @@
     "@modelcontextprotocol/inspector": "^0.16.1",
     "@types/node": "^24.0.7",
     "@vitest/coverage-v8": "^3.2.4",
-    "tar": "^7.4.3",
-    "tsx": "^4.19.2",
     "typescript": "^5.8.3",
     "vitest": "^3.2.3"
   }
