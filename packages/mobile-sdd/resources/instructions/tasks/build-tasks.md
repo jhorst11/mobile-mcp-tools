@@ -28,9 +28,6 @@ Copy and fill this in `.magen/specs/<feature-id>/tasks.md`.
 
 ```markdown
 # Implementation Tasks — <feature-id>
---- Created at: <created-time> ---
---- Updated at: <updated-time> ---
---- Approval Status: Draft ---
 
 ## Conventions
 - Link each task to PRD Feature and Story IDs.
@@ -45,33 +42,35 @@ Copy and fill this in `.magen/specs/<feature-id>/tasks.md`.
 
 ### Feature: <Feature Name> (PRD Section 5.x; FRs: FR1, FR2; Stories: ST-101, ST-102)
 
-- [ ] Design: Review PRD and finalize component responsibilities (links) — refs: ST-101
-- [ ] API/Schema: Define/extend data models and contracts — refs: ST-101
-- [ ] Backend: Implement endpoints/services — refs: ST-101
-- [ ] Frontend: Implement UI components and state — refs: ST-101
-- [ ] Mobile: Implement LWC/GraphQL adapters (prefer GraphQL wire adapter over Apex) — refs: ST-101
-- [ ] Auth/Access: Enforce permissions and role checks — refs: ST-101
-- [ ] Validation: Input validation and error states — refs: ST-101
-- [ ] Observability: Metrics, logs, alerts — refs: NFRs
-- [ ] Performance: Budget checks and profiling — refs: NFRs
-- [ ] Accessibility: WCAG checks and keyboard flows — refs: NFRs
-- [ ] Localization: i18n strings and RTL checks (if applicable)
-- [ ] Testing: Unit tests — refs: ST-101
-- [ ] Testing: Integration/E2E tests — refs: ST-101
-- [ ] Docs: Update README/Runbook/User docs
+[ ] T1.1 API/Schema: Define/extend data models and contracts — refs: ST-101
+    [ ] T1.1.1 API/Schema: Define/extend ExampleModel1 with properties prop1, prop2, prop3 — refs: ST-101
+    [ ] T1.1.2 API/Schema: Define/extend ExampleModel2 with properties propA, propB, propC — refs: ST-101
+    [ ] T1.1.3 API/Schema: Define/extend ExampleModel3 with properties propX, propY, propZ — refs: ST-101
+
+[ ] T1.2 Backend: Implement endpoints/services — refs: ST-101
+    [ ] T1.2.1 Backend: Implement /api/v1/example-endpoint1 — refs: ST-101
+    [ ] T1.2.2 Backend: Implement /api/v1/example-endpoint2 — refs: ST-101
+    
+    
+[ ] T1.3 Frontend: Implement UI components and state — refs: ST-101
+    [ ] T1.3.1 Frontend: Implement ExampleComponent1 — refs: ST-101
+    [ ] T1.3.2 Frontend: Implement ExampleComponent2 — refs: ST-101
+    [ ] T1.3.3 Frontend: Implement ExampleComponent3 — refs: ST-101
+
+...
 
 ### Feature: <Next Feature> (...)
-- [ ] ...
+[ ] T2.1 ...
 
 ## Environments & Release
-- [ ] Dev environment setup/config
-- [ ] Staging deployment and smoke tests
-- [ ] Production deployment plan and rollback
+[ ] Dev environment setup/config
+[ ] Staging deployment and smoke tests
+[ ] Production deployment plan and rollback
 
 ## Sign-offs
-- [ ] Product sign-off (references demo or screenshots)
-- [ ] Engineering sign-off (meets DoD and NFR budgets)
-- [ ] Security/Compliance sign-off (if applicable)
+[ ] Product sign-off (references demo or screenshots)
+[ ] Engineering sign-off (meets DoD and NFR budgets)
+[ ] Security/Compliance sign-off (if applicable)
 
 ```
 
