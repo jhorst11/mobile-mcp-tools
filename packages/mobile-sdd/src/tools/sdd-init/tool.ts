@@ -122,9 +122,13 @@ export class SddInitTool implements Tool {
    * Creates the specs directory structure
    * @param targetDir The .magen directory path
    */
-  private async createSpecsDirectory(targetDir: string): Promise<void> {
-    const specsDir = join(targetDir, 'specs');
-    await fs.mkdir(specsDir, { recursive: true });
+  private async createDirectoryStructure(targetDir: string): Promise<void> {
+    // Create .instructions directory
+    const instructionsDir = join(targetDir, '.instructions');
+    await fs.mkdir(instructionsDir, { recursive: true });
+    
+    // We no longer create the specs directory as features will be directly under .magen
+    // with the format 001-<feature-name>
   }
 
   protected async handleRequest(input: SddInitInputType) {
@@ -157,8 +161,8 @@ export class SddInitTool implements Tool {
       }
 
       if (magenExists) {
-        // .magen directory exists, check if START.md exists to confirm it's a valid SDD project
-        const startMdPath = join(targetDir, 'START.md');
+        // .magen directory exists, check if .instructions/START.md exists to confirm it's a valid SDD project
+        const startMdPath = join(targetDir, '.instructions', 'START.md');
         try {
           await fs.access(startMdPath);
 
@@ -167,7 +171,7 @@ export class SddInitTool implements Tool {
             content: [
               {
                 type: 'text' as const,
-                text: `The project has already been initialized with SDD. Follow the instructions in \`${startMdPath}\` to guide the feature creation process.\n\nTo create a new feature, you'll need to:\n1. Generate a feature ID (e.g., 001-example-feature)\n2. Create a directory at .magen/specs/<feature-id>/\n3. Initialize a state.json file in that directory`,
+                text: `The project has already been initialized with SDD. Follow the instructions in \`${startMdPath}\` to guide the feature creation process.\n\nTo create a new feature, you'll need to:\n1. Generate a feature ID (e.g., 001-example-feature)\n2. Create a directory at .magen/001-<feature-name>/\n3. Initialize a state.json file in that directory\n4. Create prd.md, requirements.md, and tasks.md files in that directory`,
               },
             ],
           };
@@ -200,11 +204,12 @@ export class SddInitTool implements Tool {
         };
       }
 
-      // Create specs directory structure
-      await this.createSpecsDirectory(targetDir);
+      // Create directory structure (.magen/specs and .magen/.instructions)
+      await this.createDirectoryStructure(targetDir);
 
-      // Recursively copy all files and directories
-      const copiedFiles = await this.copyRecursive(this.resourcesPath, targetDir);
+      // Recursively copy all files and directories to .instructions
+      const instructionsDir = join(targetDir, '.instructions');
+      const copiedFiles = await this.copyRecursive(this.resourcesPath, instructionsDir);
 
       return {
         content: [
@@ -215,7 +220,7 @@ export class SddInitTool implements Tool {
               .map(file => `- ${file}`)
               .join(
                 '\n'
-              )}${copiedFiles.length > 10 ? `\n...and ${copiedFiles.length - 10} more files` : ''}\n\nTo create a new feature, follow the instructions in ${join(targetDir, 'START.md')}`,
+              )}${copiedFiles.length > 10 ? `\n...and ${copiedFiles.length - 10} more files` : ''}\n\nTo create a new feature, follow the instructions in ${join(targetDir, '.instructions', 'START.md')}`,
           },
         ],
       };

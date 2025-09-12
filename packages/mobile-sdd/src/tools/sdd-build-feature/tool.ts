@@ -43,8 +43,8 @@ export class SddBuildFeatureTool implements Tool {
       version: '1.0.0',
       state: 'initialized',
       featureId: featureId,
-      specPath: `.magen/specs/${featureId}/`,
-      requirementsPath: `.magen/specs/${featureId}/requirements.md`,
+      specPath: `.magen/${featureId}/`,
+      requirementsPath: `.magen/${featureId}/requirements.md`,
       timestamps: {
         created: now,
         lastUpdated: now,
@@ -78,9 +78,8 @@ export class SddBuildFeatureTool implements Tool {
 
   protected async handleRequest(input: SddBuildFeatureInputType) {
     try {
-      const { projectPath } = input;
+      const { projectPath, featureId } = input;
       const magenDir = join(projectPath, '.magen');
-      const specsDir = join(magenDir, 'specs');
 
       // Check if project path exists
       try {
@@ -112,8 +111,8 @@ export class SddBuildFeatureTool implements Tool {
         };
       }
 
-      // Check if START.md exists
-      const startMdPath = join(magenDir, 'START.md');
+      // Check if .instructions/START.md exists
+      const startMdPath = join(magenDir, '.instructions', 'START.md');
       try {
         await fs.access(startMdPath);
       } catch (error) {
@@ -122,33 +121,86 @@ export class SddBuildFeatureTool implements Tool {
           content: [
             {
               type: 'text' as const,
-              text: `Error: The START.md file does not exist in the .magen directory. The SDD environment may be corrupted. Please run the sdd-init tool again.`,
+              text: `Error: The START.md file does not exist in the .magen/.instructions directory. The SDD environment may be corrupted. Please run the sdd-init tool again.`,
             },
           ],
         };
       }
 
-      // Create specs directory if it doesn't exist
+      // Create feature directory
+      const featureDir = join(magenDir, featureId);
       try {
-        await fs.mkdir(specsDir, { recursive: true });
+        await fs.access(featureDir);
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text' as const,
+              text: `Error: Feature directory ${featureDir} already exists. Please use a different feature ID.`,
+            },
+          ],
+        };
+      } catch (error) {
+        // Directory doesn't exist, we can create it
+        try {
+          await fs.mkdir(featureDir, { recursive: true });
+        } catch (error) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: 'text' as const,
+                text: `Error: Failed to create feature directory: ${(error as Error).message}`,
+              },
+            ],
+          };
+        }
+      }
+
+      // Create state.json file
+      const stateJson = this.createStateJsonTemplate(featureId);
+      const stateJsonPath = join(featureDir, 'state.json');
+      try {
+        await fs.writeFile(stateJsonPath, JSON.stringify(stateJson, null, 2));
       } catch (error) {
         return {
           isError: true,
           content: [
             {
               type: 'text' as const,
-              text: `Error: Failed to create specs directory: ${(error as Error).message}`,
+              text: `Error: Failed to create state.json file: ${(error as Error).message}`,
             },
           ],
         };
       }
 
-      // All checks passed, provide guidance for building a new feature
+      // Create empty files for prd.md, requirements.md, and tasks.md
+      const prdPath = join(featureDir, 'prd.md');
+      const requirementsPath = join(featureDir, 'requirements.md');
+      const tasksPath = join(featureDir, 'tasks.md');
+      
+      try {
+        await fs.writeFile(prdPath, '');
+        await fs.writeFile(requirementsPath, '');
+        await fs.writeFile(tasksPath, '');
+      } catch (error) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text' as const,
+              text: `Error: Failed to create feature files: ${(error as Error).message}`,
+            },
+          ],
+        };
+      }
+
+      // All steps completed successfully
       return {
         content: [
           {
             type: 'text' as const,
-            text: `The project has been properly initialized with SDD. Follow the instructions in ${startMdPath} to guide the feature creation process.\n\nTo create a new feature:\n\n1. Generate a feature ID (e.g., 001-example-feature)\n2. Create a directory at .magen/specs/<feature-id>/\n3. Create a state.json file in that directory with the feature's state\n4. Follow the requirements building process as outlined in the instructions\n\nEach feature will have its own state.json file that tracks its progress through the SDD workflow.`,
+            text: `Successfully created feature ${featureId} at ${featureDir}\n\nThe following files have been created:\n- ${stateJsonPath} (with initial state)\n- ${prdPath} (empty file for PRD)\n- ${requirementsPath} (empty file for requirements)\n- ${tasksPath} (empty file for tasks)\n\nFollow the instructions in ${startMdPath} to continue with the SDD process. You should start by drafting the PRD using the instructions in .magen/.instructions/design/build-design.md.`,
           },
         ],
       };

@@ -1,22 +1,23 @@
 ### Build Implementation Tasks — LLM Instructions
 
-You are a staff engineer and delivery lead. Translate a finalized PRD into a clear, verifiable implementation plan with checkboxes.
+You are a staff engineer and delivery lead. Translate a finalized PRD and finalized Requirements into a clear, verifiable implementation plan with checkboxes.
 
 ### Prerequisites (MUST)
-- The PRD for `.magen/specs/<feature-id>/` is finalized (`Approval Status: Finalized`).
-- If not finalized, stop and follow the PRD iteration/finalization guides first.
+- The PRD for `.magen/001-<feature-name>/` is finalized (`Approval Status: Finalized`).
+- The Requirements for `.magen/001-<feature-name>/` are finalized at `.magen/001-<feature-name>/requirements.md`.
+- If not finalized, stop and follow the PRD and requirements iteration/finalization guides first.
 
 ### Goals
 - Produce an actionable set of implementation tasks that provide end-to-end delivery coverage.
-- Ensure strict traceability: each task references PRD Feature and User Story IDs.
+- Ensure strict traceability: each task references PRD Feature and User Story IDs and Requirements FR IDs.
 
 ### Method
-1. Read the finalized PRD and its traceability table (FR → Feature → Story).
+1. Read the finalized PRD and its Feature ↔ Story traceability table; then read the finalized Requirements and the FR ↔ Feature/Story mapping.
 2. Break work down by feature, then by story, then by technical components.
 3. Create tasks that are small enough to complete in ≤ 1–3 days, each with a clear definition of done.
 4. Add validation tasks: unit tests, integration/e2e tests, accessibility, observability, documentation.
 5. Include environment and release tasks as applicable.
-6. Ask the user targeted questions if scope or sequencing is unclear.
+6. Ask the user targeted questions if scope or sequencing is unclear — one question at a time; wait for the user's response before proceeding.
 
 ### Quality bar
 - Every user story maps to one or more implementation tasks with test coverage.
@@ -24,13 +25,13 @@ You are a staff engineer and delivery lead. Translate a finalized PRD into a cle
 - Non-functional and compliance requirements are represented by explicit tasks.
 
 ### Embedded Tasks Template
-Copy and fill this in `.magen/specs/<feature-id>/tasks.md`.
+Copy and fill this in `.magen/001-<feature-name>/tasks.md`.
 
 ```markdown
 # Implementation Tasks — <feature-id>
 
 ## Conventions
-- Link each task to PRD Feature and Story IDs.
+- Link each task to PRD Feature and Story IDs and Requirements FR IDs.
 - Check boxes `[ ]` become `[x]` when completed.
 
 ## Plan Overview
@@ -76,5 +77,5 @@ Copy and fill this in `.magen/specs/<feature-id>/tasks.md`.
 
 ### Next steps
 - Iterate with the user to refine tasks if anything is unclear or missing.
-- When ready, proceed to `.magen/specs/instructions/tasks/finalize-tasks.md` to finalize the task plan.
+- When ready, proceed to `.magen/.instructions/tasks/finalize-tasks.md` to finalize the task plan.
 

@@ -1,53 +1,55 @@
 ### Build PRD — LLM Instructions
 
-You are an expert technical product manager. Generate a complete, clear PRD from a finalized requirements document.
+You are an expert technical product manager. Generate a complete, clear PRD from the feature brief.
 
 ### Prerequisites (MUST)
-- A finalized requirements document exists at `.magen/specs/<feature-id>/requirements.md` and is marked `Approval Status: Finalized`.
-- If not finalized, stop and follow the requirements iteration/finalization guides first.
+- A feature brief exists (intent, users, business value, constraints) in conversation context and/or the feature's state.json.
+- If starting fresh, initialize the feature per `START.md` and gather the brief from the user.
 
 ### Inputs
-- Finalized Functional Requirements (FRs), NFRs, Constraints, Assumptions from the requirements document.
-- Any domain context provided by the user.
+- Feature brief and domain context provided by the user.
+- Known constraints, assumptions, and goals captured during kickoff.
 
 ### Output
-- A single, well-structured PRD rendered inside `<PRD>...</PRD>` tags using the embedded template below.
+- A single, well-structured PRD rendered inside using the embedded template below.
+- Save the PRD to `.magen/001-<feature-name>/prd.md`.
 
 ### Guardrails
-- Do not invent scope beyond finalized requirements. If gaps are discovered, ask targeted questions or start the PRD iteration loop.
-- Maintain strict traceability from PRD content to FR IDs.
+- Do not invent scope beyond the feature brief; ask targeted questions and capture unknowns as open questions.
+- Maintain internal consistency and traceability from product goals to features and user stories. Technical requirements will be derived later.
+ - Interaction cadence: ask one question at a time; wait for the user's response before proceeding.
 
 ### Method
-1. Read the finalized requirements; extract FRs, NFRs, Constraints, and Assumptions.
-2. Group related FRs into features; preserve original FR IDs for traceability.
+1. Capture the feature brief: goals, users, value, and constraints. Clarify unknowns with targeted questions, one at a time; wait for the user's response before moving on.
+2. Define product features from goals and scope; document assumptions and constraints.
 3. Draft the PRD using sentence case for headings (title in Title Case).
-4. Create user stories with acceptance criteria that map to FR IDs (use `ST-###`).
-5. Include a traceability table (FR → Feature → User Story IDs).
-6. Validate completeness and internal consistency. If anything is unclear, ask the user precise questions.
+4. Create user stories with testable acceptance criteria. Assign `ST-###` IDs.
+5. Include a traceability table (Feature ↔ User Story IDs). Note: detailed technical FRs will be added in the next phase.
+6. Validate completeness and internal consistency. If anything is unclear, ask the user precise questions and iterate.
+7. Only once the PRD is complete and the user agrees to finalize, proceed to `.magen/.instructions/design/finalize-design.md`.
 
 ### Section guidance
 - Introduction: Purpose and scope of this PRD.
 - Product overview: What the product/feature is and is not (in/out of scope).
 - Goals and objectives: Measurable outcomes and success metrics.
 - Target audience: Primary users, roles, and contexts.
-- Features and requirements: Feature breakdown tied to FRs; include acceptance criteria at feature level when relevant.
-- User stories and acceptance criteria: Comprehensive stories (primary, alt, edge), each testable and linked to FRs.
-- Technical requirements / stack: Platform, integrations, constraints, data, privacy, security; reflect NFRs.
+- Features and requirements: Feature breakdown tied to goals; include acceptance criteria at feature level where relevant. FRs will be derived in the next phase.
+- User stories and acceptance criteria: Comprehensive stories (primary, alt, edge), each testable and linked to features. FR mapping will be added in the requirements phase.
+- Technical requirements / stack: High-level platform, integrations, constraints, data, privacy, security; reflect NFRs at a PRD level.
+  - Keep technical details high-level; detailed technical requirements will be captured in the next phase.
   - If building Salesforce mobile components, favor GraphQL wire adapter over Apex controllers.
 - Design and user interface: UX principles, wireframes/mockups references, accessibility.
 
 ### Quality bar
-- Every FR is represented by at least one PRD feature and one or more user stories.
+- Every PRD feature is represented by one or more user stories aligned to goals.
 - Each user story has testable acceptance criteria and clear success/failure conditions.
-- NFRs are concretely specified (budgets, thresholds, SLAs) and linked to observability.
+- NFRs are concretely specified at the PRD level (budgets, thresholds, SLAs) and linked to observability.
 - No contradictions; all assumptions and constraints are reflected.
 
 ### Embedded PRD Template
-Fill this template and present the final output within `<PRD>...</PRD>` tags.
+Fill this template.
 
 ```markdown
-<PRD>
-
 # <Product/Feature Title>
 
 1. Introduction
@@ -67,18 +69,18 @@ Fill this template and present the final output within `<PRD>...</PRD>` tags.
    - Contexts/platforms
 
 5. Features and requirements
-   - Feature 1 (maps to FRs: FR1, FR3, ...)
+   - Feature 1 (FR mapping will be added in the requirements phase)
      - Description
      - Key acceptance criteria
    - Feature 2 (...)
 
 6. Traceability
-   | FR ID | Feature | User Story IDs |
-   |-------|---------|----------------|
-   | FR1   | Feature 1 | ST-101, ST-102 |
+   | Feature | User Story IDs | Future FR IDs (added in requirements phase) |
+   |---------|-----------------|--------------------------------------------|
+   | Feature 1 | ST-101, ST-102 | TBD |
 
 7. User stories and acceptance criteria
-   - ST-101: As a <role>, I want <capability> so that <value>. (FR1)
+   - ST-101: As a <role>, I want <capability> so that <value>.
      - Acceptance criteria:
        - Given/When/Then ...
    - ST-102: ...
@@ -100,8 +102,6 @@ Fill this template and present the final output within `<PRD>...</PRD>` tags.
 
 11. Open questions
     - Q1: ...
-
-</PRD>
 ```
 
 ### Formatting
@@ -109,5 +109,6 @@ Fill this template and present the final output within `<PRD>...</PRD>` tags.
 - Use numbered sections/subsections; tables where helpful; concise language.
 
 ### Next steps
-- If the PRD is incomplete or unclear, proceed to `.magen/specs/instructions/design/iterate-design.md`.
-- Once complete and approved, follow `.magen/specs/instructions/design/finalize-design.md` to mark it finalized.
+- If the PRD is incomplete or unclear, proceed to `.magen/.instructions/design/iterate-design.md`.
+- Once complete and approved, follow `.magen/.instructions/design/finalize-design.md` to mark it finalized.
+- After finalization, proceed to `.magen/.instructions/requirements/build-requirements.md` to derive technical requirements.

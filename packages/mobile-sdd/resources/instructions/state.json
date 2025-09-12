@@ -18,7 +18,8 @@
     "prd": {
         "state": "pending",
         "path": "",
-        "completenessScore": 0
+        "completenessScore": 0,
+        "openQuestions": []
     },
     "build": {
         "state": "pending",
