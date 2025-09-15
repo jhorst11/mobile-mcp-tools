@@ -22,9 +22,15 @@ Objective: Lock the implementation task plan ONLY after it is complete, traceabl
 2. Update the header in `.magen/001-<feature-name>/tasks.md`:
    - [ ] Set `Updated at` timestamp
    - [ ] Set `Approval Status: Finalized`
-2. Add a short changelog entry noting finalization date and any notable scoping decisions.
-3. Freeze scope: add a note stating changes require a new iteration/version bump and approvals.
-4. Confirm readiness for execution with the user.
+2. Update the feature's `state.json`:
+   - Set `build.state` to "finalized".
+   - Set `timestamps.tasksFinalized` to the current time.
+   - Set `timestamps.lastUpdated` to the current time.
+   - Add a finalization entry to the `changelog` array with details and date.
+   - If this is a re-finalization, bump `build.version` (semantic versioning: patch/minor/major based on scope) and append a `build.versionHistory` entry: `{ date, from, to, reason }`.
+3. Add a short changelog entry noting finalization date and any notable scoping decisions.
+4. Freeze scope: add a note stating changes require a new iteration/version bump and approvals.
+5. Confirm readiness for execution with the user.
 
 ### Post-finalization guidance
 - [ ] Track execution by checking items off in `tasks.md` as they complete.

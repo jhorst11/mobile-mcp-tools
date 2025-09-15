@@ -5,6 +5,7 @@ This guide orchestrates how a user and an LLM collaborate to build software spec
 ### Available Tools
 - **sfmobile-sdd-init**: Initializes a project with SDD instructions by copying them to a .magen directory.
 - **sfmobile-sdd-build-feature**: Creates a new feature with the specified ID, automatically setting up the directory structure and required files.
+- **sfmobile-sdd-update-feature**: Guides updating an existing feature's PRD, Requirements, or Tasks with PRD-first gating and traceability.
 
 ### State Management
 - **Each feature has its own state file** at `.magen/<feature-id>/state.json`.
@@ -45,6 +46,19 @@ This guide orchestrates how a user and an LLM collaborate to build software spec
 - **PRD file**: `.magen/<feature-id>/prd.md`.
 - **Requirements file**: `.magen/<feature-id>/requirements.md`.
 - **Tasks file**: `.magen/<feature-id>/tasks.md`.
+
+### Updating existing artifacts
+Use `sfmobile-sdd-update-feature` to update an existing feature's artifacts with PRD-first gating:
+1. Target `prd` to update the PRD using `.magen/.instructions/design/update-design.md`.
+2. Target `requirements` to update technical requirements using `.magen/.instructions/requirements/update-requirements.md`.
+3. Target `tasks` to update implementation tasks using `.magen/.instructions/tasks/update-tasks.md`.
+
+Gating rules:
+- Requirements updates require `prd.state` to be `finalized`.
+- Tasks updates require `requirements.state` to be `finalized`.
+
+Finalization hygiene:
+- If an artifact was previously finalized and needs changes, set its state to `in_review` in the feature's `state.json`, make minimal changes, then re-finalize using the appropriate `finalize-*.md` doc after explicit user approval.
 
 ### LLM kickoff
 At the very start:

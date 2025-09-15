@@ -46,6 +46,7 @@ Objective: Mark requirements as finalized in the feature's state.json ONLY after
    - Set `timestamps.requirementsFinalized` to the current time.
    - Set `timestamps.lastUpdated` to the current time.
    - Add a finalization entry to the `changelog` array with details and date.
+   - If this is a re-finalization, bump `requirements.version` (semantic versioning: patch/minor/major based on scope) and append a `requirements.versionHistory` entry: `{ date, from, to, reason }`.
 
 2. **Freeze scope**: 
    - Add a note to the requirements document: "Changes after finalization require a new iteration cycle and version bump."
@@ -54,6 +55,7 @@ Objective: Mark requirements as finalized in the feature's state.json ONLY after
 3. **Record completion**:
    - Ensure final `requirements.completenessScore` is recorded in the feature's state.json.
    - Document any deferred items that remain in `requirements.openQuestions` in the feature's state.json.
+   - Optionally add a `Version: <x.y.z>` line in the top-of-document metadata for `requirements.md`.
 
 4. **Handoff**: 
    - Indicate the next phase (tasks) will derive from this finalized PRD and requirements set.

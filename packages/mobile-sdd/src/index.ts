@@ -25,6 +25,8 @@ const version = packageJson.version;
 
 import { SddInitTool } from './tools/sdd-init/tool.js';
 import { SddBuildFeatureTool } from './tools/sdd-build-feature/tool.js';
+import { SddUpdateFeatureTool } from './tools/sdd-update-feature/tool.js';
+import { SddUpdateInstructionsTool } from './tools/sdd-update-instructions/tool.js';
 
 const server = new McpServer({
   name: 'sfdc-mobile-sdd-mcp-server',
@@ -39,7 +41,12 @@ const annotations: ToolAnnotations = {
   openWorldHint: false,
 };
 
-const tools = [new SddInitTool(), new SddBuildFeatureTool()];
+const tools = [
+  new SddInitTool(),
+  new SddBuildFeatureTool(),
+  new SddUpdateFeatureTool(),
+  new SddUpdateInstructionsTool(),
+];
 
 // Register all tools
 tools.forEach(tool => tool.register(server, annotations));

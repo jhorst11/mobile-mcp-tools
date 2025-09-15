@@ -50,21 +50,29 @@ export class SddBuildFeatureTool implements Tool {
         lastUpdated: now,
         requirementsFinalized: '',
         prdFinalized: '',
+        tasksFinalized: '',
       },
       requirements: {
         state: 'pending',
         completenessScore: 0,
         openQuestions: [],
+        version: '0.0.0',
+        versionHistory: [],
       },
       prd: {
         state: 'pending',
         path: '',
         completenessScore: 0,
+        openQuestions: [],
+        version: '0.0.0',
+        versionHistory: [],
       },
       build: {
         state: 'pending',
         tasksGenerated: false,
         tasksPath: '',
+        version: '0.0.0',
+        versionHistory: [],
       },
       changelog: [
         {

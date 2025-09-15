@@ -22,6 +22,7 @@ Objective: Mark the PRD as finalized ONLY after the user EXPLICITLY confirms com
    - Set `timestamps.prdFinalized` to the current time.
    - Set `timestamps.lastUpdated` to the current time.
    - Add a finalization entry to the `changelog` array with details and date.
+   - If this is a re-finalization, bump `prd.version` (use semantic versioning: patch/minor/major based on scope of change) and append a `prd.versionHistory` entry: `{ date, from, to, reason }`.
 2. Insert/update metadata at the top of the PRD (Created/Updated, `Approval Status: Finalized`).
 3. Add a brief changelog entry with the date and key decisions.
 4. Freeze scope: add a note that changes require a new iteration and version bump.
