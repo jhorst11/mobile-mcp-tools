@@ -21,12 +21,16 @@ You are a staff engineer. Apply a minimal, justified update to an existing techn
 1. Confirm whether the change is consistent with the finalized PRD. If not, redirect to PRD update.
 2. Identify impacted FR(s), sections, and mappings. Note ripple effects on NFRs and testability.
 3. Propose a minimal diff with explicit FR ID changes (add/remove/modify) and update the FR ↔ Feature/Story mapping table.
-4. Validate testability and observability for changed FRs; update acceptance checks and budgets as needed.
-5. Update the feature's `state.json`:
+4. **Update PRD with FR IDs**:
+   - Open the corresponding PRD file (`.magen/001-<feature-name>/prd.md`).
+   - Locate the 'Future FR IDs' table.
+   - Update the table with any new or modified FR IDs.
+5. Validate testability and observability for changed FRs; update acceptance checks and budgets as needed.
+6. Update the feature's `state.json`:
    - Set `timestamps.lastUpdated` to now.
    - Append a `changelog` entry with summary and impacted FRs.
    - If previously finalized, keep `requirements.state: in_review` until user re-approves.
-6. Ask the user to review. When the user EXPLICITLY approves, proceed to `.magen/.instructions/requirements/finalize-requirements.md` to re-finalize.
+7. Ask the user to review. When the user EXPLICITLY approves, proceed to `.magen/.instructions/requirements/finalize-requirements.md` to re-finalize.
 
 ### Quality bar
 - No contradictions with the PRD. FRs remain testable and measurable.

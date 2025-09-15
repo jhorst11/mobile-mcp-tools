@@ -58,24 +58,29 @@ Objective: Derive technical requirements (FRs/NFRs), constraints, and assumption
    - Optionally tag FRs by category (FR-SYS-1, FR-UI-1, FR-INFRA-1, FR-COMP-1).
    - Document all FRs in the requirements.md file.
 
-8. **Non‑Functional Requirements (NFRs)**:
+8. **Update PRD with FR IDs**:
+   - Open the corresponding PRD file (`.magen/001-<feature-name>/prd.md`).
+   - Locate the 'Future FR IDs' table.
+   - Populate the table with the FR IDs generated in the previous step.
+
+9. **Non‑Functional Requirements (NFRs)**:
    - Derive detailed technical NFRs from PRD-level NFRs: performance, security, availability, usability, privacy, accessibility, observability.
    - Provide measurable budgets (e.g., p95 latency ≤ 300ms, uptime ≥ 99.9%).
    - Document all NFRs in the requirements.md file.
 
-9. **Constraints**:
+10. **Constraints**:
    - Document technical, compliance, integrations, data residency, deadlines.
    - Document all constraints in the requirements.md file.
 
-10. **Assumptions**:
+11. **Assumptions**:
    - Explicitly list what is presumed true.
    - Document all assumptions in the requirements.md file.
 
-11. **Open Questions**:
+12. **Open Questions**:
     - Document anything unresolved.
     - Add each question to `requirements.openQuestions` array in the feature's state.json.
 
-12. **Technical Specification** (produce concrete contracts; keep concise and testable)
+13. **Technical Specification** (produce concrete contracts; keep concise and testable)
     - Data model and schemas:
       - Entities, fields, types, nullability, constraints, indexes. 
     - API contracts and routes:

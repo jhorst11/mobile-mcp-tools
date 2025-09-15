@@ -16,7 +16,7 @@ This guide orchestrates how a user and an LLM collaborate to build software spec
 
 ### What happens first
 1. **Initialize or select a feature**:
-   - If creating a new feature, use the `sfmobile-sdd-build-feature` tool with a feature ID (e.g., `001-example-feature`).
+   - If creating a new feature, use the `sfmobile-sdd-build-feature` tool with a feature ID (e.g., `00N-example-feature`), where `N` is a number incrementing from 001 based on the number of features already created.
    - The tool will automatically create the feature directory, state.json file, and empty files for PRD, requirements, and tasks.
    - If continuing with an existing feature, locate its state.json file.
 
