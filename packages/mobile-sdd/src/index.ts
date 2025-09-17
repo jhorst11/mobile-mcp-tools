@@ -25,7 +25,6 @@ const version = packageJson.version;
 
 import { SddInitTool } from './tools/sdd-init/tool.js';
 import { SddBuildFeatureTool } from './tools/sdd-build-feature/tool.js';
-import { SddUpdateFeatureTool } from './tools/sdd-update-feature/tool.js';
 import { SddUpdateInstructionsTool } from './tools/sdd-update-instructions/tool.js';
 import { SddNewFeaturePrompt } from './prompts/sdd-new-feature/prompt.js';
 import { SddInitPrompt } from './prompts/sdd-init/prompt.js';
@@ -43,12 +42,7 @@ const annotations: ToolAnnotations = {
   openWorldHint: false,
 };
 
-const tools = [
-  new SddInitTool(),
-  new SddBuildFeatureTool(),
-  new SddUpdateFeatureTool(),
-  new SddUpdateInstructionsTool(),
-];
+const tools = [new SddInitTool(), new SddBuildFeatureTool(), new SddUpdateInstructionsTool()];
 
 // Register all tools
 tools.forEach(tool => tool.register(server, annotations));

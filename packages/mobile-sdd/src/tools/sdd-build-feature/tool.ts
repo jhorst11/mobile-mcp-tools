@@ -13,7 +13,13 @@ import {
   SddBuildFeatureInputType,
 } from '../../schemas/sddBuildFeatureSchema.js';
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import {
+  getInstructionFilePaths,
+  validateProjectPath,
+  validateMagenDirectory,
+  createFeatureDirectory,
+  getMagenDir,
+} from '../../utils/index.js';
 
 export class SddBuildFeatureTool implements Tool {
   public readonly name = 'SDD Build Feature';
@@ -37,7 +43,7 @@ export class SddBuildFeatureTool implements Tool {
    * @param featureId The feature ID
    * @returns A state.json template object
    */
-  private createStateJsonTemplate(featureId: string): any {
+  private createStateJsonTemplate(featureId: string): Record<string, unknown> {
     const now = new Date().toISOString();
     return {
       version: '1.0.0',
@@ -87,87 +93,45 @@ export class SddBuildFeatureTool implements Tool {
   protected async handleRequest(input: SddBuildFeatureInputType) {
     try {
       const { projectPath, featureId } = input;
-      const magenDir = join(projectPath, '.magen');
 
-      // Check if project path exists
-      try {
-        await fs.access(projectPath);
-      } catch (error) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text' as const,
-              text: `Error: Project path "${projectPath}" does not exist or is not accessible.`,
-            },
-          ],
-        };
+      // Validate project path
+      const projectValidation = await validateProjectPath(projectPath);
+      if (projectValidation.isError) {
+        return projectValidation;
       }
 
-      // Check if .magen directory exists
-      try {
-        await fs.access(magenDir);
-      } catch (error) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text' as const,
-              text: `Error: The .magen directory does not exist in the project path. Please run the sdd-init tool first to initialize the SDD environment.`,
-            },
-          ],
-        };
+      // Validate .magen directory
+      const magenValidation = await validateMagenDirectory(projectPath);
+      if (magenValidation.isError) {
+        return magenValidation;
       }
 
-      // Check if .instructions/START.md exists
-      const startMdPath = join(magenDir, '.instructions', 'START.md');
-      try {
-        await fs.access(startMdPath);
-      } catch (error) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text' as const,
-              text: `Error: The START.md file does not exist in the .magen/.instructions directory. The SDD environment may be corrupted. Please run the sdd-init tool again.`,
-            },
-          ],
-        };
-      }
+      const magenDir = getMagenDir(projectPath);
+      const instructionPaths = getInstructionFilePaths(magenDir);
 
       // Create feature directory
-      const featureDir = join(magenDir, featureId);
-      try {
-        await fs.access(featureDir);
+      const featureResult = await createFeatureDirectory(magenDir, featureId);
+      if (featureResult.isError) {
+        return featureResult;
+      }
+
+      // Type guard to ensure we have success result with data
+      if (!('data' in featureResult) || !featureResult.data) {
         return {
           isError: true,
           content: [
             {
               type: 'text' as const,
-              text: `Error: Feature directory ${featureDir} already exists. Please use a different feature ID.`,
+              text: 'Error: Failed to get feature directory data.',
             },
           ],
         };
-      } catch (error) {
-        // Directory doesn't exist, we can create it
-        try {
-          await fs.mkdir(featureDir, { recursive: true });
-        } catch (error) {
-          return {
-            isError: true,
-            content: [
-              {
-                type: 'text' as const,
-                text: `Error: Failed to create feature directory: ${(error as Error).message}`,
-              },
-            ],
-          };
-        }
       }
+
+      const { stateJsonPath, prdPath, requirementsPath, tasksPath } = featureResult.data;
 
       // Create state.json file
       const stateJson = this.createStateJsonTemplate(featureId);
-      const stateJsonPath = join(featureDir, 'state.json');
       try {
         await fs.writeFile(stateJsonPath, JSON.stringify(stateJson, null, 2));
       } catch (error) {
@@ -183,10 +147,6 @@ export class SddBuildFeatureTool implements Tool {
       }
 
       // Create empty files for prd.md, requirements.md, and tasks.md
-      const prdPath = join(featureDir, 'prd.md');
-      const requirementsPath = join(featureDir, 'requirements.md');
-      const tasksPath = join(featureDir, 'tasks.md');
-      
       try {
         await fs.writeFile(prdPath, '');
         await fs.writeFile(requirementsPath, '');
@@ -208,7 +168,8 @@ export class SddBuildFeatureTool implements Tool {
         content: [
           {
             type: 'text' as const,
-            text: `Successfully created feature ${featureId} at ${featureDir}\n\nThe following files have been created:\n- ${stateJsonPath} (with initial state)\n- ${prdPath} (empty file for PRD)\n- ${requirementsPath} (empty file for requirements)\n- ${tasksPath} (empty file for tasks)\n\nFollow the instructions in ${startMdPath} to continue with the SDD process. You should start by drafting the PRD using the instructions in .magen/.instructions/design/build-design.md.`,
+            text: `Successfully created feature ${featureId}. 
+            Follow the instructions in ${instructionPaths.start} and start by drafting the PRD using the instructions in ${instructionPaths.design.build}.`,
           },
         ],
       };

@@ -12,6 +12,14 @@ import { SddInitInputSchema, SddInitInputType } from '../../schemas/sddInitSchem
 import { promises as fs } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import {
+  getInstructionFilePaths,
+  getResourcesPath,
+  copyRecursive,
+  validateProjectPath,
+  getMagenDir,
+  getInstructionsDir,
+} from '../../utils/index.js';
 
 export class SddInitTool implements Tool {
   public readonly name = 'SDD Init';
@@ -21,50 +29,7 @@ export class SddInitTool implements Tool {
     'Initializes a project with Salesforce Mobile SDD instructions by copying them to a .magen directory, or adds a new feature if already initialized';
   public readonly inputSchema = SddInitInputSchema;
 
-  private readonly resourcesPath = resolve(
-    dirname(fileURLToPath(import.meta.url)),
-    '..',
-    '..',
-    '..',
-    'resources',
-    'instructions'
-  );
-
-  /**
-   * Recursively copies a directory
-   * @param sourcePath Source directory path
-   * @param targetPath Target directory path
-   * @returns Array of copied file paths (relative to source)
-   */
-  private async copyRecursive(
-    sourcePath: string,
-    targetPath: string,
-    basePath: string = ''
-  ): Promise<string[]> {
-    const copiedFiles: string[] = [];
-    const entries = await fs.readdir(sourcePath, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const srcPath = join(sourcePath, entry.name);
-      const destPath = join(targetPath, entry.name);
-      const relativePath = basePath ? join(basePath, entry.name) : entry.name;
-
-      if (entry.isDirectory()) {
-        // Create the directory
-        await fs.mkdir(destPath, { recursive: true });
-        // Recursively copy contents
-        const nestedFiles = await this.copyRecursive(srcPath, destPath, relativePath);
-        copiedFiles.push(...nestedFiles);
-      } else {
-        // Copy the file
-        const content = await fs.readFile(srcPath);
-        await fs.writeFile(destPath, content);
-        copiedFiles.push(relativePath);
-      }
-    }
-
-    return copiedFiles;
-  }
+  private readonly resourcesPath = getResourcesPath();
 
   /**
    * Public method to initialize SDD in a project
@@ -120,11 +85,11 @@ export class SddInitTool implements Tool {
 
   /**
    * Creates the specs directory structure
-   * @param targetDir The .magen directory path
+   * @param projectPath The project root path
    */
-  private async createDirectoryStructure(targetDir: string): Promise<void> {
+  private async createDirectoryStructure(projectPath: string): Promise<void> {
     // Create .instructions directory
-    const instructionsDir = join(targetDir, '.instructions');
+    const instructionsDir = getInstructionsDir(projectPath);
     await fs.mkdir(instructionsDir, { recursive: true });
     // We no longer create the specs directory as features will be directly under .magen
     // with the format 001-<feature-name>
@@ -133,48 +98,40 @@ export class SddInitTool implements Tool {
   protected async handleRequest(input: SddInitInputType) {
     try {
       const { projectPath } = input;
-      const targetDir = join(projectPath, '.magen');
 
-      // Check if project path exists
-      try {
-        await fs.access(projectPath);
-      } catch (error) {
-        return {
-          isError: true,
-          content: [
-            {
-              type: 'text' as const,
-              text: `Error: Project path "${projectPath}" does not exist or is not accessible.`,
-            },
-          ],
-        };
+      // Validate project path
+      const projectValidation = await validateProjectPath(projectPath);
+      if (projectValidation.isError) {
+        return projectValidation;
       }
+
+      const targetDir = getMagenDir(projectPath);
 
       // Check if .magen directory already exists
-      let magenExists = false;
-      try {
-        await fs.access(targetDir);
-        magenExists = true;
-      } catch (error) {
-        // .magen doesn't exist, we'll create it
-      }
+      const magenExists = await fs
+        .access(targetDir)
+        .then(() => true)
+        .catch(() => false);
 
       if (magenExists) {
         // .magen directory exists, check if .instructions/START.md exists to confirm it's a valid SDD project
-        const startMdPath = join(targetDir, '.instructions', 'START.md');
-        try {
-          await fs.access(startMdPath);
+        const instructionPaths = getInstructionFilePaths(targetDir);
+        const startExists = await fs
+          .access(instructionPaths.start)
+          .then(() => true)
+          .catch(() => false);
 
+        if (startExists) {
           // Valid SDD project, provide guidance for creating a new feature
           return {
             content: [
               {
                 type: 'text' as const,
-                text: `The project has already been initialized with SDD. Follow the instructions in \`${startMdPath}\` to guide the feature creation process.\n\nTo create a new feature, you'll need to:\n1. Generate a feature ID (e.g., 001-example-feature)\n2. Create a directory at .magen/001-<feature-name>/\n3. Initialize a state.json file in that directory\n4. Create prd.md, requirements.md, and tasks.md files in that directory`,
+                text: `The project has already been initialized with SDD. Follow the instructions in \`${instructionPaths.start}\` to guide the feature creation process.\n\nTo create a new feature, you'll need to:\n1. Generate a feature ID (e.g., 001-example-feature)\n2. Create a directory at .magen/001-<feature-name>/\n3. Initialize a state.json file in that directory\n4. Create prd.md, requirements.md, and tasks.md files in that directory`,
               },
             ],
           };
-        } catch (error) {
+        } else {
           // START.md doesn't exist, the .magen directory might be corrupted or incomplete
           return {
             isError: true,
@@ -204,13 +161,13 @@ export class SddInitTool implements Tool {
       }
 
       // Create directory structure (.magen/specs and .magen/.instructions)
-      await this.createDirectoryStructure(targetDir);
+      await this.createDirectoryStructure(projectPath);
 
       return {
         content: [
           {
             type: 'text' as const,
-            text: `Successfully initialized Salesforce Mobile SDD instructions in ${targetDir}.\n\nRead the instructions in ${join(targetDir, '.instructions', 'START.md')} to understand how to build a feature. 
+            text: `Successfully initialized Salesforce Mobile SDD instructions in ${targetDir}.\n\nRead the instructions in ${getInstructionFilePaths(targetDir).start} to understand how to build a feature. 
             Ask the user if they would like to create a new feature. You can invoke the sfmobile-sdd-new-feature tool for them or they can invoke the /ssd-new-feature prompt themselves.`,
           },
         ],
