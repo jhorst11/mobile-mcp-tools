@@ -126,7 +126,6 @@ export class SddInitTool implements Tool {
     // Create .instructions directory
     const instructionsDir = join(targetDir, '.instructions');
     await fs.mkdir(instructionsDir, { recursive: true });
-    
     // We no longer create the specs directory as features will be directly under .magen
     // with the format 001-<feature-name>
   }
@@ -207,20 +206,12 @@ export class SddInitTool implements Tool {
       // Create directory structure (.magen/specs and .magen/.instructions)
       await this.createDirectoryStructure(targetDir);
 
-      // Recursively copy all files and directories to .instructions
-      const instructionsDir = join(targetDir, '.instructions');
-      const copiedFiles = await this.copyRecursive(this.resourcesPath, instructionsDir);
-
       return {
         content: [
           {
             type: 'text' as const,
-            text: `Successfully initialized Salesforce Mobile SDD instructions in ${targetDir}.\n\nCopied ${copiedFiles.length} files:\n${copiedFiles
-              .slice(0, 10)
-              .map(file => `- ${file}`)
-              .join(
-                '\n'
-              )}${copiedFiles.length > 10 ? `\n...and ${copiedFiles.length - 10} more files` : ''}\n\nTo create a new feature, follow the instructions in ${join(targetDir, '.instructions', 'START.md')}`,
+            text: `Successfully initialized Salesforce Mobile SDD instructions in ${targetDir}.\n\nRead the instructions in ${join(targetDir, '.instructions', 'START.md')} to understand how to build a feature. 
+            Ask the user if they would like to create a new feature. You can invoke the sfmobile-sdd-new-feature tool for them or they can invoke the /ssd-new-feature prompt themselves.`,
           },
         ],
       };

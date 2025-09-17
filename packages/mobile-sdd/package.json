@@ -26,6 +26,7 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "inspect": "npm run build && npx @modelcontextprotocol/inspector node ./dist/index.js",
     "lint": "eslint --config ../../eslint.config.mjs \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\""
   },
