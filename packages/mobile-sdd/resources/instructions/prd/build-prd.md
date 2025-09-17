@@ -26,7 +26,7 @@ You are an expert technical product manager. Generate a complete, clear PRD from
 4. Create user stories with testable acceptance criteria. Assign `ST-###` IDs.
 5. Include a traceability table (Feature ↔ User Story IDs). Note: detailed technical FRs will be added in the next phase.
 6. Validate completeness and internal consistency. If anything is unclear, ask the user precise questions and iterate.
-7. Only once the PRD is complete and the user agrees to finalize, proceed to `.magen/.instructions/design/finalize-design.md`.
+7. Only once the PRD is complete and the user agrees to finalize, proceed to `.magen/.instructions/prd/finalize-prd.md`.
 
 ### Section guidance
 - Introduction: Purpose and scope of this PRD.
@@ -108,7 +108,23 @@ Fill this template.
 - Use sentence case for all headings except the title (Title Case).
 - Use numbered sections/subsections; tables where helpful; concise language.
 
+### PRD Completion Checklist
+Before finalizing the PRD, ensure all open questions have been answered:
+
+- [ ] All feature goals and scope are clearly defined
+- [ ] Target audience and user roles are specified
+- [ ] Business goals and success metrics are measurable
+- [ ] All features have corresponding user stories with testable acceptance criteria
+- [ ] User stories cover primary, alternative, and edge case scenarios
+- [ ] Traceability table (Feature ↔ User Story IDs) is complete and accurate
+- [ ] Technical requirements and constraints are documented at appropriate level
+- [ ] Non-functional requirements include measurable budgets and observability
+- [ ] Design and UI guidelines are specified
+- [ ] All assumptions and constraints are explicitly documented
+- [ ] No contradictions exist between sections
+- [ ] User has explicitly approved the PRD for finalization
+
 ### Next steps
-- If the PRD is incomplete or unclear, proceed to `.magen/.instructions/design/iterate-design.md`.
-- Once complete and approved, follow `.magen/.instructions/design/finalize-design.md` to mark it finalized.
+- If the PRD is incomplete or unclear, proceed to `.magen/.instructions/prd/iterate-prd.md`.
+- Once complete and approved, follow `.magen/.instructions/prd/finalize-prd.md` to mark it finalized.
 - After finalization, proceed to `.magen/.instructions/requirements/build-requirements.md` to derive technical requirements.

@@ -27,7 +27,7 @@ You are an expert technical product manager. Apply a minimal, well-justified upd
    - Set `timestamps.lastUpdated` to now.
    - Append a `changelog` entry with a short summary and links to impacted sections.
    - If the PRD was previously finalized, keep `prd.state: in_review` until the user explicitly re-approves.
-7. Ask the user to review. Only when the user EXPLICITLY approves, proceed to `.magen/.instructions/design/finalize-design.md` to re-finalize the PRD (set `prd.state: finalized`).
+7. Ask the user to review. Only when the user EXPLICITLY approves, proceed to `.magen/.instructions/prd/finalize-prd.md` to re-finalize the PRD (set `prd.state: finalized`).
 
 ### Quality bar
 - Changes are narrowly scoped and justified.

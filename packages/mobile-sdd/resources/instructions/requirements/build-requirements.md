@@ -121,13 +121,31 @@ If answers affect existing FRs/NFRs, update both the document and the feature's 
 ### State Updates
 After completing the initial draft:
 1. **Update changelog**: Add an entry to the `changelog` array in the feature's state.json.
-2. **Set completeness score**: Estimate initial `requirements.completenessScore` (0-100) in the feature's state.json.
 
 ### Iteration Loop
 Once the first draft exists:
 - Move to `.magen/.instructions/requirements/iterate-requirements.md` and follow its loop to converge on consensus.
-- Keep unresolved items in the feature's state.json `requirements.openQuestions` array and revisit until resolved.
 - Ensure each FR traces back to PRD features and stories; fill any gaps.
+
+### Requirements Completion Checklist
+Before finalizing the requirements, ensure all open questions have been answered:
+
+- [ ] All functional requirements (FRs) are atomic, numbered, and use "System shall..." phrasing
+- [ ] Each FR has clear acceptance criteria and traces back to PRD features and user stories
+- [ ] All non-functional requirements (NFRs) include measurable targets and budgets
+- [ ] Technical constraints and assumptions are explicitly documented
+- [ ] Data model and schemas are defined with types, nullability, and constraints
+- [ ] API contracts and routes are specified with method, path, auth, and error codes
+- [ ] Events and state machines are documented with transitions and payloads
+- [ ] Client/UI component contracts include props, states, and accessibility
+- [ ] Configuration and feature flags are defined with scope and rollout strategy
+- [ ] Security and compliance details include auth flows and data retention
+- [ ] Observability includes metrics, logs, traces, and alert rules
+- [ ] Performance and capacity planning includes budgets and load profiles
+- [ ] Deployment and migration plan includes steps and rollback strategy
+- [ ] Error handling and fallback behaviors are specified
+- [ ] Test plan mapping exists for all FRs/NFRs
+- [ ] User has explicitly approved the requirements for finalization
 
 ### Finalization
 When the user agrees that requirements are complete and testable:

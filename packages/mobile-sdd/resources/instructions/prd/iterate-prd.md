@@ -9,7 +9,7 @@ Repeat until consensus:
 3. Propose concrete edits to sections, features, stories, and acceptance criteria.
 4. Update the traceability table (Feature ↔ Story IDs) as changes are made. FR mapping will be added in the requirements phase.
 5. Validate NFR budgets and observability are specified and realistic.
-6. Keep unresolved items in “Open questions”; revisit until resolved or explicitly deferred.
+6. Keep unresolved items documented; revisit until resolved or explicitly deferred.
 
 ### Exit criteria (quality bar)
 - All PRD features are covered by one or more user stories with testable acceptance criteria.
@@ -29,5 +29,5 @@ Repeat until consensus:
 - ONLY proceed to finalization when the user has EXPLICITLY approved it with a clear statement.
 - If the user has not explicitly approved finalization, continue with the iteration process.
 
-Next: When criteria are satisfied and ONLY once the user has EXPLICITLY confirmed that they are ready to finalize, proceed to `.magen/.instructions/design/finalize-design.md` otherwise continue iterating.
+Next: When criteria are satisfied and ONLY once the user has EXPLICITLY confirmed that they are ready to finalize, proceed to `.magen/.instructions/prd/finalize-prd.md` otherwise continue iterating.
 

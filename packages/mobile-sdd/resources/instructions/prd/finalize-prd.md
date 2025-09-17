@@ -13,7 +13,7 @@ Objective: Mark the PRD as finalized ONLY after the user EXPLICITLY confirms com
 - Each PRD feature maps to one or more user stories with testable acceptance criteria.
 - NFRs include measurable budgets and observability at the PRD level.
 - The Feature ↔ Story traceability table is complete and accurate.
-- "Open questions" is empty or contains only explicitly deferred items (not MVP).
+- All open questions have been answered or explicitly deferred (not MVP).
 
 ### Finalization steps
 1. CONFIRM user has explicitly approved finalization. If not, return to iteration.

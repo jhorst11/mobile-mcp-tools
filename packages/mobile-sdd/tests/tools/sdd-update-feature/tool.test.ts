@@ -206,7 +206,9 @@ describe('SddUpdateFeatureTool', () => {
     const result = await handleRequest({ projectPath, featureId, target: 'tasks' });
 
     expect(result.isError).toBe(true);
-    expect(result.content[0].text).toContain('Cannot update tasks until requirements are finalized');
+    expect(result.content[0].text).toContain(
+      'Cannot update tasks until requirements are finalized'
+    );
   });
 
   it('returns guidance when checks pass for PRD update', async () => {
@@ -220,9 +222,14 @@ describe('SddUpdateFeatureTool', () => {
       .mockResolvedValueOnce(undefined) // START.md
       .mockResolvedValueOnce(undefined) // featureDir
       .mockResolvedValueOnce(undefined) // artifact prd.md
-      .mockResolvedValueOnce(undefined); // instruction doc update-design.md
+      .mockResolvedValueOnce(undefined); // instruction doc update-prd.md
 
-    const result = await handleRequest({ projectPath, featureId, target: 'prd', changeSummary: 'Tweak story wording' });
+    const result = await handleRequest({
+      projectPath,
+      featureId,
+      target: 'prd',
+      changeSummary: 'Tweak story wording',
+    });
 
     expect(result.isError).not.toBe(true);
     expect(result.content[0].text).toContain('Update SDD Feature');

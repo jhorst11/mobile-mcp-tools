@@ -11,12 +11,10 @@ Goal: Collaboratively refine `.magen/001-<feature-name>/requirements.md` with th
    - Locate the feature's state.json at `.magen/001-<feature-name>/state.json`.
    - Verify the current state of the feature in its state.json file.
    - Confirm `prd.state` is "finalized" and `requirements.state` is "in_progress" or "pending".
-   - Review existing `requirements.openQuestions` array in the feature's state.json.
 
 ### Iteration Loop
 Repeat until consensus:
 1. **Surface uncertainties**: 
-   - Read `requirements.openQuestions` array from the feature's state.json.
    - Identify any vague items in the requirements document and any ambiguities relative to PRD features and stories.
 
 2. **Ask targeted questions**: 
@@ -44,8 +42,6 @@ Repeat until consensus:
    - Add them to the appropriate sections in the requirements document.
 
 7. **Update state**: 
-   - Update `requirements.openQuestions` in the feature's state.json by removing resolved questions.
-   - Add new questions as they arise.
    - Add an entry to the `changelog` array in the feature's state.json after significant changes.
 
 ### Quality Bar (exit criteria)
@@ -53,7 +49,7 @@ Repeat until consensus:
 - Error conditions and edge cases covered or explicitly out of scope.
 - NFRs include performance, security, privacy, accessibility, availability, observability with measurable targets.
 - Constraints and assumptions are explicit and consistent with FRs.
-- `requirements.openQuestions` array is empty or limited to items explicitly deferred post‑MVP.
+- All open questions have been answered or explicitly deferred (not MVP).
 - Each FR maps to at least one PRD feature and one or more PRD user stories where applicable.
 - The user EXPLICITLY confirms readiness to finalize with a clear statement like "I approve finalizing the requirements" or "The requirements can be finalized now".
 - FR style uses "System shall …" phrasing and avoids duplicating PRD business context or user stories.
@@ -61,13 +57,6 @@ Repeat until consensus:
 - Technical Specification sections are present and concrete (schemas, routes, components, events/state, security, observability, performance, deployment, error handling, analytics/SEO as applicable).
 - No code blocks or code snippets are present in the requirements; contracts are described via prose and tables only.
 
-### Completeness Score
-- After each iteration, recalculate `requirements.completenessScore` (0-100) in the feature's state.json.
-- Base the score on:
-  - Percentage of FRs with clear acceptance criteria
-  - Percentage of open questions resolved
-  - Coverage of key NFR categories
-  - Clarity of constraints and assumptions
 
 ### Helpful Prompts
 - Which flows must never block? What are acceptable fallbacks?
@@ -77,8 +66,6 @@ Repeat until consensus:
 - Are there localization, accessibility, or offline needs?
 
 Ask the user clarification questions one at a time. Let them know they can choose to finalize at any time however the more the requirements are refined the better the outcome will be.
-
-If a user chooses to finalize prematurely, warn them based on the current completeness score in the feature's state.json. Explain that the lower the completeness score, the higher the risk of defects.
 
 ### IMPORTANT: STRICT USER APPROVAL REQUIRED
 - DO NOT proceed to finalization automatically after answering open questions.

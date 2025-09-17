@@ -13,16 +13,12 @@
     },
     "requirements": {
         "state": "pending",
-        "completenessScore": 0,
-        "openQuestions": [],
         "version": "0.0.0",
         "versionHistory": []
     },
     "prd": {
         "state": "pending",
         "path": "",
-        "completenessScore": 0,
-        "openQuestions": [],
         "version": "0.0.0",
         "versionHistory": []
     },

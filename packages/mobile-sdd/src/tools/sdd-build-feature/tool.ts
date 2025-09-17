@@ -169,7 +169,7 @@ export class SddBuildFeatureTool implements Tool {
           {
             type: 'text' as const,
             text: `Successfully created feature ${featureId}. 
-            Follow the instructions in ${instructionPaths.start} and start by drafting the PRD using the instructions in ${instructionPaths.design.build}.`,
+            Follow the instructions in ${instructionPaths.start} and start by drafting the PRD using the instructions in ${instructionPaths.prd.build}.`,
           },
         ],
       };

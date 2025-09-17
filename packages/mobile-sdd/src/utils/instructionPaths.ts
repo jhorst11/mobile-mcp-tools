@@ -10,7 +10,7 @@ import { join } from 'path';
 export interface InstructionFilePaths {
   start: string;
   state: string;
-  design: {
+  prd: {
     build: string;
     finalize: string;
     iterate: string;
@@ -39,11 +39,11 @@ export function getInstructionFilePaths(magenDir: string): InstructionFilePaths 
   return {
     start: join(instructionsDir, 'START.md'),
     state: join(instructionsDir, 'state.json'),
-    design: {
-      build: join(instructionsDir, 'design', 'build-design.md'),
-      finalize: join(instructionsDir, 'design', 'finalize-design.md'),
-      iterate: join(instructionsDir, 'design', 'iterate-design.md'),
-      update: join(instructionsDir, 'design', 'update-design.md'),
+    prd: {
+      build: join(instructionsDir, 'prd', 'build-prd.md'),
+      finalize: join(instructionsDir, 'prd', 'finalize-prd.md'),
+      iterate: join(instructionsDir, 'prd', 'iterate-prd.md'),
+      update: join(instructionsDir, 'prd', 'update-prd.md'),
     },
     requirements: {
       build: join(instructionsDir, 'requirements', 'build-requirements.md'),

@@ -21,7 +21,7 @@ This guide orchestrates how a user and an LLM collaborate to build software spec
    - If continuing with an existing feature, locate its state.json file.
 
 2. **Build PRD**: Create a product requirements document first, iterate with the user until complete, then finalize.
-   - Open `.magen/.instructions/design/build-design.md` and follow it.
+   - Open `.magen/.instructions/prd/build-prd.md` and follow it.
    - Track progress in state.json's `prd` object.
 
 ### SDD flow overview
@@ -49,7 +49,7 @@ This guide orchestrates how a user and an LLM collaborate to build software spec
 
 ### Updating existing artifacts
 Use `sfmobile-sdd-update-feature` to update an existing feature's artifacts with PRD-first gating:
-1. Target `prd` to update the PRD using `.magen/.instructions/design/update-design.md`.
+1. Target `prd` to update the PRD using `.magen/.instructions/prd/update-prd.md`.
 2. Target `requirements` to update technical requirements using `.magen/.instructions/requirements/update-requirements.md`.
 3. Target `tasks` to update implementation tasks using `.magen/.instructions/tasks/update-tasks.md`.
 
@@ -72,7 +72,7 @@ At the very start:
    - Create the feature directory at `.magen/<feature-id>/`
    - Initialize state.json with timestamps and initial state
    - Create empty files for PRD, requirements, and tasks
-5. **Proceed to** `.magen/.instructions/design/build-design.md` to draft the PRD first.
+5. **Proceed to** `.magen/.instructions/prd/build-prd.md` to draft the PRD first.
 
 - Interview cadence: Ask one question at a time and wait for the user's response before moving to the next question.
 

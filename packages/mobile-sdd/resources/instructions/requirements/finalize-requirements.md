@@ -13,7 +13,6 @@ Objective: Mark requirements as finalized in the feature's state.json ONLY after
    - Locate the feature's state.json at `.magen/001-<feature-name>/state.json`.
    - Verify the current state of the feature in its state.json file.
    - Confirm `prd.state` is "finalized" and `requirements.state` is "in_progress" or "pending".
-   - Check `requirements.completenessScore` is at an acceptable level (ideally 80+).
 
 ### Pre‑finalization checklist
 - User has EXPLICITLY approved finalization with a clear statement (REQUIRED).
@@ -21,7 +20,7 @@ Objective: Mark requirements as finalized in the feature's state.json ONLY after
 - FRs trace back to PRD features and story IDs where applicable.
 - NFRs in the requirements document cover key quality attributes (performance, security, privacy, accessibility, availability, observability) with measurable targets.
 - Constraints and assumptions in the requirements document are explicit and stable.
-- `requirements.openQuestions` array is empty or contains only explicitly deferred post‑MVP items.
+- All open questions have been answered or explicitly deferred (not MVP).
  - FR style: uses "System shall …" phrasing without restating PRD business context or user stories.
  - No duplication: requirements do not restate PRD acceptance criteria; they instead reference PRD IDs.
  - No code: the requirements contain no code blocks or code snippets; contracts are expressed with prose and tables only.
@@ -53,8 +52,6 @@ Objective: Mark requirements as finalized in the feature's state.json ONLY after
    - This is now tracked in the feature's state.json with `requirements.state` = "finalized".
 
 3. **Record completion**:
-   - Ensure final `requirements.completenessScore` is recorded in the feature's state.json.
-   - Document any deferred items that remain in `requirements.openQuestions` in the feature's state.json.
    - Optionally add a `Version: <x.y.z>` line in the top-of-document metadata for `requirements.md`.
 
 4. **Handoff**: 
