@@ -28,7 +28,7 @@ export const SddNewFeaturePrompt: Prompt = {
             role: 'user',
             content: {
               type: 'text',
-              text: `Check if the .magen directory exists at the project root, if it does invoke the sfmobile-sdd-build-feature tool with the following arguments: featureid ${id}. Once the feature is scaffolded follow the provided instructions to build out the PRD.`,
+              text: `Check if the .magen directory exists at the project root (this may be a hidden directory), if it does invoke the sfmobile-sdd-build-feature tool with the following arguments: featureid ${id}. Once the feature is scaffolded follow the provided instructions to build out the PRD.`,
             },
           },
         ],
