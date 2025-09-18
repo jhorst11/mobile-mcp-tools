@@ -2,8 +2,6 @@
     "version": "1.0.0",
     "state": "initialized",
     "featureId": "",
-    "specPath": "",
-    "requirementsPath": "",
     "timestamps": {
         "created": "",
         "lastUpdated": "",
@@ -12,22 +10,13 @@
         "tasksFinalized": ""
     },
     "requirements": {
-        "state": "pending",
-        "version": "0.0.0",
-        "versionHistory": []
+        "state": "pending"
     },
     "prd": {
-        "state": "pending",
-        "path": "",
-        "version": "0.0.0",
-        "versionHistory": []
+        "state": "pending"
     },
     "build": {
-        "state": "pending",
-        "tasksGenerated": false,
-        "tasksPath": "",
-        "version": "0.0.0",
-        "versionHistory": []
+        "state": "pending"
     },
     "changelog": []
 }

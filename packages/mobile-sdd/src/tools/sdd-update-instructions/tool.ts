@@ -13,8 +13,6 @@ import {
   SddUpdateInstructionsInputType,
 } from '../../schemas/sddUpdateInstructionsSchema.js';
 import { promises as fs } from 'fs';
-import { join, resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import {
   getInstructionFilePaths,
   getResourcesPath,
@@ -29,7 +27,7 @@ export class SddUpdateInstructionsTool implements Tool {
   public readonly title = 'Salesforce Mobile SDD Instructions Updater Tool';
   public readonly toolId = 'sfmobile-sdd-update-instructions';
   public readonly description =
-    'Updates the instruction files in a .magen directory from the latest version included with the tool.';
+    'Updates the instruction files in a magen-sdd directory from the latest version included with the tool.';
   public readonly inputSchema = SddUpdateInstructionsInputSchema;
 
   private readonly resourcesPath = getResourcesPath();
@@ -47,7 +45,7 @@ export class SddUpdateInstructionsTool implements Tool {
       const targetDir = getMagenDir(projectPath);
       const instructionsDir = getInstructionsDir(projectPath);
 
-      // Check if .magen/.instructions directory exists to confirm it's a valid SDD project
+      // Check if magen-sdd/.instructions directory exists to confirm it's a valid SDD project
       const instructionPaths = getInstructionFilePaths(targetDir);
       const startExists = await fs
         .access(instructionPaths.start)

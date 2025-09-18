@@ -18,6 +18,7 @@ import {
   validateProjectPath,
   validateMagenDirectory,
   createFeatureDirectory,
+  loadStateJsonTemplate,
   getMagenDir,
 } from '../../utils/index.js';
 
@@ -43,51 +44,29 @@ export class SddBuildFeatureTool implements Tool {
    * @param featureId The feature ID
    * @returns A state.json template object
    */
-  private createStateJsonTemplate(featureId: string): Record<string, unknown> {
+  private async createStateJsonTemplate(featureId: string): Promise<Record<string, unknown>> {
+    const templateResult = await loadStateJsonTemplate();
+    if (templateResult.isError) {
+      throw new Error('Failed to load state.json template');
+    }
+
     const now = new Date().toISOString();
-    return {
-      version: '1.0.0',
-      state: 'initialized',
-      featureId: featureId,
-      specPath: `.magen/${featureId}/`,
-      requirementsPath: `.magen/${featureId}/requirements.md`,
-      timestamps: {
-        created: now,
-        lastUpdated: now,
-        requirementsFinalized: '',
-        prdFinalized: '',
-        tasksFinalized: '',
+    const template = (templateResult as { data: Record<string, unknown> }).data;
+
+    // Update feature-specific fields
+    template.featureId = featureId;
+    const timestamps = template.timestamps as Record<string, string>;
+    timestamps.created = now;
+    timestamps.lastUpdated = now;
+    template.changelog = [
+      {
+        date: now,
+        action: 'initialized',
+        description: 'Feature initialized',
       },
-      requirements: {
-        state: 'pending',
-        completenessScore: 0,
-        openQuestions: [],
-        version: '0.0.0',
-        versionHistory: [],
-      },
-      prd: {
-        state: 'pending',
-        path: '',
-        completenessScore: 0,
-        openQuestions: [],
-        version: '0.0.0',
-        versionHistory: [],
-      },
-      build: {
-        state: 'pending',
-        tasksGenerated: false,
-        tasksPath: '',
-        version: '0.0.0',
-        versionHistory: [],
-      },
-      changelog: [
-        {
-          date: now,
-          action: 'initialized',
-          description: 'Feature initialized',
-        },
-      ],
-    };
+    ];
+
+    return template;
   }
 
   protected async handleRequest(input: SddBuildFeatureInputType) {
@@ -100,7 +79,7 @@ export class SddBuildFeatureTool implements Tool {
         return projectValidation;
       }
 
-      // Validate .magen directory
+      // Validate magen-sdd directory
       const magenValidation = await validateMagenDirectory(projectPath);
       if (magenValidation.isError) {
         return magenValidation;
@@ -131,7 +110,7 @@ export class SddBuildFeatureTool implements Tool {
       const { stateJsonPath, prdPath, requirementsPath, tasksPath } = featureResult.data;
 
       // Create state.json file
-      const stateJson = this.createStateJsonTemplate(featureId);
+      const stateJson = await this.createStateJsonTemplate(featureId);
       try {
         await fs.writeFile(stateJsonPath, JSON.stringify(stateJson, null, 2));
       } catch (error) {

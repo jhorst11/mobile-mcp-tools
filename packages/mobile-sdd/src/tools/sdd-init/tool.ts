@@ -19,6 +19,7 @@ import {
   validateProjectPath,
   getMagenDir,
   getInstructionsDir,
+  loadStateJsonTemplate,
 } from '../../utils/index.js';
 
 export class SddInitTool implements Tool {
@@ -26,7 +27,7 @@ export class SddInitTool implements Tool {
   public readonly title = 'Salesforce Mobile SDD Initialization Tool';
   public readonly toolId = 'sfmobile-sdd-init';
   public readonly description =
-    'Initializes a project with Salesforce Mobile SDD instructions by copying them to a .magen directory, or adds a new feature if already initialized';
+    'Initializes a project with Salesforce Mobile SDD instructions by copying them to a magen-sdd directory, or adds a new feature if already initialized';
   public readonly inputSchema = SddInitInputSchema;
 
   private readonly resourcesPath = getResourcesPath();
@@ -44,43 +45,28 @@ export class SddInitTool implements Tool {
    * Creates a state.json template for a feature
    * @returns A state.json template object
    */
-  private createStateJsonTemplate(): any {
+  private async createStateJsonTemplate(): Promise<any> {
+    const templateResult = await loadStateJsonTemplate();
+    if (templateResult.isError) {
+      throw new Error('Failed to load state.json template');
+    }
+
     const now = new Date().toISOString();
-    return {
-      version: '1.0.0',
-      state: 'initialized',
-      featureId: '',
-      specPath: '',
-      requirementsPath: '',
-      timestamps: {
-        created: now,
-        lastUpdated: now,
-        requirementsFinalized: '',
-        prdFinalized: '',
+    const template = (templateResult as { data: Record<string, unknown> }).data;
+
+    // Update timestamps and changelog
+    const timestamps = template.timestamps as Record<string, string>;
+    timestamps.created = now;
+    timestamps.lastUpdated = now;
+    template.changelog = [
+      {
+        date: now,
+        action: 'initialized',
+        description: 'SDD environment initialized',
       },
-      requirements: {
-        state: 'pending',
-        completenessScore: 0,
-        openQuestions: [],
-      },
-      prd: {
-        state: 'pending',
-        path: '',
-        completenessScore: 0,
-      },
-      build: {
-        state: 'pending',
-        tasksGenerated: false,
-        tasksPath: '',
-      },
-      changelog: [
-        {
-          date: now,
-          action: 'initialized',
-          description: 'SDD environment initialized',
-        },
-      ],
-    };
+    ];
+
+    return template;
   }
 
   /**
@@ -91,7 +77,7 @@ export class SddInitTool implements Tool {
     // Create .instructions directory
     const instructionsDir = getInstructionsDir(projectPath);
     await fs.mkdir(instructionsDir, { recursive: true });
-    // We no longer create the specs directory as features will be directly under .magen
+    // We no longer create the specs directory as features will be directly under magen-sdd
     // with the format 001-<feature-name>
   }
 
@@ -107,14 +93,14 @@ export class SddInitTool implements Tool {
 
       const targetDir = getMagenDir(projectPath);
 
-      // Check if .magen directory already exists
+      // Check if magen-sdd directory already exists
       const magenExists = await fs
         .access(targetDir)
         .then(() => true)
         .catch(() => false);
 
       if (magenExists) {
-        // .magen directory exists, check if .instructions/START.md exists to confirm it's a valid SDD project
+        // magen-sdd directory exists, check if .instructions/START.md exists to confirm it's a valid SDD project
         const instructionPaths = getInstructionFilePaths(targetDir);
         const startExists = await fs
           .access(instructionPaths.start)
@@ -127,25 +113,25 @@ export class SddInitTool implements Tool {
             content: [
               {
                 type: 'text' as const,
-                text: `The project has already been initialized with SDD. Follow the instructions in \`${instructionPaths.start}\` to guide the feature creation process.\n\nTo create a new feature, you'll need to:\n1. Generate a feature ID (e.g., 001-example-feature)\n2. Create a directory at .magen/001-<feature-name>/\n3. Initialize a state.json file in that directory\n4. Create prd.md, requirements.md, and tasks.md files in that directory`,
+                text: `The project has already been initialized with SDD. Follow the instructions in \`${instructionPaths.start}\` to guide the feature creation process.\n\nTo create a new feature, you'll need to:\n1. Generate a feature ID (e.g., 001-example-feature)\n2. Create a directory at magen-sdd/001-<feature-name>/\n3. Initialize a state.json file in that directory\n4. Create prd.md, requirements.md, and tasks.md files in that directory`,
               },
             ],
           };
         } else {
-          // START.md doesn't exist, the .magen directory might be corrupted or incomplete
+          // START.md doesn't exist, the magen-sdd directory might be corrupted or incomplete
           return {
             isError: true,
             content: [
               {
                 type: 'text' as const,
-                text: `Warning: The .magen directory exists but appears to be incomplete or corrupted. Would you like to reinitialize it? (This will overwrite any existing files)`,
+                text: `Warning: The magen-sdd directory exists but appears to be incomplete or corrupted. Would you like to reinitialize it? (This will overwrite any existing files)`,
               },
             ],
           };
         }
       }
 
-      // Create .magen directory if it doesn't exist
+      // Create magen-sdd directory if it doesn't exist
       try {
         await fs.mkdir(targetDir, { recursive: true });
       } catch (error) {
@@ -154,13 +140,13 @@ export class SddInitTool implements Tool {
           content: [
             {
               type: 'text' as const,
-              text: `Error: Failed to create .magen directory: ${(error as Error).message}`,
+              text: `Error: Failed to create magen-sdd directory: ${(error as Error).message}`,
             },
           ],
         };
       }
 
-      // Create directory structure (.magen/specs and .magen/.instructions)
+      // Create directory structure (magen-sdd/specs and magen-sdd/.instructions)
       await this.createDirectoryStructure(projectPath);
 
       return {

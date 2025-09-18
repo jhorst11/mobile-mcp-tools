@@ -15,6 +15,7 @@ export {
   validateProjectPath,
   validateMagenDirectory,
   createFeatureDirectory,
+  loadStateJsonTemplate,
   type FileSystemError,
   type FileSystemSuccess,
   type FileSystemResult,

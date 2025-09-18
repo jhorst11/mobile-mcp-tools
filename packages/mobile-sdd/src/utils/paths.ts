@@ -8,12 +8,12 @@
 import { join } from 'path';
 
 /**
- * Gets the .magen directory path for a project
+ * Gets the magen-sdd directory path for a project
  * @param projectPath The project root path
- * @returns The .magen directory path
+ * @returns The magen-sdd directory path
  */
 export function getMagenDir(projectPath: string): string {
-  return join(projectPath, '.magen');
+  return join(projectPath, 'magen-sdd');
 }
 
 /**

@@ -8,6 +8,7 @@
 import { promises as fs } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
+// getResourcesPath is defined in this file
 
 /**
  * Error result type for file system operations
@@ -42,14 +43,7 @@ export type FileSystemResult<T = unknown> = FileSystemError | FileSystemSuccess<
  * @returns The absolute path to the resources/instructions directory
  */
 export function getResourcesPath(): string {
-  return resolve(
-    dirname(fileURLToPath(import.meta.url)),
-    '..',
-    '..',
-    '..',
-    'resources',
-    'instructions'
-  );
+  return resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'resources', 'instructions');
 }
 
 /**
@@ -154,12 +148,12 @@ export async function validateProjectPath(projectPath: string): Promise<FileSyst
 }
 
 /**
- * Validates that a .magen directory exists and contains valid SDD structure
+ * Validates that a magen-sdd directory exists and contains valid SDD structure
  * @param projectPath The project path
  * @returns FileSystemResult indicating success or failure
  */
 export async function validateMagenDirectory(projectPath: string): Promise<FileSystemResult> {
-  const magenDir = join(projectPath, '.magen');
+  const magenDir = join(projectPath, 'magen-sdd');
   const exists = await pathExists(magenDir);
 
   if (!exists) {
@@ -168,7 +162,7 @@ export async function validateMagenDirectory(projectPath: string): Promise<FileS
       content: [
         {
           type: 'text' as const,
-          text: `Error: The .magen directory does not exist in the project path. Please run the sdd-init tool first to initialize the SDD environment.`,
+          text: `Error: The magen-sdd directory does not exist in the project path. Please run the sdd-init tool first to initialize the SDD environment.`,
         },
       ],
     };
@@ -184,7 +178,7 @@ export async function validateMagenDirectory(projectPath: string): Promise<FileS
       content: [
         {
           type: 'text' as const,
-          text: `Error: The START.md file does not exist in the .magen/.instructions directory. The SDD environment may be corrupted. Please run the sdd-init tool again.`,
+          text: `Error: The START.md file does not exist in the magen-sdd/.instructions directory. The SDD environment may be corrupted. Please run the sdd-init tool again.`,
         },
       ],
     };
@@ -203,10 +197,43 @@ export async function validateMagenDirectory(projectPath: string): Promise<FileS
 
 /**
  * Creates a feature directory structure
- * @param magenDir The .magen directory path
+ * @param magenDir The magen-sdd directory path
  * @param featureId The feature ID
  * @returns FileSystemResult with the created feature directory path
  */
+/**
+ * Loads the state.json template from resources
+ * @returns The state.json template object
+ */
+export async function loadStateJsonTemplate(): Promise<FileSystemResult<Record<string, unknown>>> {
+  try {
+    const resourcesPath = getResourcesPath();
+    const templatePath = join(resourcesPath, 'state.json');
+    const templateContent = await fs.readFile(templatePath, 'utf8');
+    const template = JSON.parse(templateContent);
+    return {
+      isError: false,
+      content: [
+        {
+          type: 'text' as const,
+          text: 'State.json template loaded successfully.',
+        },
+      ],
+      data: template,
+    };
+  } catch (error) {
+    return {
+      isError: true,
+      content: [
+        {
+          type: 'text' as const,
+          text: `Error loading state.json template: ${(error as Error).message}`,
+        },
+      ],
+    };
+  }
+}
+
 export async function createFeatureDirectory(
   magenDir: string,
   featureId: string
