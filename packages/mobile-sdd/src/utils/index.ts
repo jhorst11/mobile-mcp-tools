@@ -26,6 +26,6 @@ export {
   getFeatureDir,
   getStateJsonPath,
   getPrdPath,
-  getRequirementsPath,
+  getTddPath,
   getTasksPath,
 } from './paths.js';

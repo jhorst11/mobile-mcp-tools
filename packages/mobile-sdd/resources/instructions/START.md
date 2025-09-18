@@ -16,7 +16,7 @@ This guide orchestrates how a user and an LLM collaborate to build software spec
 ### What happens first
 1. **Initialize or select a feature**:
    - If creating a new feature, use the `sfmobile-sdd-build-feature` tool with a feature ID (e.g., `00N-example-feature`), where `N` is a number incrementing from 001 based on the number of features already created.
-   - The tool will automatically create the feature directory, state.json file, and empty files for PRD, requirements, and tasks.
+   - The tool will automatically create the feature directory, state.json file, and empty files for PRD, TDD, and tasks.
    - If continuing with an existing feature, locate its state.json file.
 
 2. **Build PRD**: Create a product requirements document first, iterate with the user until complete, then finalize.
@@ -24,31 +24,31 @@ This guide orchestrates how a user and an LLM collaborate to build software spec
    - Track progress in state.json's `prd` object.
 
 ### SDD flow overview
-1. **PRD phase** (must finalize before Requirements)
+1. **PRD phase** (must finalize before TDD)
    - Draft the PRD from the feature brief using the template.
    - Iterate by asking targeted questions; update the PRD and the feature's state.json as gaps are uncovered.
    - Finalize PRD once there is clear consensus (set `prd.state` to "finalized").
 
-2. **Requirements phase** (requires `prd.state` to be "finalized")
-   - Derive technical requirements from the finalized PRD using `magen-sdd/.instructions/requirements/build-requirements.md`.
-   - Iterate via `magen-sdd/.instructions/requirements/iterate-requirements.md`.
-   - Finalize via `magen-sdd/.instructions/requirements/finalize-requirements.md`.
-   - Track in state.json's `requirements` object.
+2. **TDD phase** (requires `prd.state` to be "finalized")
+   - Derive technical requirements from the finalized PRD using `magen-sdd/.instructions/tdd/build-tdd.md`.
+   - Iterate via `magen-sdd/.instructions/tdd/iterate-tdd.md`.
+   - Finalize via `magen-sdd/.instructions/tdd/finalize-tdd.md`.
+   - Track in state.json's `tdd` object.
 
-3. **Tasks phase** (requires `requirements.state` to be "finalized")
-   - Task generation depends on the finalized PRD and requirements for traceability.
+3. **Tasks phase** (requires `tdd.state` to be "finalized")
+   - Task generation depends on the finalized PRD and TDD for traceability.
    - Track in state.json's `build` object.
 
 ### Conventions
 - **Feature ID**: `NNN-kebab-case` (e.g., `001-family-meal-planning`).
 - **Spec folder**: `magen-sdd/<feature-id>/`.
 - **PRD file**: `magen-sdd/<feature-id>/prd.md`.
-- **Requirements file**: `magen-sdd/<feature-id>/requirements.md`.
+- **TDD file**: `magen-sdd/<feature-id>/tdd.md`.
 - **Tasks file**: `magen-sdd/<feature-id>/tasks.md`.
 
 Gating rules:
-- Requirements updates require `prd.state` to be `finalized`.
-- Tasks updates require `requirements.state` to be `finalized`.
+- TDD updates require `prd.state` to be `finalized`.
+- Tasks updates require `tdd.state` to be `finalized`.
 
 Finalization hygiene:
 - If an artifact was previously finalized and needs changes, set its state to `in_review` in the feature's `state.json`, make minimal changes, then re-finalize using the appropriate `finalize-*.md` doc after explicit user approval.
@@ -64,7 +64,7 @@ At the very start:
 4. **Use the `sfmobile-sdd-build-feature` tool** with the project path and feature ID to automatically:
    - Create the feature directory at `magen-sdd/<feature-id>/`
    - Initialize state.json with timestamps and initial state
-   - Create empty files for PRD, requirements, and tasks
+   - Create empty files for PRD, TDD, and tasks
 5. **Proceed to** `magen-sdd/.instructions/prd/build-prd.md` to draft the PRD first.
 
 - Interview cadence: Ask one question at a time and wait for the user's response before moving to the next question.
@@ -72,7 +72,7 @@ At the very start:
 ### Collaboration rules
 - Prefer short, verifiable edits over large rewrites.
 - Ask one question at a time; wait for the user's answer before proceeding.
-- Track open issues in the appropriate sections of the PRD and requirements documents themselves.
+- Track open issues in the appropriate sections of the PRD and TDD documents themselves.
 - Maintain clear acceptance criteria so each functional requirement is testable.
-- Defer non‑requirements topics until after requirements are finalized.
+- Defer non‑TDD topics until after TDD is finalized.
 - Always update the feature's state.json after each significant change.

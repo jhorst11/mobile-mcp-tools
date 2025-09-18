@@ -1,22 +1,22 @@
 ### Build Implementation Tasks — LLM Instructions
 
-You are a staff engineer and delivery lead. Translate a finalized PRD and finalized Requirements into a clear, verifiable implementation plan with checkboxes.
+You are a staff engineer and delivery lead. Translate a finalized PRD and finalized TDD into a clear, verifiable implementation plan with checkboxes.
 
 ### Prerequisites (MUST)
 - The PRD for `magen-sdd/001-<feature-name>/` is finalized (`Approval Status: Finalized`).
-- The Requirements for `magen-sdd/001-<feature-name>/` are finalized at `magen-sdd/001-<feature-name>/requirements.md`.
-- If not finalized, stop and follow the PRD and requirements iteration/finalization guides first.
+- The TDD for `magen-sdd/001-<feature-name>/` is finalized at `magen-sdd/001-<feature-name>/tdd.md`.
+- If not finalized, stop and follow the PRD and TDD iteration/finalization guides first.
 
 ### Goals
 - Produce an actionable set of implementation tasks that provide end-to-end delivery coverage.
-- Ensure strict traceability: each task references PRD Feature and User Story IDs and Requirements FR IDs.
+- Ensure strict traceability: each task references PRD Feature and User Story IDs and TDD FR IDs.
 
 ### Execution Flow
 
 #### Initial Tasks Creation
-1. **Read the finalized PRD and Requirements**:
+1. **Read the finalized PRD and TDD**:
    - Read the finalized PRD and its Feature ↔ Story traceability table
-   - Read the finalized Requirements and the FR ↔ Feature/Story mapping
+   - Read the finalized TDD and the FR ↔ Feature/Story mapping
    - Ensure both documents are finalized before proceeding
 
 2. **Set the initial version**:
@@ -52,15 +52,15 @@ You are a staff engineer and delivery lead. Translate a finalized PRD and finali
 #### Iteration Process
 When the tasks need refinement or have gaps, follow this iteration loop:
 
-1. **Review alignment** with the finalized PRD and Requirements. Flag any divergence.
+1. **Review alignment** with the finalized PRD and TDD. Flag any divergence.
 2. **Ask targeted questions** about unclear scope, missing tasks, or sequencing — one question at a time; wait for the user's answer before proceeding.
 3. **When user answers questions**:
    - Update the relevant sections of the tasks document with the new information
    - Regenerate any affected task breakdowns or sequencing as necessary
    - Update checklist items to reflect the new completion status
-   - Ensure all changes maintain traceability to PRD and Requirements
+   - Ensure all changes maintain traceability to PRD and TDD
 4. **Propose concrete edits** to task breakdown, sequencing, or scope.
-5. **Update traceability** to ensure each task references PRD Feature/Story IDs and Requirements FR IDs.
+5. **Update traceability** to ensure each task references PRD Feature/Story IDs and TDD FR IDs.
 6. **Validate completeness** of testing, observability, accessibility, and release tasks.
 7. **Update checklist items** in the tasks template to reflect current completion status as you make changes.
 8. **Keep unresolved items documented**; revisit until resolved or explicitly deferred.
@@ -81,8 +81,8 @@ For applying minimal, well-justified updates to an existing task plan:
    - Update the relevant sections of the tasks document with the new information
    - Regenerate any affected task breakdowns or sequencing as necessary
    - Update checklist items to reflect the new completion status
-   - Ensure all changes maintain traceability to PRD and Requirements
-3. **Identify impacted tasks** and their traceability to PRD Features/Stories and Requirements FRs.
+   - Ensure all changes maintain traceability to PRD and TDD
+3. **Identify impacted tasks** and their traceability to PRD Features/Stories and TDD FRs.
 4. **Propose a minimal diff** to the tasks document with explicit task ID changes (add/remove/modify).
 5. **Ensure traceability is intact** for each changed/added task referencing PRD Feature/Story IDs and FR IDs.
 6. **Include validation tasks** where needed (tests, a11y, observability, docs, release ops).
@@ -107,8 +107,8 @@ For applying minimal, well-justified updates to an existing task plan:
 **Pre-finalization checklist:**
 - User has EXPLICITLY approved finalization with a clear statement (REQUIRED).
 - PRD is finalized (`Approval Status: Finalized`).
-- Requirements are finalized at `magen-sdd/001-<feature-name>/requirements.md`.
-- Each PRD user story maps to one or more tasks, and tasks reference Requirements FR IDs where applicable.
+- TDD is finalized at `magen-sdd/001-<feature-name>/tdd.md`.
+- Each PRD user story maps to one or more tasks, and tasks reference TDD FR IDs where applicable.
 - Tasks include testing (unit, integration/e2e), observability, accessibility, performance/security where applicable.
 - Risks and mitigations are captured; owners/roles are identified where needed.
 - Environment and release steps are included.
@@ -136,7 +136,7 @@ For applying minimal, well-justified updates to an existing task plan:
 
 **Post-finalization guidance:**
 - Track execution by checking items off in `tasks.md` as they complete.
-- Keep traceability to PRD stories and Requirements FRs up to date if tasks are re-scoped.
+- Keep traceability to PRD stories and TDD FRs up to date if tasks are re-scoped.
 - If new work is discovered, create a new iteration of the task plan after discussing impacts to timeline and scope.
 
 ### Quality bar
@@ -154,12 +154,12 @@ Copy and fill this in `magen-sdd/001-<feature-name>/tasks.md`.
 ** Version **: 1.0.0
 
 ## Conventions
-- Link each task to PRD Feature and Story IDs and Requirements FR IDs.
+- Link each task to PRD Feature and Story IDs and TDD FR IDs.
 - Check boxes `[ ]` become `[x]` when completed.
 
 ## LLM Instructions
 - **Mark tasks as complete** by changing `[ ]` to `[x]` after successfully implementing each task
-- **Update traceability** to ensure completed tasks maintain links to PRD Feature/Story IDs and Requirements FR IDs
+- **Update traceability** to ensure completed tasks maintain links to PRD Feature/Story IDs and TDD FR IDs
 - **Validate completion** by ensuring each task meets its definition of done and acceptance criteria
 - **Update progress** in the feature's state.json when significant milestones are reached
 - **Document any deviations** from the original plan in the changelog section
@@ -205,7 +205,7 @@ Copy and fill this in `magen-sdd/001-<feature-name>/tasks.md`.
 
 ## Tasks completion checklist
 - [ ] All PRD user stories map to one or more implementation tasks
-- [ ] Each task references PRD Feature/Story IDs and Requirements FR IDs
+- [ ] Each task references PRD Feature/Story IDs and TDD FR IDs
 - [ ] Tasks are small enough to complete in ≤ 1–3 days
 - [ ] Each task has clear acceptance criteria and definition of done
 - [ ] Unit tests are included for each component

@@ -56,13 +56,13 @@ export function getPrdPath(projectPath: string, featureId: string): string {
 }
 
 /**
- * Gets the requirements file path for a feature
+ * Gets the TDD file path for a feature
  * @param projectPath The project root path
  * @param featureId The feature ID
- * @returns The requirements file path
+ * @returns The TDD file path
  */
-export function getRequirementsPath(projectPath: string, featureId: string): string {
-  return join(getFeatureDir(projectPath, featureId), 'requirements.md');
+export function getTddPath(projectPath: string, featureId: string): string {
+  return join(getFeatureDir(projectPath, featureId), 'tdd.md');
 }
 
 /**

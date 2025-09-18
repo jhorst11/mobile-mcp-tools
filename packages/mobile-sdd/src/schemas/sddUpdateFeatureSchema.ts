@@ -19,7 +19,7 @@ export const SddUpdateFeatureInputSchema = z.object({
       'Feature ID must be in format NNN-kebab-case (e.g., 001-example-feature)'
     ),
   target: z
-    .enum(['prd', 'requirements', 'tasks'])
+    .enum(['prd', 'tdd', 'tasks'])
     .describe('Which artifact to update. PRD-first gating enforced.'),
   changeSummary: z
     .string()

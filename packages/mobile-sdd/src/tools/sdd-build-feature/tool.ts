@@ -13,6 +13,7 @@ import {
   SddBuildFeatureInputType,
 } from '../../schemas/sddBuildFeatureSchema.js';
 import { promises as fs } from 'fs';
+import { join } from 'path';
 import {
   getInstructionFilePaths,
   validateProjectPath,
@@ -20,6 +21,8 @@ import {
   createFeatureDirectory,
   loadStateJsonTemplate,
   getMagenDir,
+  copyRecursive,
+  getResourcesPath,
 } from '../../utils/index.js';
 
 export class SddBuildFeatureTool implements Tool {
@@ -107,7 +110,7 @@ export class SddBuildFeatureTool implements Tool {
         };
       }
 
-      const { stateJsonPath, prdPath, requirementsPath, tasksPath } = featureResult.data;
+      const { stateJsonPath, prdPath, tddPath, tasksPath } = featureResult.data;
 
       // Create state.json file
       const stateJson = await this.createStateJsonTemplate(featureId);
@@ -125,11 +128,20 @@ export class SddBuildFeatureTool implements Tool {
         };
       }
 
-      // Create empty files for prd.md, requirements.md, and tasks.md
       try {
-        await fs.writeFile(prdPath, '');
-        await fs.writeFile(requirementsPath, '');
-        await fs.writeFile(tasksPath, '');
+        // Create empty feature files
+        await fs.writeFile(
+          prdPath,
+          `Placeholder file for PRD. You MUST follow instructions at ${instructionPaths.prd.build} to complete`
+        );
+        await fs.writeFile(
+          tddPath,
+          `Placeholder file for TDD. You MUST follow instructions at ${instructionPaths.tdd.build} to complete`
+        );
+        await fs.writeFile(
+          tasksPath,
+          `Placeholder file for Tasks. You MUST follow instructions at ${instructionPaths.tasks.build} to complete`
+        );
       } catch (error) {
         return {
           isError: true,
@@ -148,7 +160,7 @@ export class SddBuildFeatureTool implements Tool {
           {
             type: 'text' as const,
             text: `Successfully created feature ${featureId}. 
-            Follow the instructions in ${instructionPaths.start} and start by drafting the PRD using the instructions in ${instructionPaths.prd.build}.`,
+            Follow the instructions in ${instructionPaths.prd.build} to begin building out the PRD.`,
           },
         ],
       };

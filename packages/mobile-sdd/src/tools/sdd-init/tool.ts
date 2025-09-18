@@ -10,16 +10,15 @@ import { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 import { Tool } from '../tool.js';
 import { SddInitInputSchema, SddInitInputType } from '../../schemas/sddInitSchema.js';
 import { promises as fs } from 'fs';
-import { join, resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import {
   getInstructionFilePaths,
-  getResourcesPath,
-  copyRecursive,
   validateProjectPath,
+  validateMagenDirectory,
   getMagenDir,
   getInstructionsDir,
   loadStateJsonTemplate,
+  copyRecursive,
+  getResourcesPath,
 } from '../../utils/index.js';
 
 export class SddInitTool implements Tool {
@@ -29,8 +28,6 @@ export class SddInitTool implements Tool {
   public readonly description =
     'Initializes a project with Salesforce Mobile SDD instructions by copying them to a magen-sdd directory, or adds a new feature if already initialized';
   public readonly inputSchema = SddInitInputSchema;
-
-  private readonly resourcesPath = getResourcesPath();
 
   /**
    * Public method to initialize SDD in a project
@@ -45,7 +42,7 @@ export class SddInitTool implements Tool {
    * Creates a state.json template for a feature
    * @returns A state.json template object
    */
-  private async createStateJsonTemplate(): Promise<any> {
+  private async createStateJsonTemplate(): Promise<Record<string, unknown>> {
     const templateResult = await loadStateJsonTemplate();
     if (templateResult.isError) {
       throw new Error('Failed to load state.json template');
@@ -70,13 +67,18 @@ export class SddInitTool implements Tool {
   }
 
   /**
-   * Creates the specs directory structure
+   * Creates the specs directory structure and copies instruction files
    * @param projectPath The project root path
    */
   private async createDirectoryStructure(projectPath: string): Promise<void> {
     // Create .instructions directory
     const instructionsDir = getInstructionsDir(projectPath);
     await fs.mkdir(instructionsDir, { recursive: true });
+
+    // Copy instruction files from resources to project
+    const resourcesPath = getResourcesPath();
+    await copyRecursive(resourcesPath, instructionsDir);
+
     // We no longer create the specs directory as features will be directly under magen-sdd
     // with the format 001-<feature-name>
   }
@@ -92,6 +94,7 @@ export class SddInitTool implements Tool {
       }
 
       const targetDir = getMagenDir(projectPath);
+      const instructionPaths = getInstructionFilePaths(targetDir);
 
       // Check if magen-sdd directory already exists
       const magenExists = await fs
@@ -100,34 +103,23 @@ export class SddInitTool implements Tool {
         .catch(() => false);
 
       if (magenExists) {
-        // magen-sdd directory exists, check if .instructions/START.md exists to confirm it's a valid SDD project
-        const instructionPaths = getInstructionFilePaths(targetDir);
-        const startExists = await fs
-          .access(instructionPaths.start)
-          .then(() => true)
-          .catch(() => false);
+        // magen-sdd directory exists, validate it's a proper SDD project
+        const validation = await validateMagenDirectory(projectPath);
 
-        if (startExists) {
+        if (!validation.isError) {
           // Valid SDD project, provide guidance for creating a new feature
+
           return {
             content: [
               {
                 type: 'text' as const,
-                text: `The project has already been initialized with SDD. Follow the instructions in \`${instructionPaths.start}\` to guide the feature creation process.\n\nTo create a new feature, you'll need to:\n1. Generate a feature ID (e.g., 001-example-feature)\n2. Create a directory at magen-sdd/001-<feature-name>/\n3. Initialize a state.json file in that directory\n4. Create prd.md, requirements.md, and tasks.md files in that directory`,
+                text: `The project has already been initialized with SDD. Follow the instructions in \`${instructionPaths.start}\`.`,
               },
             ],
           };
         } else {
-          // START.md doesn't exist, the magen-sdd directory might be corrupted or incomplete
-          return {
-            isError: true,
-            content: [
-              {
-                type: 'text' as const,
-                text: `Warning: The magen-sdd directory exists but appears to be incomplete or corrupted. Would you like to reinitialize it? (This will overwrite any existing files)`,
-              },
-            ],
-          };
+          // Invalid SDD project, return the validation error
+          return validation;
         }
       }
 
@@ -153,8 +145,7 @@ export class SddInitTool implements Tool {
         content: [
           {
             type: 'text' as const,
-            text: `Successfully initialized Salesforce Mobile SDD instructions in ${targetDir}.\n\nRead the instructions in ${getInstructionFilePaths(targetDir).start} to understand how to build a feature. 
-            Ask the user if they would like to create a new feature. You can invoke the sfmobile-sdd-new-feature tool for them or they can invoke the /ssd-new-feature prompt themselves.`,
+            text: `Successfully initialized Salesforce Mobile SDD instructions in ${targetDir}. Follow ${instructionPaths.start}`,
           },
         ],
       };

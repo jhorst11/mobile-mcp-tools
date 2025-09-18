@@ -242,7 +242,7 @@ export async function createFeatureDirectory(
     featureDir: string;
     stateJsonPath: string;
     prdPath: string;
-    requirementsPath: string;
+    tddPath: string;
     tasksPath: string;
   }>
 > {
@@ -267,7 +267,7 @@ export async function createFeatureDirectory(
 
     const stateJsonPath = join(featureDir, 'state.json');
     const prdPath = join(featureDir, 'prd.md');
-    const requirementsPath = join(featureDir, 'requirements.md');
+    const tddPath = join(featureDir, 'tdd.md');
     const tasksPath = join(featureDir, 'tasks.md');
 
     return {
@@ -282,7 +282,7 @@ export async function createFeatureDirectory(
         featureDir,
         stateJsonPath,
         prdPath,
-        requirementsPath,
+        tddPath,
         tasksPath,
       },
     };

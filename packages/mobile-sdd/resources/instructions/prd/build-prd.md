@@ -16,7 +16,7 @@ You are an expert technical product manager. Generate a complete, clear PRD from
 
 ### Guardrails
 - Do not invent scope beyond the feature brief; ask targeted questions and capture unknowns as open questions.
-- Maintain internal consistency and traceability from product goals to features and user stories. Technical requirements will be derived later.
+- Maintain internal consistency and traceability from product goals to features and user stories. Technical requirements will be derived later in the TDD phase.
  - Interaction cadence: ask one question at a time; wait for the user's response before proceeding.
 
 ### Execution Flow
@@ -34,7 +34,7 @@ You are an expert technical product manager. Generate a complete, clear PRD from
    - Update the relevant sections of the PRD with the new information
    - Remove the [OPEN QUESTION] tags from sections that have been clarified
    - **Remove the answered question from the "Open questions" section** (section 11)
-   - Regenerate any affected requirements, user stories, or traceability tables as necessary
+   - Regenerate any affected user stories, or traceability tables as necessary
    - Update checklist items to reflect the new completion status
    - Ensure all changes maintain internal consistency across the document
 10. Only once the PRD is complete and the user agrees to finalize, proceed to the **Finalization Process** below.
@@ -48,11 +48,11 @@ When the PRD needs refinement or has gaps, follow this iteration loop:
    - Update the relevant sections of the PRD with the new information
    - Remove any [OPEN QUESTION] tags from sections that have been clarified
    - **Remove the answered question from the "Open questions" section** (section 11)
-   - Regenerate any affected requirements, user stories, or traceability tables as necessary
+   - Regenerate any affected user stories, or traceability tables as necessary
    - Update checklist items to reflect the new completion status
    - Ensure all changes maintain internal consistency across the document
 4. **Propose concrete edits** to sections, features, stories, and acceptance criteria.
-5. **Update the traceability table** (Feature ↔ Story IDs) as changes are made. FR mapping will be added in the requirements phase.
+5. **Update the traceability table** (Feature ↔ Story IDs) as changes are made. FR mapping will be added in the TDD phase.
 6. **Validate NFR budgets** and observability are specified and realistic.
 7. **Update checklist items** in the PRD template to reflect current completion status as you make changes.
 8. **Keep unresolved items documented**; revisit until resolved or explicitly deferred.
@@ -72,7 +72,7 @@ For applying minimal, well-justified updates to an existing PRD:
    - Update the relevant sections of the PRD with the new information
    - Remove any [OPEN QUESTION] tags from sections that have been clarified
    - **Remove the answered question from the "Open questions" section** (section 11)
-   - Regenerate any affected requirements, user stories, or traceability tables as necessary
+   - Regenerate any affected user stories, or traceability tables as necessary
    - Update checklist items to reflect the new completion status
    - Ensure all changes maintain internal consistency across the document
 3. **Identify impacted sections** (e.g., Goals, Features, User stories, NFRs, Traceability table) and ripple effects.
@@ -120,7 +120,7 @@ For applying minimal, well-justified updates to an existing PRD:
 5. **Insert/update metadata** at the top of the PRD (Created/Updated, `Approval Status: Finalized`).
 6. **Add a brief changelog entry** with the date and key decisions.
 7. **Freeze scope**: add a note that changes require a new iteration and version bump.
-8. **Confirm downstream dependency**: a finalized PRD is REQUIRED before deriving technical requirements and generating tasks. Proceed to `magen-sdd/.instructions/requirements/build-requirements.md` after finalization.
+8. **Confirm downstream dependency**: a finalized PRD is REQUIRED before deriving technical requirements and generating tasks. Proceed to `magen-sdd/.instructions/tdd/build-tdd.md` after finalization.
 
 **Post-finalization guidance:**
 - Do not silently change finalized PRDs. Start a new iteration if scope changes.
@@ -131,8 +131,8 @@ For applying minimal, well-justified updates to an existing PRD:
 - Product overview: What the product/feature is and is not (in/out of scope).
 - Goals and objectives: Measurable outcomes and success metrics.
 - Target audience: Primary users, roles, and contexts.
-- Features and requirements: Feature breakdown tied to goals; include acceptance criteria at feature level where relevant. FRs will be derived in the next phase.
-- User stories and acceptance criteria: Comprehensive stories (primary, alt, edge), each testable and linked to features. FR mapping will be added in the requirements phase.
+- Features: Feature breakdown tied to goals; include acceptance criteria at feature level where relevant. FRs will be derived in the TDD phase.
+- User stories and acceptance criteria: Comprehensive stories (primary, alt, edge), each testable and linked to features. FR mapping will be added in the TDD phase.
 - Non-functional requirements: Performance, availability, security budgets and constraints at a PRD level.
 - Design and user interface: UX principles, wireframes/mockups references, accessibility.
 - Open questions: Document unresolved items that need clarification. **Remove questions from this section once answered and incorporated into the PRD.**
@@ -153,56 +153,72 @@ Fill this template.
 ** Version **: 1.0.0
 ** User Input **: <original input from user>
 
-1. Introduction
-   - Purpose
-   - Scope
+## Instructions for LLM
 
-2. Product overview
-   - Problem statement
-   - In-scope / Out-of-scope
+- Before modifying this document the model MUST read the instructions located at <INSERT build-prd.md PATH>
 
-3. Goals and objectives
-   - Business goals
-   - Success metrics (KPIs)
+## Introduction
 
-4. Target audience
-   - Users/roles
-   - Contexts/platforms
+- Purpose
+- Scope
 
-5. Features and requirements
-   - Feature 1 (FR mapping will be added in the requirements phase)
-     - Description
-     - Key acceptance criteria
-   - Feature 2 (...)
+## Product overview
 
-6. User stories and acceptance criteria
-   - ST-101: As a <role>, I want <capability> so that <value>.
-     - Acceptance criteria:
-       - Given/When/Then ...
-   - ST-102: ...
+- Problem statement
+- In-scope / Out-of-scope
 
-7. Traceability
-   | Feature | User Story IDs | Future FR IDs (added in requirements phase) |
-   |---------|-----------------|--------------------------------------------|
-   | Feature 1 | ST-101, ST-102 | TBD |
+## Goals and objectives
 
-8. Non-functional requirements
-   - Performance, availability, security budgets
-   - Observability (metrics, logs, alerts)
+- Business goals
+- Success metrics (KPIs)
 
-9. Design and user interface
-   - UX guidelines
-   - Wireframes/mockups (links)
-   - Accessibility (WCAG targets)
+## Target audience
 
-10. Assumptions and constraints
+- Users/roles
+- Contexts/platforms
+
+## Features and requirements
+
+- Feature 1 (FR mapping will be added in the requirements phase)
+  - Description
+  - Key acceptance criteria
+- Feature 2 (...)
+
+## User stories and acceptance criteria
+
+- ST-101: As a <role>, I want <capability> so that <value>.
+  - Acceptance criteria:
+    - Given/When/Then ...
+- ST-102: ...
+
+## Traceability
+
+| Feature   | User Story IDs | Future FR IDs (added in requirements phase) |
+| --------- | -------------- | ------------------------------------------- |
+| Feature 1 | ST-101, ST-102 | TBD                                         |
+
+## Non-functional requirements
+
+- Performance, availability, security budgets
+- Observability (metrics, logs, alerts)
+
+## Design and user interface
+
+- UX guidelines
+- Wireframes/mockups (links)
+- Accessibility (WCAG targets)
+
+## Assumptions and constraints
+
     - Assumptions
     - Constraints
 
-11. Open questions
+## Open questions
+
     - Q1: ...
 
-12. PRD completion checklist
+## PRD completion checklist
+
     - [ ] All feature goals and scope are clearly defined
     - [ ] Target audience and user roles are specified
     - [ ] Business goals and success metrics are measurable
@@ -225,4 +241,4 @@ Fill this template.
 ### Next steps
 - If the PRD is incomplete or unclear, follow the **Iteration Process** in the Execution Flow above.
 - Once complete and approved, follow the **Finalization Process** in the Execution Flow above to mark it finalized.
-- After finalization, proceed to `magen-sdd/.instructions/requirements/build-requirements.md` to derive technical requirements.
+- After finalization, proceed to `magen-sdd/.instructions/tdd/build-tdd.md` to derive technical requirements.

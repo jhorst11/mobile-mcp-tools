@@ -13,7 +13,7 @@ export interface InstructionFilePaths {
   prd: {
     build: string;
   };
-  requirements: {
+  tdd: {
     build: string;
   };
   tasks: {
@@ -34,8 +34,8 @@ export function getInstructionFilePaths(magenDir: string): InstructionFilePaths 
     prd: {
       build: join(instructionsDir, 'prd', 'build-prd.md'),
     },
-    requirements: {
-      build: join(instructionsDir, 'requirements', 'build-requirements.md'),
+    tdd: {
+      build: join(instructionsDir, 'tdd', 'build-tdd.md'),
     },
     tasks: {
       build: join(instructionsDir, 'tasks', 'build-tasks.md'),

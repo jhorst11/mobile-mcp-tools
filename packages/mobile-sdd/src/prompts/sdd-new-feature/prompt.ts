@@ -8,7 +8,7 @@ export const SddNewFeaturePrompt: Prompt = {
       'new-feature',
       {
         title: 'Build New Feature',
-        description: 'Build the requirements and tasks for a new feature',
+        description: 'Build the TDD and tasks for a new feature',
         argsSchema: {
           id: z
             .string()

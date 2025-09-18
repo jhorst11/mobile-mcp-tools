@@ -5,11 +5,11 @@
     "timestamps": {
         "created": "",
         "lastUpdated": "",
-        "requirementsFinalized": "",
+        "tddFinalized": "",
         "prdFinalized": "",
         "tasksFinalized": ""
     },
-    "requirements": {
+    "tdd": {
         "state": "pending"
     },
     "prd": {

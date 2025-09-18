@@ -1,6 +1,6 @@
-### Build Requirements — LLM Instructions
+### Build TDD (Technical Design Document) — LLM Instructions
 
-Objective: Derive technical requirements (FRs/NFRs), constraints, and assumptions from a finalized PRD and produce `magen-sdd/001-<feature-name>/requirements.md`, then collaborate with the user to close gaps. Each feature has its own state file at `magen-sdd/001-<feature-name>/state.json`.
+Objective: Derive technical requirements (FRs/NFRs), constraints, and assumptions from a finalized PRD and produce `magen-sdd/001-<feature-name>/tdd.md`, then collaborate with the user to close gaps. Each feature has its own state file at `magen-sdd/001-<feature-name>/state.json`.
 
 ### Prerequisites (MUST)
 - A finalized PRD exists at `magen-sdd/001-<feature-name>/prd.md`.
@@ -11,9 +11,9 @@ Objective: Derive technical requirements (FRs/NFRs), constraints, and assumption
 - Use strict, testable "System shall …" statements for FRs; keep them implementation-agnostic but concrete.
 - Tight traceability only: each FR references PRD Feature and Story IDs (e.g., `refs: Feature A; ST-101`).
 - Categorize FRs when helpful: System (FR-SYS-*), UI/Client (FR-UI-*), Infrastructure (FR-INFRA-*), Compliance/Security (FR-COMP-*).
-- Describe data schemas, API contracts, events, and technical specifications, but do not include code in the requirements document.
+- Describe data schemas, API contracts, events, and technical specifications, but do not include code in the TDD document.
 - Ask one question at a time when clarifying; wait for the user's answer before proceeding.
-- **Open questions**: Document unresolved items that need clarification. **Remove questions from this section once answered and incorporated into the requirements.**
+- **Open questions**: Document unresolved items that need clarification. **Remove questions from this section once answered and incorporated into the TDD.**
 - **Checklist completion**: Always mark checklist items as complete when the corresponding work is done, especially the "Mapping table in PRD file updated" item.
 
 ### State Management First
@@ -37,7 +37,7 @@ If answers affect existing FRs/NFRs, update both the document and the feature's 
 
 ### Execution Flow
 
-#### Initial Requirements Creation
+#### Initial TDD Creation
 1. **Locate or create feature folder**:
    - If working with an existing feature, use its feature ID.
    - If creating a new feature, propose a feature ID (e.g., `001-example-feature`).
@@ -57,7 +57,7 @@ If answers affect existing FRs/NFRs, update both the document and the feature's 
    - Note any open questions to clarify.
 
 5. **Seed from template**:
-   - Use the template below to create the requirements document.
+   - Use the template below to create the TDD document.
    - Set the **Version** header to "1.0.0" for the initial version.
 
 6. **Populate Overview**:
@@ -70,30 +70,30 @@ If answers affect existing FRs/NFRs, update both the document and the feature's 
    - Do not restate user stories or PRD acceptance criteria; instead, reference PRD IDs (e.g., `refs: Feature A; ST-101`).
    - Capture edge cases and error handling at the FR level when relevant.
    - Optionally tag FRs by category (FR-SYS-1, FR-UI-1, FR-INFRA-1, FR-COMP-1).
-   - Document all FRs in the requirements.md file.
+   - Document all FRs in the tdd.md file.
 
 9. **Update PRD with FR IDs**:
    - Open the corresponding PRD file (`magen-sdd/001-<feature-name>/prd.md`).
    - Locate the 'Future FR IDs' table.
    - Populate the table with the FR IDs generated in the previous step.
-   - **Mark the "Mapping table in PRD file updated" checklist item as complete** in the requirements template.
+   - **Mark the "Mapping table in PRD file updated" checklist item as complete** in the TDD template.
 
 10. **Non‑Functional Requirements (NFRs)**:
    - Derive detailed technical NFRs from PRD-level NFRs: performance, security, availability, usability, privacy, accessibility, observability.
    - Provide measurable budgets (e.g., p95 latency ≤ 300ms, uptime ≥ 99.9%).
-   - Document all NFRs in the requirements.md file.
+   - Document all NFRs in the tdd.md file.
 
 11. **Constraints**:
    - Document technical, compliance, integrations, data residency, deadlines.
-   - Document all constraints in the requirements.md file.
+   - Document all constraints in the tdd.md file.
 
 12. **Assumptions**:
    - Explicitly list what is presumed true.
-   - Document all assumptions in the requirements.md file.
+   - Document all assumptions in the tdd.md file.
 
 13. **Open Questions**:
-     - Document anything unresolved in the Open Questions section of the requirements document.
-     - **When user answers open questions**: Update the relevant sections of the requirements with the new information and **remove the answered question from the "Open Questions" section** (section 13).
+     - Document anything unresolved in the Open Questions section of the TDD document.
+     - **When user answers open questions**: Update the relevant sections of the TDD with the new information and **remove the answered question from the "Open Questions" section** (section 13).
 
 14. **Technical Specification** (produce concrete contracts; keep concise and testable)
     - Data model and schemas:
@@ -121,32 +121,32 @@ If answers affect existing FRs/NFRs, update both the document and the feature's 
     - Test plan mapping:
       - For each FR/NFR, list unit/integration/e2e/contract tests and how they validate acceptance.
 
-15. **Mark checklist items as complete** in the requirements template as you validate each requirement.
+15. **Mark checklist items as complete** in the TDD template as you validate each requirement.
 
 16. **Update state**: Add an entry to the `changelog` array in the feature's state.json.
 
 #### Iteration Process
-When the requirements need refinement or have gaps, follow this iteration loop:
+When the TDD needs refinement or has gaps, follow this iteration loop:
 
 1. **Surface uncertainties**: 
-   - Identify any vague items in the requirements document and any ambiguities relative to PRD features and stories.
+   - Identify any vague items in the TDD document and any ambiguities relative to PRD features and stories.
 
 2. **Ask targeted questions**: 
    - Ask one question at a time; minimize cognitive load.
    - Update `timestamps.lastUpdated` in the feature's state.json after each interaction.
-   - **When user answers questions**: Update the relevant sections of the requirements with the new information and **remove the answered question from the "Open Questions" section** (section 13).
+   - **When user answers questions**: Update the relevant sections of the TDD with the new information and **remove the answered question from the "Open Questions" section** (section 13).
 
 3. **Propose edits**: 
    - Suggest specific FR/NFR/Constraint edits. 
    - Apply them once the user agrees.
-   - Update the requirements document with the agreed changes.
+   - Update the TDD document with the agreed changes.
    - Ensure FRs use strict "System shall …" phrasing with triggers, inputs, processing, outputs, and error cases; do not restate PRD acceptance criteria.
-   - Do not include code snippets or code blocks in the requirements; use descriptive prose and tables for schemas, routes, and metrics.
+   - Do not include code snippets or code blocks in the TDD; use descriptive prose and tables for schemas, routes, and metrics.
 
 4. **Traceability check**: 
    - Ensure each FR links to acceptance criteria and maps to one or more PRD features and story IDs.
    - Ensure PRD-level NFRs are cascaded into measurable technical NFRs.
-   - Update the requirements document as needed.
+   - Update the TDD document as needed.
 
 5. **Technical Specification completion**:
    - Fill out Data schemas, API contracts, Events/State, Client/UI contracts, Config/Flags, Security/Compliance, Observability, Performance/Capacity, Deployment/Migration, Error Handling, Analytics/SEO (as applicable).
@@ -154,9 +154,9 @@ When the requirements need refinement or have gaps, follow this iteration loop:
 
 6. **Risk review**: 
    - Identify performance, security, or integration risks.
-   - Add them to the appropriate sections in the requirements document.
+   - Add them to the appropriate sections in the TDD document.
 
-7. **Update checklist items** in the requirements template to reflect current completion status as you make changes.
+7. **Update checklist items** in the TDD template to reflect current completion status as you make changes.
 
 8. **Update state**: 
    - Add an entry to the `changelog` array in the feature's state.json after significant changes.
@@ -168,92 +168,92 @@ When the requirements need refinement or have gaps, follow this iteration loop:
 - Constraints and assumptions are explicit and consistent with FRs.
 - All open questions have been answered or explicitly deferred (not MVP).
 - Each FR maps to at least one PRD feature and one or more PRD user stories where applicable.
-- The user EXPLICITLY confirms readiness to finalize with a clear statement like "I approve finalizing the requirements" or "The requirements can be finalized now".
+- The user EXPLICITLY confirms readiness to finalize with a clear statement like "I approve finalizing the TDD" or "The TDD can be finalized now".
 - FR style uses "System shall …" phrasing and avoids duplicating PRD business context or user stories.
 - A Traceability table (FR ↔ PRD Feature ↔ PRD Story IDs) is present and complete.
 - Technical Specification sections are present and concrete (schemas, routes, components, events/state, security, observability, performance, deployment, error handling, analytics/SEO as applicable).
-- No code blocks or code snippets are present in the requirements; contracts are described via prose and tables only.
+- No code blocks or code snippets are present in the TDD; contracts are described via prose and tables only.
 
 #### Update Process
-For applying minimal, well-justified updates to an existing requirements document:
+For applying minimal, well-justified updates to an existing TDD document:
 
 1. **Confirm scope** of the change. If unclear, ask one targeted question and wait for the user's response.
-   - **When user answers questions**: Update the relevant sections of the requirements with the new information and **remove the answered question from the "Open Questions" section** (section 13).
+   - **When user answers questions**: Update the relevant sections of the TDD with the new information and **remove the answered question from the "Open Questions" section** (section 13).
 2. **Identify impacted sections** (e.g., FRs, NFRs, Technical Specification) and ripple effects.
 3. **Propose a minimal diff** with explicit FR ID changes (add/remove/modify) and update the FR ↔ Feature/Story mapping table.
 4. **Update PRD with FR IDs**:
    - Open the corresponding PRD file (`magen-sdd/001-<feature-name>/prd.md`).
    - Locate the 'Future FR IDs' table.
    - Update the table with any new or modified FR IDs.
-   - **Mark the "Mapping table in PRD file updated" checklist item as complete** in the requirements template.
-5. **Update the requirements version**:
+   - **Mark the "Mapping table in PRD file updated" checklist item as complete** in the TDD template.
+5. **Update the TDD version**:
    - For minor updates: Increment patch version (e.g., 1.0.0 → 1.0.1)
    - For new features: Increment minor version (e.g., 1.0.0 → 1.1.0)
    - For breaking changes: Increment major version (e.g., 1.0.0 → 2.0.0)
-   - Update the **Version** header in the requirements document
+   - Update the **Version** header in the TDD document
 6. **Validate testability and observability** for changed FRs; update acceptance checks and budgets as needed.
 7. **Update checklist items** in the requirements template to reflect any changes in completion status.
 8. **Update the feature's state.json**:
    - Set `timestamps.lastUpdated` to now.
    - Append a `changelog` entry with summary and impacted FRs.
-   - If previously finalized, keep `requirements.state: in_review` until user re-approves.
+   - If previously finalized, keep `tdd.state: in_review` until user re-approves.
 9. **Ask the user to review**. Only when the user EXPLICITLY approves, proceed to finalization.
 
 #### Finalization Process
 **IMPORTANT: STRICT USER APPROVAL REQUIRED**
-- DO NOT finalize requirements automatically after answering open questions.
-- ONLY finalize when the user has EXPLICITLY approved finalization with a clear statement like "I approve finalizing the requirements" or "The requirements can be finalized now".
+- DO NOT finalize TDD automatically after answering open questions.
+- ONLY finalize when the user has EXPLICITLY approved finalization with a clear statement like "I approve finalizing the TDD" or "The TDD can be finalized now".
 - If the user has not explicitly approved finalization, continue with the iteration process.
 
 **Pre-finalization checklist:**
 - User has EXPLICITLY approved finalization with a clear statement (REQUIRED).
-- FRs in the requirements document are atomic, numbered, and have acceptance criteria.
+- FRs in the TDD document are atomic, numbered, and have acceptance criteria.
 - FRs trace back to PRD features and story IDs where applicable.
-- NFRs in the requirements document cover key quality attributes (performance, security, privacy, accessibility, availability, observability) with measurable targets.
-- Constraints and assumptions in the requirements document are explicit and stable.
+- NFRs in the TDD document cover key quality attributes (performance, security, privacy, accessibility, availability, observability) with measurable targets.
+- Constraints and assumptions in the TDD document are explicit and stable.
 - All open questions have been answered or explicitly deferred (not MVP).
 - FR style: uses "System shall …" phrasing without restating PRD business context or user stories.
-- No duplication: requirements do not restate PRD acceptance criteria; they instead reference PRD IDs.
-- No code: the requirements contain no code blocks or code snippets; contracts are expressed with prose and tables only.
+- No duplication: TDD does not restate PRD acceptance criteria; it instead references PRD IDs.
+- No code: the TDD contains no code blocks or code snippets; contracts are expressed with prose and tables only.
 - Technical Specification sections are present and concrete where applicable.
 - Test plan mapping exists for FRs/NFRs (unit/integration/e2e/contract) and aligns with acceptance verification.
 
 **Finalization steps:**
 1. **CONFIRM user has explicitly approved finalization**. If not, return to iteration.
-2. **Verify all checklist items are marked complete** in the requirements template. If any items are incomplete, address them before finalizing.
+2. **Verify all checklist items are marked complete** in the TDD template. If any items are incomplete, address them before finalizing.
 3. **Update the feature's state.json**:
-   - Set `requirements.state` to "finalized".
-   - Set `timestamps.requirementsFinalized` to the current time.
+   - Set `tdd.state` to "finalized".
+   - Set `timestamps.tddFinalized` to the current time.
    - Set `timestamps.lastUpdated` to the current time.
    - Add a finalization entry to the `changelog` array with details and date.
 4. **Freeze scope**: 
-   - Add a note to the requirements document: "Changes after finalization require a new iteration cycle and version bump."
-   - This is now tracked in the feature's state.json with `requirements.state` = "finalized".
-5. **Update the requirements version**:
+   - Add a note to the TDD document: "Changes after finalization require a new iteration cycle and version bump."
+   - This is now tracked in the feature's state.json with `tdd.state` = "finalized".
+5. **Update the TDD version**:
    - For initial version: Set to "1.0.0"
    - For subsequent versions: Use semantic versioning (patch/minor/major based on scope of change)
-   - Update the **Version** header in the requirements document
+   - Update the **Version** header in the TDD document
 7. **Handoff**: 
-   - Indicate the next phase (tasks) will derive from this finalized PRD and requirements set.
-   - Set `state` in the feature's state.json to "requirements_complete" to indicate readiness for tasks phase.
+   - Indicate the next phase (tasks) will derive from this finalized PRD and TDD set.
+   - Set `state` in the feature's state.json to "tdd_complete" to indicate readiness for tasks phase.
 
 **Post-finalization guidance:**
-- Treat further discoveries as inputs to a new iteration cycle; do not silently edit finalized requirements.
-- Maintain traceability between requirements in the document and test cases/user stories in downstream artifacts.
-- Any changes to requirements after finalization should be tracked with a new changelog entry and version increment in the requirements document.
+- Treat further discoveries as inputs to a new iteration cycle; do not silently edit finalized TDD.
+- Maintain traceability between TDD in the document and test cases/user stories in downstream artifacts.
+- Any changes to TDD after finalization should be tracked with a new changelog entry and version increment in the TDD document.
 
 ### Next steps
-- If the requirements are incomplete or unclear, follow the **Iteration Process** in the Execution Flow above.
-- Once complete and approved, follow the **Finalization Process** in the Execution Flow above to mark them finalized.
+- If the TDD is incomplete or unclear, follow the **Iteration Process** in the Execution Flow above.
+- Once complete and approved, follow the **Finalization Process** in the Execution Flow above to mark it finalized.
   - After finalization, proceed to `magen-sdd/.instructions/tasks/build-tasks.md` to generate implementation tasks.
 
 
 
-### Embedded Requirements Template
-Copy this into `magen-sdd/001-<feature-name>/requirements.md` and replace placeholders:
+### Embedded TDD Template
+Copy this into `magen-sdd/001-<feature-name>/tdd.md` and replace placeholders:
 
 ```markdown
-# Requirements: <feature-id>
+# TDD: <feature-id>
 
 ** Status **: Draft
 ** Version **: 1.0.0
@@ -261,7 +261,7 @@ Copy this into `magen-sdd/001-<feature-name>/requirements.md` and replace placeh
 ## Conventions
 - System shall… style; do not restate PRD business/user-story context.
 - Link each FR to PRD Feature and Story IDs (e.g., refs: Feature A; ST-101).
-- Use tables and descriptive prose for contracts (schemas, routes, metrics); do not include code in the requirements document.
+- Use tables and descriptive prose for contracts (schemas, routes, metrics); do not include code in the TDD document.
 
 ## Overview and technical scope
 - Link to PRD: [./prd.md](./prd.md)
@@ -353,7 +353,7 @@ Copy this into `magen-sdd/001-<feature-name>/requirements.md` and replace placeh
 - Q1: [Question 1]
 - Q2: [Question 2]
 
-## Requirements completion checklist
+## TDD completion checklist
 - [ ] All functional requirements (FRs) are atomic, numbered, and use "System shall..." phrasing
 - [ ] Each FR has clear acceptance criteria and traces back to PRD features and user stories
 - [ ] All non-functional requirements (NFRs) include measurable targets and budgets
@@ -370,7 +370,7 @@ Copy this into `magen-sdd/001-<feature-name>/requirements.md` and replace placeh
 - [ ] Deployment and migration plan includes steps and rollback strategy
 - [ ] Error handling and fallback behaviors are specified
 - [ ] Test plan mapping exists for all FRs/NFRs
-- [ ] User has explicitly approved the requirements for finalization (all above tasks must be completed or removed)
+- [ ] User has explicitly approved the TDD for finalization (all above tasks must be completed or removed)
 ```
 
 Note: Status metadata (creation time, update time, approval status) is now tracked in state.json instead of in the document itself.
