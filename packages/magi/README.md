@@ -1,13 +1,12 @@
-# Salesforce Mobile SDD MCP Server
+# Salesforce Magi MCP Server
 
-This package provides Model Context Protocol (MCP) tools for Salesforce Mobile SDD (Software Design and Development).
+This package provides Model Context Protocol (MCP) tools for Salesforce Magi a SDD (Software Design and Development) tool.
 
 ## Overview
 
-The Salesforce Mobile SDD MCP Server is a collection of tools to assist with mobile software design and development tasks. It leverages the Model Context Protocol to provide AI-assisted capabilities for mobile development workflows.
+Magi is a collection of tools to assist with mobile software design and development tasks. It leverages the Model Context Protocol to provide AI-assisted capabilities for mobile development workflows.
 
 ## Available Tools
-
 
 ## Development
 

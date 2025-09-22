@@ -27,7 +27,7 @@ import { join } from 'path';
 export class SddUpdateInstructionsTool implements Tool {
   public readonly name = 'SDD Update Instructions';
   public readonly title = 'Salesforce Mobile SDD Instructions Updater Tool';
-  public readonly toolId = 'sfmobile-sdd-update-instructions';
+  public readonly toolId = 'magi-update-instructions';
   public readonly description =
     'Updates the instruction files in a magi-sdd directory from the latest version included with the tool.';
   public readonly inputSchema = SddUpdateInstructionsInputSchema;
@@ -60,7 +60,7 @@ export class SddUpdateInstructionsTool implements Tool {
           content: [
             {
               type: 'text' as const,
-              text: `Error: This does not appear to be a valid SDD project. The directory '${instructionsDir}' or its contents are missing. Please run the 'sfmobile-sdd-init' tool first.`,
+              text: `Error: This does not appear to be a valid SDD project. The directory '${instructionsDir}' or its contents are missing. Please run the 'magi-init' tool first.`,
             },
           ],
         };

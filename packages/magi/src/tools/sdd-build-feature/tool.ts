@@ -13,7 +13,6 @@ import {
   SddBuildFeatureInputType,
 } from '../../schemas/sddBuildFeatureSchema.js';
 import { promises as fs } from 'fs';
-import { join } from 'path';
 import {
   getInstructionFilePaths,
   validateProjectPath,
@@ -21,14 +20,12 @@ import {
   createFeatureDirectory,
   loadStateJsonTemplate,
   getMagenDir,
-  copyRecursive,
-  getResourcesPath,
 } from '../../utils/index.js';
 
 export class SddBuildFeatureTool implements Tool {
   public readonly name = 'SDD Build Feature';
   public readonly title = 'Salesforce Mobile SDD Feature Builder Tool';
-  public readonly toolId = 'sfmobile-sdd-build-feature';
+  public readonly toolId = 'magi-build-feature';
   public readonly description =
     'Guides the LLM through creating a new feature requirement using SDD methodology';
   public readonly inputSchema = SddBuildFeatureInputSchema;

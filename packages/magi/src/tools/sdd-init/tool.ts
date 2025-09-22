@@ -26,7 +26,7 @@ import { join } from 'path';
 export class SddInitTool implements Tool {
   public readonly name = 'SDD Init';
   public readonly title = 'Salesforce Mobile SDD Initialization Tool';
-  public readonly toolId = 'sfmobile-sdd-init';
+  public readonly toolId = 'magi-init';
   public readonly description =
     'Initializes a project with Salesforce Mobile SDD instructions by copying them to a magi-sdd directory, or adds a new feature if already initialized';
   public readonly inputSchema = SddInitInputSchema;

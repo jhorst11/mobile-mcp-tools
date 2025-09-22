@@ -46,9 +46,9 @@ interface StateJson {
 }
 
 export class SddNextStepTool implements Tool {
-  public readonly name = 'SDD Next Step';
-  public readonly title = 'Salesforce Mobile SDD Next Step Tool';
-  public readonly toolId = 'sfmobile-sdd-next-step';
+  public readonly name = 'Magi SDD Next Step';
+  public readonly title = 'Magi SDD Next Step Tool';
+  public readonly toolId = 'magi-next-step';
   public readonly description =
     'Checks the state.json to determine which step of the feature generation we are currently in and provides pointers as to what should be done';
   public readonly inputSchema = SddNextStepInputSchema;
@@ -71,7 +71,7 @@ export class SddNextStepTool implements Tool {
     try {
       const content = await fs.readFile(stateJsonPath, 'utf8');
       return JSON.parse(content) as StateJson;
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -164,7 +164,7 @@ export class SddNextStepTool implements Tool {
 ### What to do next:
 1. **Review the deliverables** - Ensure all documents are complete and accurate
 2. **Begin implementation** - Start development based on the finalized tasks
-3. **Create a new feature** - Use \`sfmobile-sdd-build-feature\` to start another feature
+3. **Create a new feature** - Use \`magi-build-feature\` to start another feature
 
 ### All phases are complete and ready for implementation!`;
   }

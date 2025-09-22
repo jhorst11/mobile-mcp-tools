@@ -1,43 +1,45 @@
 {
-  "name": "@salesforce/mobile-sdd-mcp-server",
+  "name": "@salesforce/magi",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/mobile-sdd/src",
+  "sourceRoot": "packages/magi/src",
   "projectType": "library",
   "targets": {
     "build": {
       "executor": "nx:run-commands",
       "options": {
         "command": "tsc",
-        "cwd": "packages/mobile-sdd"
+        "cwd": "packages/magi"
       },
-      "outputs": ["{projectRoot}/dist"]
+      "outputs": [
+        "{projectRoot}/dist"
+      ]
     },
     "test": {
       "executor": "nx:run-commands",
       "options": {
         "command": "vitest run",
-        "cwd": "packages/mobile-sdd"
+        "cwd": "packages/magi"
       }
     },
     "test:coverage": {
       "executor": "nx:run-commands",
       "options": {
         "command": "vitest run --coverage",
-        "cwd": "packages/mobile-sdd"
+        "cwd": "packages/magi"
       }
     },
     "test:watch": {
       "executor": "nx:run-commands",
       "options": {
         "command": "vitest",
-        "cwd": "packages/mobile-sdd"
+        "cwd": "packages/magi"
       }
     },
     "lint": {
       "executor": "nx:run-commands",
       "options": {
         "command": "eslint --config ../../eslint.config.mjs \"src/**/*.ts\"",
-        "cwd": "packages/mobile-sdd"
+        "cwd": "packages/magi"
       }
     }
   },

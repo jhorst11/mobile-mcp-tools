@@ -15,7 +15,7 @@ export const SddUpdateInstructionsPrompt: Prompt = {
             role: 'user',
             content: {
               type: 'text',
-              text: `Check if the magi-sdd directory exists at the project root (this may be a hidden directory), if it does invoke the sfmobile-sdd-update-instructions tool.`,
+              text: `Check if the magi-sdd directory exists at the project root (this may be a hidden directory), if it does invoke the magi-update-instructions tool.`,
             },
           },
         ],

@@ -1,5 +1,5 @@
 {
-  "name": "@salesforce/mobile-sdd-mcp-server",
+  "name": "@salesforce/magi",
   "version": "0.0.1-alpha.1",
   "type": "module",
   "files": [
@@ -18,7 +18,7 @@
     }
   },
   "bin": {
-    "sfdc-mobile-sdd-mcp-server": "dist/index.js"
+    "magi": "dist/index.js"
   },
   "scripts": {
     "build": "tsc ",

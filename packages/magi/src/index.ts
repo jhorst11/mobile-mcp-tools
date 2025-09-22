@@ -32,7 +32,7 @@ import { SddInitPrompt } from './prompts/sdd-init/prompt.js';
 import { SddUpdateInstructionsPrompt } from './prompts/sdd-update-instructions/prompt.js';
 
 const server = new McpServer({
-  name: 'sfdc-mobile-sdd-mcp-server',
+  name: 'magi',
   description: 'Magi Spec Driven Development MCP Server',
   version,
 });
