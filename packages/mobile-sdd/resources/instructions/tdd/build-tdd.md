@@ -267,4 +267,6 @@ When asking clarifying questions about technical requirements, the model MUST us
 
 ### Next Steps
 - If the TDD is incomplete, the model MUST follow the Iteration Process.  
-- Once finalized, the model MAY proceed to `magi-sdd/.instructions/tasks/build-tasks.md` to generate tasks.  
+- Once finalized, the model MUST ONLY proceed to `magi-sdd/.instructions/tasks/build-tasks.md` to generate tasks.
+- The model MUST NOT offer implementation, code generation, or any other options until TDD is finalized.
+- The model MUST NOT suggest alternative next steps until TDD is finalized.

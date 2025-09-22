@@ -208,7 +208,7 @@ export async function validateMagenDirectory(projectPath: string): Promise<FileS
 export async function loadStateJsonTemplate(): Promise<FileSystemResult<Record<string, unknown>>> {
   try {
     const resourcesPath = getResourcesPath();
-    const templatePath = join(resourcesPath, 'state.json');
+    const templatePath = join(resourcesPath, 'instructions', 'state.json');
     const templateContent = await fs.readFile(templatePath, 'utf8');
     const template = JSON.parse(templateContent);
     return {

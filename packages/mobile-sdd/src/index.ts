@@ -26,12 +26,14 @@ const version = packageJson.version;
 import { SddInitTool } from './tools/sdd-init/tool.js';
 import { SddBuildFeatureTool } from './tools/sdd-build-feature/tool.js';
 import { SddUpdateInstructionsTool } from './tools/sdd-update-instructions/tool.js';
+import { SddNextStepTool } from './tools/sdd-next-step/tool.js';
 import { SddNewFeaturePrompt } from './prompts/sdd-new-feature/prompt.js';
 import { SddInitPrompt } from './prompts/sdd-init/prompt.js';
 import { SddUpdateInstructionsPrompt } from './prompts/sdd-update-instructions/prompt.js';
 
 const server = new McpServer({
   name: 'sfdc-mobile-sdd-mcp-server',
+  description: 'Magi Spec Driven Development MCP Server',
   version,
 });
 
@@ -43,7 +45,12 @@ const annotations: ToolAnnotations = {
   openWorldHint: false,
 };
 
-const tools = [new SddInitTool(), new SddBuildFeatureTool(), new SddUpdateInstructionsTool()];
+const tools = [
+  new SddInitTool(),
+  new SddBuildFeatureTool(),
+  new SddUpdateInstructionsTool(),
+  new SddNextStepTool(),
+];
 
 // Register all tools
 tools.forEach(tool => tool.register(server, annotations));

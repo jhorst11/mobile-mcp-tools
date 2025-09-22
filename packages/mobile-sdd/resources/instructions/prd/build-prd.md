@@ -81,7 +81,7 @@ When providing multiple choice options for key questions, the model MUST use a v
 | **B**  | Multi-step wizard with guided flow                   |
 | **C**  | Dashboard with real-time data visualization          |
 | **D**  | Form-based data entry with validation                |
-| **E**  | **Other** (please describe): ****\_\_\_****          |
+| **E**  | **Other** (please describe):                         |
 
 ---
 
@@ -95,7 +95,7 @@ When providing multiple choice options for key questions, the model MUST use a v
 | **B**  | 100-1,000                                   | Department/medium organization |
 | **C**  | 1,000-10,000                                | Large organization/enterprise  |
 | **D**  | > 10,000                                    | Public/mass market scale       |
-| **E**  | **Other** (please describe): ****\_\_\_**** |
+| **E**  | **Other** (please describe):                |                                |
 
 ---
 
@@ -363,7 +363,7 @@ Each user story MUST include:
 
 ### Next Steps
 
-- If the TDD is incomplete, the model MUST follow the Iteration Process.
+- If the PRD is incomplete, the model MUST follow the Iteration Process.
 - Once finalized, the model MUST ONLY proceed to TDD generation using `magi-sdd/.instructions/tasks/build-tdd.md`.
-- The model MUST NOT offer implementation, code generation, or any other options until TDD is complete.
-- The model MUST NOT suggest alternative next steps until TDD is complete.
+- The model MUST NOT offer implementation, code generation, or any other options until PRD is complete.
+- The model MUST NOT suggest alternative next steps until PRD is complete.
