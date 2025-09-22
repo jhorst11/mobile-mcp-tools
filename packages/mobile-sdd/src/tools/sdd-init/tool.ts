@@ -19,14 +19,16 @@ import {
   loadStateJsonTemplate,
   copyRecursive,
   getResourcesPath,
+  pathExists,
 } from '../../utils/index.js';
+import { join } from 'path';
 
 export class SddInitTool implements Tool {
   public readonly name = 'SDD Init';
   public readonly title = 'Salesforce Mobile SDD Initialization Tool';
   public readonly toolId = 'sfmobile-sdd-init';
   public readonly description =
-    'Initializes a project with Salesforce Mobile SDD instructions by copying them to a magen-sdd directory, or adds a new feature if already initialized';
+    'Initializes a project with Salesforce Mobile SDD instructions by copying them to a magi-sdd directory, or adds a new feature if already initialized';
   public readonly inputSchema = SddInitInputSchema;
 
   /**
@@ -75,11 +77,20 @@ export class SddInitTool implements Tool {
     const instructionsDir = getInstructionsDir(projectPath);
     await fs.mkdir(instructionsDir, { recursive: true });
 
-    // Copy instruction files from resources to project
+    // Copy instructions from resources/instructions to .instructions
     const resourcesPath = getResourcesPath();
-    await copyRecursive(resourcesPath, instructionsDir);
+    const instructionsSourcePath = join(resourcesPath, 'instructions');
+    await copyRecursive(instructionsSourcePath, instructionsDir);
 
-    // We no longer create the specs directory as features will be directly under magen-sdd
+    // Copy hooks directory if it exists
+    const targetDir = getMagenDir(projectPath);
+    const hooksSourcePath = join(resourcesPath, 'hooks');
+    const hooksTargetPath = join(targetDir, 'hooks');
+    if (await pathExists(hooksSourcePath)) {
+      await copyRecursive(hooksSourcePath, hooksTargetPath);
+    }
+
+    // We no longer create the specs directory as features will be directly under magi-sdd
     // with the format 001-<feature-name>
   }
 
@@ -96,14 +107,14 @@ export class SddInitTool implements Tool {
       const targetDir = getMagenDir(projectPath);
       const instructionPaths = getInstructionFilePaths(targetDir);
 
-      // Check if magen-sdd directory already exists
+      // Check if magi-sdd directory already exists
       const magenExists = await fs
         .access(targetDir)
         .then(() => true)
         .catch(() => false);
 
       if (magenExists) {
-        // magen-sdd directory exists, validate it's a proper SDD project
+        // magi-sdd directory exists, validate it's a proper SDD project
         const validation = await validateMagenDirectory(projectPath);
 
         if (!validation.isError) {
@@ -123,7 +134,7 @@ export class SddInitTool implements Tool {
         }
       }
 
-      // Create magen-sdd directory if it doesn't exist
+      // Create magi-sdd directory if it doesn't exist
       try {
         await fs.mkdir(targetDir, { recursive: true });
       } catch (error) {
@@ -132,13 +143,13 @@ export class SddInitTool implements Tool {
           content: [
             {
               type: 'text' as const,
-              text: `Error: Failed to create magen-sdd directory: ${(error as Error).message}`,
+              text: `Error: Failed to create magi-sdd directory: ${(error as Error).message}`,
             },
           ],
         };
       }
 
-      // Create directory structure (magen-sdd/specs and magen-sdd/.instructions)
+      // Create directory structure (magi-sdd/specs and magi-sdd/.instructions)
       await this.createDirectoryStructure(projectPath);
 
       return {

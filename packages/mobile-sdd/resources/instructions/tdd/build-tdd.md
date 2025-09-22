@@ -1,257 +1,148 @@
-### Build TDD (Technical Design Document) — LLM Instructions
+# Build TDD — LLM Instructions
 
-Objective: Derive technical requirements (FRs/NFRs), constraints, and assumptions from a finalized PRD and produce `magen-sdd/001-<feature-name>/tdd.md`, then collaborate with the user to close gaps. Each feature has its own state file at `magen-sdd/001-<feature-name>/state.json`.
+You are an expert technical architect. Your goal is to derive technical requirements (FRs/NFRs), constraints, and assumptions from a finalized PRD and produce `magi-sdd/001-<feature-name>/tdd.md`, then collaborate with the user to close gaps. Each feature has its own state file at `magi-sdd/001-<feature-name>/state.json`.
+
+---
 
 ### Prerequisites (MUST)
-- A finalized PRD exists at `magen-sdd/001-<feature-name>/prd.md`.
-- The feature's state.json has `prd.state` = "finalized".
 
-### Conventions (style and separation of concerns)
-- Do not restate PRD business context or user stories in this document. Link to them.
-- Use strict, testable "System shall …" statements for FRs; keep them implementation-agnostic but concrete.
-- Tight traceability only: each FR references PRD Feature and Story IDs (e.g., `refs: Feature A; ST-101`).
-- Categorize FRs when helpful: System (FR-SYS-*), UI/Client (FR-UI-*), Infrastructure (FR-INFRA-*), Compliance/Security (FR-COMP-*).
-- Describe data schemas, API contracts, events, and technical specifications, but do not include code in the TDD document.
-- Ask one question at a time when clarifying; wait for the user's answer before proceeding.
-- **Open questions**: Document unresolved items that need clarification. **Remove questions from this section once answered and incorporated into the TDD.**
-- **Checklist completion**: Always mark checklist items as complete when the corresponding work is done, especially the "Mapping table in PRD file updated" item.
+- A finalized PRD MUST exist at `magi-sdd/001-<feature-name>/prd.md`.
+- The TDD MUST NOT proceed unless the PRD is finalized.
 
-### State Management First
-1. **Locate or create feature state file**:
-   - If working with an existing feature, locate its state.json at `magen-sdd/001-<feature-name>/state.json`.
-   - If creating a new feature, you'll need to initialize a new state.json file.
-   - Check the feature's state.json to determine where you are in the process.
-   - Confirm `prd.state` is "finalized" before proceeding.
+### Custom Instructions (MUST)
 
-### User Collaboration Prompts
-Ask concise questions to fill gaps. Prioritize ambiguous or high‑risk areas.
-- Ask one question at a time; wait for the user's answer before moving to the next.
-- What are the primary user roles and their permissions?
-- What are the core user journeys to support in v1?
-- What systems do we integrate with? 
-- What data is sensitive or regulated (PII/PHI/PCI)?
-- What platforms are in scope (web, mobile, API)? Any out of scope?
-- What success metrics define "done" for this feature?
+- The model MUST read and follow any custom instructions in `magi-sdd/hooks/tdd-hook.md` if it exists.
+- Custom instructions in the hook file take precedence over these default instructions.
+- If the hook file contains "## LLM IGNORE FOLLOWING (USER MUST POPULATE)", the model MUST ignore the hook file content and proceed with these default instructions.
 
-If answers affect existing FRs/NFRs, update both the document and the feature's state.json immediately.
+---
+
+### Conventions (MUST, MUST NOT, SHOULD, MAY)
+- The TDD MUST NOT restate PRD business context or user stories. It MUST link to them instead.
+- FRs MUST use strict, testable "System shall …" phrasing. They MUST be implementation-agnostic but concrete.
+- Each FR MUST reference PRD Feature and Story IDs (e.g., `refs: Feature A; ST-101`).
+- FRs MAY be categorized when helpful: System (FR-SYS-*), UI/Client (FR-UI-*), Infrastructure (FR-INFRA-*), Compliance/Security (FR-COMP-*).
+- The Technical Specification MUST describe schemas, API contracts, events, and technical specifications in prose and tables. It MUST NOT include code snippets or code blocks.
+- Open questions MUST be documented. Once resolved, they MUST be removed and incorporated into the TDD.
+- Checklist items MUST be marked complete only when the work is actually done. Placeholders that are not applicable MUST be removed.
+
+### Visual Format for Questions
+
+When asking clarifying questions about technical requirements, the model MUST use a visually appealing format with clear formatting and visual separators. Example:
+
+```markdown
+## Technical Clarification Questions
+
+**TDD Progress:** ████████░░ 80%
+
+---
+
+### 1) Architecture Pattern
+**What is the preferred architectural approach for this feature?**
+
+| Option | Pattern | Description |
+|--------|---------|-------------|
+| **A** | Microservices | Independent services with APIs |
+| **B** | Monolithic | Single application with modules |
+| **C** | Event-driven | Async communication via events |
+| **D** | Mobile-first | Native mobile with backend API |
+| **E** | **Other** (please describe): ___________ |
+
+---
+
+### 2) Data Storage Requirements
+**What are the data persistence needs?**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| **A** | Relational | Structured data, ACID compliance |
+| **B** | NoSQL | Flexible schema, high scale |
+| **C** | Search | Full-text search capabilities |
+| **D** | Time-series | Metrics and analytics data |
+| **E** | **Other** (please describe): ___________ |
+
+---
+
+**Tip:** You can respond with just the letter (A, B, C, etc.) or provide additional details!
+```
+
+---
+
+### State Management (MUST)
+1. The model MUST locate or create the feature’s state.json file at `magi-sdd/001-<feature-name>/state.json`.
+2. The model MUST confirm `prd.state = finalized` before proceeding.
+3. The model MUST update `timestamps.lastUpdated` and append to the changelog on every change.
+
+---
+
+### User Collaboration Prompts (MUST)
+- The model MUST prioritize ambiguous or high-risk areas.  
+- The model MUST ask one targeted question at a time to resolve a specific technical ambiguity or high-risk area. It SHOULD NOT ask broad, open-ended questions that could be broken down into smaller, more specific inquiries. The model MAY group very closely related, atomic questions (e.g., "What is the format of the `userId`? And what is the format of the `accountId`?") if it improves user clarity.
+- The model MUST NOT continue generating without waiting for the user’s answer.  
+- The model MAY ask about user roles, journeys, integrations, sensitive data, platforms, and success metrics.  
+
+---
 
 ### Execution Flow
 
 #### Initial TDD Creation
-1. **Locate or create feature folder**:
-   - If working with an existing feature, use its feature ID.
-   - If creating a new feature, propose a feature ID (e.g., `001-example-feature`).
-   - Ensure the directory `magen-sdd/001-<feature-name>/` exists.
+1. The model MUST locate or create the feature folder.
+2. The model MUST create or open the feature’s `state.json` and initialize if new.
+3. The model MUST update timestamps accordingly.
+4. The model MUST read the finalized PRD and extract features, user stories, NFRs, and constraints.
+5. The model MUST seed the TDD file from the provided template.
+6. The model MUST populate the Overview by linking to PRD and asking questions if gaps exist.
+7. The model MUST draft FRs as atomic, numbered, and testable “System shall …” statements with acceptance verification.
+8. The model MUST update the PRD with FR IDs in the mapping table and mark the checklist item complete.
+9. The model MUST derive NFRs with measurable budgets (e.g., p95 latency ≤ 300ms, uptime ≥ 99.9%).  
+10. The model MUST document all Constraints and Assumptions.  
+11. The model MUST maintain the Open Questions section until all are resolved.  
+12. The Technical Specification section MUST cover schemas, APIs, events/state machines, client contracts, config/flags, security, observability, performance, deployment, error handling, analytics/SEO (if applicable), and test mapping.  
+13. The model MUST mark checklist items complete as work is done.  
+14. The model MUST update state.json with changelog entries.  
 
-2. **Create or initialize state.json**:
-   - Create or open `magen-sdd/001-<feature-name>/state.json`.
-   - Initialize with the feature ID.
+**IMPORTANT GATING RULE:** The model MUST NOT proceed to implementation task generation (`magi-sdd/.instructions/tasks/build-tasks.md`) until the TDD is explicitly finalized by the user. The presence of a finalized PRD alone is NOT sufficient.
 
-3. **Initialize timestamps**:
-   - If `timestamps.created` is empty, set it to the current time.
-   - Always update `timestamps.lastUpdated` when making changes.
+---
 
-4. **Read finalized PRD**:
-   - Open `magen-sdd/001-<feature-name>/prd.md`.
-   - Identify features, user stories (ST-###), PRD-level NFRs, and constraints.
-   - Note any open questions to clarify.
+### Iteration Process
+- The model MUST surface uncertainties in the Open Questions section.  
+- The model MUST ask targeted questions to resolve a specific technical ambiguity or high-risk area using the enhanced visual format. The model MAY group very closely related questions together and present them using the enhanced visual format with tables and clear separators.
+- The model MUST update state.json timestamps on every interaction.  
+- When user answers are provided, the model MUST incorporate them and remove resolved questions.  
+- The model MUST propose FR/NFR edits only with user agreement.  
+- The model MUST ensure traceability (FR ↔ PRD Feature ↔ PRD Story).  
+- The Technical Specification MUST be kept concise, testable, and code-free.  
+- Risks SHOULD be documented in the appropriate sections.  
+- Checklist items MUST be updated as progress is made.  
 
-5. **Seed from template**:
-   - Use the template below to create the TDD document.
-   - Set the **Version** header to "1.0.0" for the initial version.
+---
 
-6. **Populate Overview**:
-    - Summarize intent, target users, business value, and scope boundaries.
-    - Base this on the finalized PRD; ask targeted questions one at a time if gaps remain, waiting for the user's answer before moving on.
+### Update Process
+- The model MUST confirm the scope of changes. If unclear, it MUST ask one clarifying question using the enhanced visual format.  
+- The model MUST identify impacted sections and update them with minimal diffs.  
+- The PRD mapping table MUST be updated with any new/changed FR IDs.  
+- The TDD version MUST follow semantic versioning.  
+- The model MUST update state.json with timestamps and changelog entries.  
+- If previously finalized, the TDD state MUST be reset to `in_review` until the user re-approves.  
 
-8. **Draft Functional Requirements (FRs)**:
-   - Derive from PRD features and user stories; use numbered FRs (FR1, FR2, …). One behavior per FR.
-   - Phrase as "System shall …" with trigger, inputs, processing, outputs, error conditions, and verifiable acceptance checks.
-   - Do not restate user stories or PRD acceptance criteria; instead, reference PRD IDs (e.g., `refs: Feature A; ST-101`).
-   - Capture edge cases and error handling at the FR level when relevant.
-   - Optionally tag FRs by category (FR-SYS-1, FR-UI-1, FR-INFRA-1, FR-COMP-1).
-   - Document all FRs in the tdd.md file.
+---
 
-9. **Update PRD with FR IDs**:
-   - Open the corresponding PRD file (`magen-sdd/001-<feature-name>/prd.md`).
-   - Locate the 'Future FR IDs' table.
-   - Populate the table with the FR IDs generated in the previous step.
-   - **Mark the "Mapping table in PRD file updated" checklist item as complete** in the TDD template.
+### Finalization Process (STRICT)
 
-10. **Non‑Functional Requirements (NFRs)**:
-   - Derive detailed technical NFRs from PRD-level NFRs: performance, security, availability, usability, privacy, accessibility, observability.
-   - Provide measurable budgets (e.g., p95 latency ≤ 300ms, uptime ≥ 99.9%).
-   - Document all NFRs in the tdd.md file.
+- The model MUST NOT finalize a TDD without explicit user approval.  
+- The user MUST explicitly approve with a statement like “I approve finalizing the TDD.”  
+- The model MUST confirm all checklist items are complete.  
+- The TDD MUST contain atomic, numbered FRs, measurable NFRs, explicit constraints/assumptions, no code, and complete technical specifications.  
+- The model MUST record `tdd.state = finalized` in `state.json` and update timestamps.  
+- The TDD document MUST include a note: “Changes after finalization require a new iteration cycle and version bump.”  
+- The model MUST update the TDD version using semantic versioning.
 
-11. **Constraints**:
-   - Document technical, compliance, integrations, data residency, deadlines.
-   - Document all constraints in the tdd.md file.
+**STRICT GATING RULE:** The model MUST NOT generate implementation tasks until `tdd.state = finalized` is set in the feature’s state.json.  
 
-12. **Assumptions**:
-   - Explicitly list what is presumed true.
-   - Document all assumptions in the tdd.md file.
+---
 
-13. **Open Questions**:
-     - Document anything unresolved in the Open Questions section of the TDD document.
-     - **When user answers open questions**: Update the relevant sections of the TDD with the new information and **remove the answered question from the "Open Questions" section** (section 13).
-
-14. **Technical Specification** (produce concrete contracts; keep concise and testable)
-    - Data model and schemas:
-      - Entities, fields, types, nullability, constraints, indexes. 
-    - API contracts and routes:
-      - Method, path, auth, headers, params, request/response schema, error codes, idempotency, rate limits, versioning.
-    - Events and state machines:
-      - Event names, topics, payload schemas, ordering/delivery guarantees, retries/DLQ; state diagrams and transitions.
-    - Client/UI component contracts:
-      - Components, props/inputs/outputs, state shape, loading/error/empty states, accessibility behaviors.
-    - Configuration and feature flags:
-      - Names, defaults, scope, rollout/kill switch strategy.
-    - Security and compliance details:
-      - AuthN/AuthZ flows, scopes/permissions, data retention/redaction, secrets handling, audit trails.
-    - Observability:
-      - Metrics (RED/USE), logs/events schema, trace spans, dashboards, alert rules (thresholds, ownership).
-    - Performance and capacity planning:
-      - Budgets, expected traffic, load profiles, concurrency, backpressure policies; perf test plan.
-    - Deployment and migration plan:
-      - Steps, DB migrations, compatibility windows, rollback strategy, safety checks.
-    - Error handling and fallback behaviors:
-      - Failure modes, retries, user-visible errors, rate limiting, anti-enumeration for slugs/tokens.
-    - Analytics/SEO and metadata (if applicable):
-      - Analytics events, OpenGraph/meta tags for public pages.
-    - Test plan mapping:
-      - For each FR/NFR, list unit/integration/e2e/contract tests and how they validate acceptance.
-
-15. **Mark checklist items as complete** in the TDD template as you validate each requirement.
-
-16. **Update state**: Add an entry to the `changelog` array in the feature's state.json.
-
-#### Iteration Process
-When the TDD needs refinement or has gaps, follow this iteration loop:
-
-1. **Surface uncertainties**: 
-   - Identify any vague items in the TDD document and any ambiguities relative to PRD features and stories.
-
-2. **Ask targeted questions**: 
-   - Ask one question at a time; minimize cognitive load.
-   - Update `timestamps.lastUpdated` in the feature's state.json after each interaction.
-   - **When user answers questions**: Update the relevant sections of the TDD with the new information and **remove the answered question from the "Open Questions" section** (section 13).
-
-3. **Propose edits**: 
-   - Suggest specific FR/NFR/Constraint edits. 
-   - Apply them once the user agrees.
-   - Update the TDD document with the agreed changes.
-   - Ensure FRs use strict "System shall …" phrasing with triggers, inputs, processing, outputs, and error cases; do not restate PRD acceptance criteria.
-   - Do not include code snippets or code blocks in the TDD; use descriptive prose and tables for schemas, routes, and metrics.
-
-4. **Traceability check**: 
-   - Ensure each FR links to acceptance criteria and maps to one or more PRD features and story IDs.
-   - Ensure PRD-level NFRs are cascaded into measurable technical NFRs.
-   - Update the TDD document as needed.
-
-5. **Technical Specification completion**:
-   - Fill out Data schemas, API contracts, Events/State, Client/UI contracts, Config/Flags, Security/Compliance, Observability, Performance/Capacity, Deployment/Migration, Error Handling, Analytics/SEO (as applicable).
-   - Use tables and descriptive prose to keep contracts concise and verifiable. Do not include code blocks.
-
-6. **Risk review**: 
-   - Identify performance, security, or integration risks.
-   - Add them to the appropriate sections in the TDD document.
-
-7. **Update checklist items** in the TDD template to reflect current completion status as you make changes.
-
-8. **Update state**: 
-   - Add an entry to the `changelog` array in the feature's state.json after significant changes.
-
-**Iteration exit criteria:**
-- FRs are numbered, atomic, and testable with clear acceptance criteria.
-- Error conditions and edge cases covered or explicitly out of scope.
-- NFRs include performance, security, privacy, accessibility, availability, observability with measurable targets.
-- Constraints and assumptions are explicit and consistent with FRs.
-- All open questions have been answered or explicitly deferred (not MVP).
-- Each FR maps to at least one PRD feature and one or more PRD user stories where applicable.
-- The user EXPLICITLY confirms readiness to finalize with a clear statement like "I approve finalizing the TDD" or "The TDD can be finalized now".
-- FR style uses "System shall …" phrasing and avoids duplicating PRD business context or user stories.
-- A Traceability table (FR ↔ PRD Feature ↔ PRD Story IDs) is present and complete.
-- Technical Specification sections are present and concrete (schemas, routes, components, events/state, security, observability, performance, deployment, error handling, analytics/SEO as applicable).
-- No code blocks or code snippets are present in the TDD; contracts are described via prose and tables only.
-
-#### Update Process
-For applying minimal, well-justified updates to an existing TDD document:
-
-1. **Confirm scope** of the change. If unclear, ask one targeted question and wait for the user's response.
-   - **When user answers questions**: Update the relevant sections of the TDD with the new information and **remove the answered question from the "Open Questions" section** (section 13).
-2. **Identify impacted sections** (e.g., FRs, NFRs, Technical Specification) and ripple effects.
-3. **Propose a minimal diff** with explicit FR ID changes (add/remove/modify) and update the FR ↔ Feature/Story mapping table.
-4. **Update PRD with FR IDs**:
-   - Open the corresponding PRD file (`magen-sdd/001-<feature-name>/prd.md`).
-   - Locate the 'Future FR IDs' table.
-   - Update the table with any new or modified FR IDs.
-   - **Mark the "Mapping table in PRD file updated" checklist item as complete** in the TDD template.
-5. **Update the TDD version**:
-   - For minor updates: Increment patch version (e.g., 1.0.0 → 1.0.1)
-   - For new features: Increment minor version (e.g., 1.0.0 → 1.1.0)
-   - For breaking changes: Increment major version (e.g., 1.0.0 → 2.0.0)
-   - Update the **Version** header in the TDD document
-6. **Validate testability and observability** for changed FRs; update acceptance checks and budgets as needed.
-7. **Update checklist items** in the requirements template to reflect any changes in completion status.
-8. **Update the feature's state.json**:
-   - Set `timestamps.lastUpdated` to now.
-   - Append a `changelog` entry with summary and impacted FRs.
-   - If previously finalized, keep `tdd.state: in_review` until user re-approves.
-9. **Ask the user to review**. Only when the user EXPLICITLY approves, proceed to finalization.
-
-#### Finalization Process
-**IMPORTANT: STRICT USER APPROVAL REQUIRED**
-- DO NOT finalize TDD automatically after answering open questions.
-- ONLY finalize when the user has EXPLICITLY approved finalization with a clear statement like "I approve finalizing the TDD" or "The TDD can be finalized now".
-- If the user has not explicitly approved finalization, continue with the iteration process.
-
-**Pre-finalization checklist:**
-- User has EXPLICITLY approved finalization with a clear statement (REQUIRED).
-- FRs in the TDD document are atomic, numbered, and have acceptance criteria.
-- FRs trace back to PRD features and story IDs where applicable.
-- NFRs in the TDD document cover key quality attributes (performance, security, privacy, accessibility, availability, observability) with measurable targets.
-- Constraints and assumptions in the TDD document are explicit and stable.
-- All open questions have been answered or explicitly deferred (not MVP).
-- FR style: uses "System shall …" phrasing without restating PRD business context or user stories.
-- No duplication: TDD does not restate PRD acceptance criteria; it instead references PRD IDs.
-- No code: the TDD contains no code blocks or code snippets; contracts are expressed with prose and tables only.
-- Technical Specification sections are present and concrete where applicable.
-- Test plan mapping exists for FRs/NFRs (unit/integration/e2e/contract) and aligns with acceptance verification.
-
-**Finalization steps:**
-1. **CONFIRM user has explicitly approved finalization**. If not, return to iteration.
-2. **Verify all checklist items are marked complete** in the TDD template. If any items are incomplete, address them before finalizing.
-3. **Update the feature's state.json**:
-   - Set `tdd.state` to "finalized".
-   - Set `timestamps.tddFinalized` to the current time.
-   - Set `timestamps.lastUpdated` to the current time.
-   - Add a finalization entry to the `changelog` array with details and date.
-4. **Freeze scope**: 
-   - Add a note to the TDD document: "Changes after finalization require a new iteration cycle and version bump."
-   - This is now tracked in the feature's state.json with `tdd.state` = "finalized".
-5. **Update the TDD version**:
-   - For initial version: Set to "1.0.0"
-   - For subsequent versions: Use semantic versioning (patch/minor/major based on scope of change)
-   - Update the **Version** header in the TDD document
-7. **Handoff**: 
-   - Indicate the next phase (tasks) will derive from this finalized PRD and TDD set.
-   - Set `state` in the feature's state.json to "tdd_complete" to indicate readiness for tasks phase.
-
-**Post-finalization guidance:**
-- Treat further discoveries as inputs to a new iteration cycle; do not silently edit finalized TDD.
-- Maintain traceability between TDD in the document and test cases/user stories in downstream artifacts.
-- Any changes to TDD after finalization should be tracked with a new changelog entry and version increment in the TDD document.
-
-### Next steps
-- If the TDD is incomplete or unclear, follow the **Iteration Process** in the Execution Flow above.
-- Once complete and approved, follow the **Finalization Process** in the Execution Flow above to mark it finalized.
-  - After finalization, proceed to `magen-sdd/.instructions/tasks/build-tasks.md` to generate implementation tasks.
-
-
-
-### Embedded TDD Template
-Copy this into `magen-sdd/001-<feature-name>/tdd.md` and replace placeholders:
-
+### Embedded TDD Template (MUST use this for drafting)
 ```markdown
 # TDD: <feature-id>
 
@@ -371,6 +262,9 @@ Copy this into `magen-sdd/001-<feature-name>/tdd.md` and replace placeholders:
 - [ ] Error handling and fallback behaviors are specified
 - [ ] Test plan mapping exists for all FRs/NFRs
 - [ ] User has explicitly approved the TDD for finalization (all above tasks must be completed or removed)
-```
+- [ ] The document status has been marked "Finalized"
+- [ ] The state.json file has been updated with tdd.state = "finalized"
 
-Note: Status metadata (creation time, update time, approval status) is now tracked in state.json instead of in the document itself.
+### Next Steps
+- If the TDD is incomplete, the model MUST follow the Iteration Process.  
+- Once finalized, the model MAY proceed to `magi-sdd/.instructions/tasks/build-tasks.md` to generate tasks.  

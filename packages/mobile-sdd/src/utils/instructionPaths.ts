@@ -23,7 +23,7 @@ export interface InstructionFilePaths {
 
 /**
  * Gets all instruction files absolute paths
- * @param magenDir The magen-sdd directory path
+ * @param magenDir The magi-sdd directory path
  * @returns Object containing all instruction file paths
  */
 export function getInstructionFilePaths(magenDir: string): InstructionFilePaths {

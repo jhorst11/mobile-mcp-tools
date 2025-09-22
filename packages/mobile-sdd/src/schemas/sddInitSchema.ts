@@ -10,7 +10,7 @@ import { z } from 'zod';
 export const SddInitInputSchema = z.object({
   projectPath: z
     .string()
-    .describe('Path to the project directory where magen-sdd folder will be created'),
+    .describe('Path to the project directory where magi-sdd folder will be created'),
 });
 
 export type SddInitInputType = z.infer<typeof SddInitInputSchema>;

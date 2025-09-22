@@ -82,7 +82,7 @@ export class SddBuildFeatureTool implements Tool {
         return projectValidation;
       }
 
-      // Validate magen-sdd directory
+      // Validate magi-sdd directory
       const magenValidation = await validateMagenDirectory(projectPath);
       if (magenValidation.isError) {
         return magenValidation;

@@ -40,10 +40,10 @@ export type FileSystemResult<T = unknown> = FileSystemError | FileSystemSuccess<
 
 /**
  * Gets the resources path for instruction files
- * @returns The absolute path to the resources/instructions directory
+ * @returns The absolute path to the resources directory
  */
 export function getResourcesPath(): string {
-  return resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'resources', 'instructions');
+  return resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'resources');
 }
 
 /**
@@ -148,12 +148,12 @@ export async function validateProjectPath(projectPath: string): Promise<FileSyst
 }
 
 /**
- * Validates that a magen-sdd directory exists and contains valid SDD structure
+ * Validates that a magi-sdd directory exists and contains valid SDD structure
  * @param projectPath The project path
  * @returns FileSystemResult indicating success or failure
  */
 export async function validateMagenDirectory(projectPath: string): Promise<FileSystemResult> {
-  const magenDir = join(projectPath, 'magen-sdd');
+  const magenDir = join(projectPath, 'magi-sdd');
   const exists = await pathExists(magenDir);
 
   if (!exists) {
@@ -162,7 +162,7 @@ export async function validateMagenDirectory(projectPath: string): Promise<FileS
       content: [
         {
           type: 'text' as const,
-          text: `Error: The magen-sdd directory does not exist in the project path. Please run the sdd-init tool first to initialize the SDD environment.`,
+          text: `Error: The magi-sdd directory does not exist in the project path. Please run the sdd-init tool first to initialize the SDD environment.`,
         },
       ],
     };
@@ -178,7 +178,7 @@ export async function validateMagenDirectory(projectPath: string): Promise<FileS
       content: [
         {
           type: 'text' as const,
-          text: `Error: The START.md file does not exist in the magen-sdd/.instructions directory. The SDD environment may be corrupted. Please run the sdd-init tool again.`,
+          text: `Error: The START.md file does not exist in the magi-sdd/.instructions directory. The SDD environment may be corrupted. Please run the sdd-init tool again.`,
         },
       ],
     };
@@ -197,7 +197,7 @@ export async function validateMagenDirectory(projectPath: string): Promise<FileS
 
 /**
  * Creates a feature directory structure
- * @param magenDir The magen-sdd directory path
+ * @param magenDir The magi-sdd directory path
  * @param featureId The feature ID
  * @returns FileSystemResult with the created feature directory path
  */

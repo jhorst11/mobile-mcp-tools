@@ -20,14 +20,16 @@ import {
   validateProjectPath,
   getMagenDir,
   getInstructionsDir,
+  pathExists,
 } from '../../utils/index.js';
+import { join } from 'path';
 
 export class SddUpdateInstructionsTool implements Tool {
   public readonly name = 'SDD Update Instructions';
   public readonly title = 'Salesforce Mobile SDD Instructions Updater Tool';
   public readonly toolId = 'sfmobile-sdd-update-instructions';
   public readonly description =
-    'Updates the instruction files in a magen-sdd directory from the latest version included with the tool.';
+    'Updates the instruction files in a magi-sdd directory from the latest version included with the tool.';
   public readonly inputSchema = SddUpdateInstructionsInputSchema;
 
   private readonly resourcesPath = getResourcesPath();
@@ -45,7 +47,7 @@ export class SddUpdateInstructionsTool implements Tool {
       const targetDir = getMagenDir(projectPath);
       const instructionsDir = getInstructionsDir(projectPath);
 
-      // Check if magen-sdd/.instructions directory exists to confirm it's a valid SDD project
+      // Check if magi-sdd/.instructions directory exists to confirm it's a valid SDD project
       const instructionPaths = getInstructionFilePaths(targetDir);
       const startExists = await fs
         .access(instructionPaths.start)
@@ -68,8 +70,16 @@ export class SddUpdateInstructionsTool implements Tool {
       await fs.rm(instructionsDir, { recursive: true, force: true });
       await fs.mkdir(instructionsDir, { recursive: true });
 
-      // Recursively copy all files and directories to .instructions, overwriting existing files
-      const copiedFiles = await copyRecursive(this.resourcesPath, instructionsDir);
+      // Copy instructions from resources/instructions to .instructions
+      const instructionsSourcePath = join(this.resourcesPath, 'instructions');
+      const copiedFiles = await copyRecursive(instructionsSourcePath, instructionsDir);
+
+      // Copy hooks directory if it exists
+      const hooksSourcePath = join(this.resourcesPath, 'hooks');
+      const hooksTargetPath = join(targetDir, 'hooks');
+      if (await pathExists(hooksSourcePath)) {
+        await copyRecursive(hooksSourcePath, hooksTargetPath);
+      }
 
       return {
         content: [

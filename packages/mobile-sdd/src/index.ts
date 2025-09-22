@@ -28,6 +28,7 @@ import { SddBuildFeatureTool } from './tools/sdd-build-feature/tool.js';
 import { SddUpdateInstructionsTool } from './tools/sdd-update-instructions/tool.js';
 import { SddNewFeaturePrompt } from './prompts/sdd-new-feature/prompt.js';
 import { SddInitPrompt } from './prompts/sdd-init/prompt.js';
+import { SddUpdateInstructionsPrompt } from './prompts/sdd-update-instructions/prompt.js';
 
 const server = new McpServer({
   name: 'sfdc-mobile-sdd-mcp-server',
@@ -47,7 +48,7 @@ const tools = [new SddInitTool(), new SddBuildFeatureTool(), new SddUpdateInstru
 // Register all tools
 tools.forEach(tool => tool.register(server, annotations));
 
-const prompts = [SddInitPrompt, SddNewFeaturePrompt];
+const prompts = [SddInitPrompt, SddNewFeaturePrompt, SddUpdateInstructionsPrompt];
 
 // Register all prompts
 prompts.forEach(prompt => prompt.register(server));

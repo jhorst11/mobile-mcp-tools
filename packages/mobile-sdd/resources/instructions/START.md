@@ -1,78 +1,36 @@
-### Spec‑Driven Development (SDD) — START
+# Spec‑Driven Development (SDD) — START
 
 This guide orchestrates how a user and an LLM collaborate to build software specs and assets in small, verifiable steps. Each feature has its own state.json file.
 
-### Available Tools
-- **sfmobile-sdd-init**: Initializes a project with SDD instructions by copying them to a magen-sdd directory.
-- **sfmobile-sdd-build-feature**: Creates a new feature with the specified ID, automatically setting up the directory structure and required files.
+## LLM Behavior
 
-### State Management
-- **Each feature has its own state file** at `magen-sdd/<feature-id>/state.json`.
-- **Always check the feature's state.json first** to determine the current state of the feature.
-- **Update state.json** after each significant change or phase transition.
-- **Use timestamps** in state.json to track when changes were made.
-- **Record all state transitions** in the changelog array.
+The model MUST determine the current state and guide the user accordingly:
 
-### What happens first
-1. **Initialize or select a feature**:
-   - If creating a new feature, use the `sfmobile-sdd-build-feature` tool with a feature ID (e.g., `00N-example-feature`), where `N` is a number incrementing from 001 based on the number of features already created.
-   - The tool will automatically create the feature directory, state.json file, and empty files for PRD, TDD, and tasks.
-   - If continuing with an existing feature, locate its state.json file.
+### If magi-sdd was just initialized:
+- The model MUST use the `sfmobile-sdd-build-feature` tool to create a new feature
+- The model MUST ask the user for a feature brief (intent, users, business value, constraints)
+- The model MUST generate a feature ID in format `NNN-kebab-case` (e.g., `001-example-feature`), the number MUST be incremented from the last feature (or 001 in the case of the first feature)
 
-2. **Build PRD**: Create a product requirements document first, iterate with the user until complete, then finalize.
-   - Open `magen-sdd/.instructions/prd/build-prd.md` and follow it.
-   - Track progress in state.json's `prd` object.
+### If user wants to create a new feature:
+- The model MUST use the `sfmobile-sdd-build-feature` tool with the project path and feature ID
+- The model MUST ask the user for a feature brief (intent, users, business value, constraints)
 
-### SDD flow overview
-1. **PRD phase** (must finalize before TDD)
-   - Draft the PRD from the feature brief using the template.
-   - Iterate by asking targeted questions; update the PRD and the feature's state.json as gaps are uncovered.
-   - Finalize PRD once there is clear consensus (set `prd.state` to "finalized").
+### If user was in the middle of creating a feature:
+- The model MUST inspect the feature's `state.json` file to determine current state
+- The model MUST guide the user to the appropriate instruction file based on state:
+  - If `prd.state` is not "finalized": guide to `magi-sdd/.instructions/prd/build-prd.md`
+  - If `prd.state` is "finalized" but `tdd.state` is not "finalized": guide to `magi-sdd/.instructions/tdd/build-tdd.md`
+  - If both `prd.state` and `tdd.state` are "finalized": guide to `magi-sdd/.instructions/tasks/build-tasks.md`
 
-2. **TDD phase** (requires `prd.state` to be "finalized")
-   - Derive technical requirements from the finalized PRD using `magen-sdd/.instructions/tdd/build-tdd.md`.
-   - Iterate via `magen-sdd/.instructions/tdd/iterate-tdd.md`.
-   - Finalize via `magen-sdd/.instructions/tdd/finalize-tdd.md`.
-   - Track in state.json's `tdd` object.
+## State Management
 
-3. **Tasks phase** (requires `tdd.state` to be "finalized")
-   - Task generation depends on the finalized PRD and TDD for traceability.
-   - Track in state.json's `build` object.
+- The model MUST check the feature's `state.json` first to determine current state
+- The model MUST update `state.json` after each significant change or phase transition
+- The model MUST use timestamps in state.json to track when changes were made
+- The model MUST record all state transitions in the changelog array
 
-### Conventions
-- **Feature ID**: `NNN-kebab-case` (e.g., `001-family-meal-planning`).
-- **Spec folder**: `magen-sdd/<feature-id>/`.
-- **PRD file**: `magen-sdd/<feature-id>/prd.md`.
-- **TDD file**: `magen-sdd/<feature-id>/tdd.md`.
-- **Tasks file**: `magen-sdd/<feature-id>/tasks.md`.
+## Gating Rules
 
-Gating rules:
-- TDD updates require `prd.state` to be `finalized`.
-- Tasks updates require `tdd.state` to be `finalized`.
-
-Finalization hygiene:
-- If an artifact was previously finalized and needs changes, set its state to `in_review` in the feature's `state.json`, make minimal changes, then re-finalize using the appropriate `finalize-*.md` doc after explicit user approval.
-
-### LLM kickoff
-At the very start:
-1. **Ask the user** which feature they want to work on, or if they want to create a new one.
-2. **If starting new feature**, ask the user for:
-   - **Overview of intent and business value** (focus on functionality not technicals)
-   - **Primary users/actors and platforms** (web/mobile/api, etc.)
-   - **Hard constraints** (deadlines, integrations, compliance)
-3. **Generate a feature ID** (e.g., `001-example-feature`).
-4. **Use the `sfmobile-sdd-build-feature` tool** with the project path and feature ID to automatically:
-   - Create the feature directory at `magen-sdd/<feature-id>/`
-   - Initialize state.json with timestamps and initial state
-   - Create empty files for PRD, TDD, and tasks
-5. **Proceed to** `magen-sdd/.instructions/prd/build-prd.md` to draft the PRD first.
-
-- Interview cadence: Ask one question at a time and wait for the user's response before moving to the next question.
-
-### Collaboration rules
-- Prefer short, verifiable edits over large rewrites.
-- Ask one question at a time; wait for the user's answer before proceeding.
-- Track open issues in the appropriate sections of the PRD and TDD documents themselves.
-- Maintain clear acceptance criteria so each functional requirement is testable.
-- Defer non‑TDD topics until after TDD is finalized.
-- Always update the feature's state.json after each significant change.
+- TDD updates require `prd.state` to be "finalized"
+- Tasks updates require `tdd.state` to be "finalized"
+- The model MUST enforce these gating rules before proceeding to next phases

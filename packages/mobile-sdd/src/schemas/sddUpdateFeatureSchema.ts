@@ -10,7 +10,7 @@ import { z } from 'zod';
 export const SddUpdateFeatureInputSchema = z.object({
   projectPath: z
     .string()
-    .describe('Path to the project directory where magen-sdd folder should exist'),
+    .describe('Path to the project directory where magi-sdd folder should exist'),
   featureId: z
     .string()
     .describe('ID of the existing feature (e.g., 001-example-feature)')
