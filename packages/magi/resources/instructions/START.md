@@ -7,13 +7,14 @@ This guide orchestrates how a user and an LLM collaborate to build software spec
 The model MUST determine the current state and guide the user accordingly:
 
 ### If magi was just initialized:
-- The model MUST use the `magi-build-feature` tool to create a new feature
 - The model MUST ask the user for a feature brief (intent, users, business value, constraints)
-- The model MUST generate a feature ID in format `NNN-kebab-case` (e.g., `001-example-feature`), the number MUST be incremented from the last feature (or 001 in the case of the first feature)
+- The model MUST use the `sdd-next-feature-id` tool to generate the next feature ID from the kebab-case feature name
+- The model MUST use the `magi-build-feature` tool to create a new feature with the generated feature ID
 
 ### If user wants to create a new feature:
-- The model MUST use the `magi-build-feature` tool with the project path and feature ID
 - The model MUST ask the user for a feature brief (intent, users, business value, constraints)
+- The model MUST use the `sdd-next-feature-id` tool to generate the next feature ID from the kebab-case feature name
+- The model MUST use the `magi-build-feature` tool with the project path and generated feature ID
 
 ### If user was in the middle of creating a feature:
 - The model MUST inspect the feature's `state.json` file to determine current state

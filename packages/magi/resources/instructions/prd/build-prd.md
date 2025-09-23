@@ -7,7 +7,7 @@ You are an expert technical product manager. Your goal is to generate a complete
 ### Prerequisites (MUST)
 
 - A feature brief exists (intent, users, business value, constraints) in conversation context and/or the feature's `state.json`.
-- If starting fresh, the model MUST initialize the feature per `START.md` and gather the brief from the user.
+- If starting fresh, the model MUST initialize the feature per `../START.md` and gather the brief from the user.
 
 ### Custom Instructions (MUST)
 

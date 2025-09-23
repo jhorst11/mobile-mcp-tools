@@ -27,6 +27,7 @@ import { SddInitTool } from './tools/sdd-init/tool.js';
 import { SddBuildFeatureTool } from './tools/sdd-build-feature/tool.js';
 import { SddUpdateInstructionsTool } from './tools/sdd-update-instructions/tool.js';
 import { SddNextStepTool } from './tools/sdd-next-step/tool.js';
+import { SddNextFeatureIdTool } from './tools/sdd-next-feature-id/tool.js';
 import { SddNewFeaturePrompt } from './prompts/sdd-new-feature/prompt.js';
 import { SddInitPrompt } from './prompts/sdd-init/prompt.js';
 import { SddUpdateInstructionsPrompt } from './prompts/sdd-update-instructions/prompt.js';
@@ -50,6 +51,7 @@ const tools = [
   new SddBuildFeatureTool(),
   new SddUpdateInstructionsTool(),
   new SddNextStepTool(),
+  new SddNextFeatureIdTool(),
 ];
 
 // Register all tools
