@@ -22,9 +22,10 @@
     "magen-server": "dist/index.js"
   },
   "scripts": {
-    "build": "npm run ensure-templates && tsc && npm run copy-templates",
+    "build": "npm run ensure-templates && tsc && npm run copy-templates && npm run copy-instructions",
     "ensure-templates": "git submodule update --init --recursive",
     "copy-templates": "cp -r templates dist/",
+    "copy-instructions": "cp -r src/tools/magi/nodes/prd/*.md dist/tools/magi/nodes/prd/ 2>/dev/null || true && cp -r src/tools/magi/nodes/tdd/*.md dist/tools/magi/nodes/tdd/ 2>/dev/null || true && cp -r src/tools/magi/nodes/tasks/*.md dist/tools/magi/nodes/tasks/ 2>/dev/null || true",
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

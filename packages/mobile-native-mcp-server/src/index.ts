@@ -16,6 +16,8 @@ import { SFMobileNativeDeploymentTool } from './tools/run/sfmobile-native-deploy
 import { SFMobileNativeBuildTool } from './tools/plan/sfmobile-native-build/tool.js';
 import { SFMobileNativeProjectGenerationTool } from './tools/plan/sfmobile-native-project-generation/tool.js';
 import { MobileNativeOrchestrator } from './tools/workflow/sfmobile-native-project-manager/tool.js';
+import { MagiTool } from './tools/magi/tool.js';
+import { registerMagiPrompts } from './tools/magi/prompts.js';
 
 import packageJson from '../package.json' with { type: 'json' };
 const version = packageJson.version;
@@ -49,7 +51,7 @@ const projectGenerationTool = new SFMobileNativeProjectGenerationTool(server);
 const buildTool = new SFMobileNativeBuildTool(server);
 const deploymentTool = new SFMobileNativeDeploymentTool(server);
 const xcodeAddFilesTool = new UtilsXcodeAddFilesTool(server);
-
+const magiTool = new MagiTool(server);
 // Register orchestrator with specific annotations
 orchestrator.register(orchestratorAnnotations);
 
@@ -60,6 +62,9 @@ projectGenerationTool.register(readOnlyAnnotations);
 buildTool.register(readOnlyAnnotations);
 deploymentTool.register(readOnlyAnnotations);
 xcodeAddFilesTool.register(readOnlyAnnotations);
+magiTool.register(orchestratorAnnotations);
+
+registerMagiPrompts(server);
 
 export default server;
 

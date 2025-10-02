@@ -99,7 +99,6 @@ describe('Evaluator', () => {
 
     it('should handle MCP client connection errors', async () => {
       const connectionError = new Error('Connection failed');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mockMcpClient.connect as any).mockRejectedValue(connectionError);
 
       const evaluatorLlmClient = mockLlmClient;
@@ -156,7 +155,6 @@ describe('Evaluator', () => {
         verdict: 'Pass GA Criteria',
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mockGenerationEvaluator.evaluate as vi.Mock).mockResolvedValue(expectedScore);
 
       const result = await evaluator.evaluate('testComponent');
@@ -185,7 +183,6 @@ describe('Evaluator', () => {
       };
 
       vi.mocked(loadEvaluationUnit).mockResolvedValue(reviewRefactorEvaluationUnit);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mockReviewRefactorEvaluator.evaluate as vi.Mock).mockResolvedValue(expectedScore);
 
       const result = await evaluator.evaluate('testComponent');
@@ -230,7 +227,6 @@ describe('Evaluator', () => {
 
     it('should propagate errors from generation evaluator', async () => {
       const evaluationError = new Error('Generation evaluation failed');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mockGenerationEvaluator.evaluate as vi.Mock).mockRejectedValue(evaluationError);
 
       await expect(evaluator.evaluate('testComponent')).rejects.toThrow(
@@ -250,7 +246,6 @@ describe('Evaluator', () => {
       vi.mocked(loadEvaluationUnit).mockResolvedValue(reviewRefactorEvaluationUnit);
 
       const evaluationError = new Error('Review-refactor evaluation failed');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mockReviewRefactorEvaluator.evaluate as vi.Mock).mockRejectedValue(evaluationError);
 
       await expect(evaluator.evaluate('testComponent')).rejects.toThrow(
@@ -301,7 +296,6 @@ describe('Evaluator', () => {
         verdict: 'Pass GA Criteria',
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mockGenerationEvaluator.evaluate as vi.Mock).mockResolvedValue(expectedScore);
       vi.mocked(loadEvaluationUnit).mockResolvedValue(mockEvaluationUnit);
 
