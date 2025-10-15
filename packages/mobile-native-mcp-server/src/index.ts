@@ -21,10 +21,13 @@ import packageJson from '../package.json' with { type: 'json' };
 const version = packageJson.version;
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 
-const server = new McpServer({
-  name: 'sfdc-mobile-native-mcp-server',
-  version,
-});
+const server = new McpServer(
+  {
+    name: 'sfdc-mobile-native-mcp-server',
+    version,
+  },
+  { capabilities: { logging: {} } }
+);
 
 // Define annotations for different tool types
 const readOnlyAnnotations: ToolAnnotations = {
@@ -60,6 +63,40 @@ projectGenerationTool.register(readOnlyAnnotations);
 buildTool.register(readOnlyAnnotations);
 deploymentTool.register(readOnlyAnnotations);
 xcodeAddFilesTool.register(readOnlyAnnotations);
+
+server.tool(
+  'send-progress-notification',
+  'Starts a long task and updates progress every 5 seconds',
+  {},
+  async (req, { sendNotification, _meta }) => {
+    const progressToken = _meta?.progressToken;
+
+    await sendNotification({
+      method: 'notifications/message',
+      params: {
+        level: 'info',
+        data: 'starting long running task',
+      },
+    });
+    for (let i = 1; i <= 10; i++) {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      // while this is a valid notification and the one we SHOULD be using, it does not seem to be handled by the MCP inspector.
+      // I found that sending a normal message notification as a heart beat keeps the tool alive
+      await sendNotification({
+        method: 'notifications/progress',
+        params: {
+          progressToken: progressToken ?? '123',
+          message: 'Solving world hunger...',
+          progress: i,
+          total: 10,
+        },
+      });
+    }
+    return {
+      content: [{ type: 'text', text: 'Task completed' }],
+    };
+  }
+);
 
 export default server;
 
