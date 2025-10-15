@@ -57,9 +57,15 @@ export const MobileNativeWorkflowState = Annotation.Root({
   userInputQuestion: Annotation<string>,
   platform: Annotation<z.infer<typeof WORKFLOW_USER_INPUT_PROPERTIES.platform.zodType>>,
 
+  // Input gathering state (new flexible system)
+  inputGatheringContext: Annotation<unknown>, // InputRequestContext
+  inputGatheringResponse: Annotation<unknown>, // InputResponse
+  inputGatheringRound: Annotation<number>,
+
   // Plan phase state
   validEnvironment: Annotation<boolean>,
   workflowFatalErrorMessages: Annotation<string[]>,
+  workflowStateData: Annotation<Record<string, unknown>>,
   selectedTemplate: Annotation<string>,
   projectName: Annotation<z.infer<typeof WORKFLOW_USER_INPUT_PROPERTIES.projectName.zodType>>,
   projectPath: Annotation<string>,

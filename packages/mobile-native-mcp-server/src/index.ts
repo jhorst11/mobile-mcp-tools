@@ -10,9 +10,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { SFMobileNativeTemplateDiscoveryTool } from './tools/plan/sfmobile-native-template-discovery/tool.js';
-import { SFMobileNativeGenerateQuestionTool } from './tools/plan/sfmobile-native-generate-question/tool.js';
-import { SFMobileNativeGetInputTool } from './tools/plan/sfmobile-native-get-input/tool.js';
-import { SFMobileNativeInputExtractionTool } from './tools/plan/sfmobile-native-input-extraction/tool.js';
+import { SFMobileNativeGatherInputTool } from './tools/plan/sfmobile-native-gather-input/tool.js';
 import { UtilsXcodeAddFilesTool } from './tools/utils/utils-xcode-add-files/tool.js';
 import { SFMobileNativeDeploymentTool } from './tools/run/sfmobile-native-deployment/tool.js';
 import { SFMobileNativeBuildTool } from './tools/plan/sfmobile-native-build/tool.js';
@@ -48,9 +46,7 @@ const orchestratorAnnotations: ToolAnnotations = {
 
 // Initialize tools
 const orchestrator = new MobileNativeOrchestrator(server);
-const generateQuestionTool = new SFMobileNativeGenerateQuestionTool(server);
-const getInputTool = new SFMobileNativeGetInputTool(server);
-const inputExtractionTool = new SFMobileNativeInputExtractionTool(server);
+const gatherInputTool = new SFMobileNativeGatherInputTool(server);
 const templateDiscoveryTool = new SFMobileNativeTemplateDiscoveryTool(server);
 const projectGenerationTool = new SFMobileNativeProjectGenerationTool(server);
 const buildTool = new SFMobileNativeBuildTool(server);
@@ -64,9 +60,7 @@ const failureTool = new SFMobileNativeFailureTool(server);
 orchestrator.register(orchestratorAnnotations);
 
 // Register all other tools with read-only annotations
-generateQuestionTool.register(readOnlyAnnotations);
-getInputTool.register(readOnlyAnnotations);
-inputExtractionTool.register(readOnlyAnnotations);
+gatherInputTool.register(readOnlyAnnotations);
 templateDiscoveryTool.register(readOnlyAnnotations);
 projectGenerationTool.register(readOnlyAnnotations);
 buildTool.register(readOnlyAnnotations);
