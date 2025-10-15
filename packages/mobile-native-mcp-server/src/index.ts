@@ -80,8 +80,6 @@ server.tool(
     });
     for (let i = 1; i <= 10; i++) {
       await new Promise(resolve => setTimeout(resolve, 5000));
-      // while this is a valid notification and the one we SHOULD be using, it does not seem to be handled by the MCP inspector.
-      // I found that sending a normal message notification as a heart beat keeps the tool alive
       await sendNotification({
         method: 'notifications/progress',
         params: {
