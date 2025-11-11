@@ -1,0 +1,7 @@
+{
+  "total_chunks": 2874,
+  "total_files": 595,
+  "model_name": "all-MiniLM-L6-v2",
+  "chunk_size": 500,
+  "chunk_overlap": 100
+}

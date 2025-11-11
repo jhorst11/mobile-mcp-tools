@@ -22,9 +22,10 @@
     "magen-server": "dist/index.js"
   },
   "scripts": {
-    "build": "npm run ensure-templates && tsc && npm run copy-templates",
+    "build": "npm run ensure-templates && tsc && npm run copy-templates && npm run copy-embeddings",
     "ensure-templates": "git submodule update --init --recursive",
     "copy-templates": "cp -r templates dist/",
+    "copy-embeddings": "mkdir -p dist/tools/docs/mobile-sdk && cp -r src/tools/docs/mobile-sdk/embeddings dist/tools/docs/mobile-sdk/ && cp -r src/tools/docs/mobile-sdk/content dist/tools/docs/mobile-sdk/",
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

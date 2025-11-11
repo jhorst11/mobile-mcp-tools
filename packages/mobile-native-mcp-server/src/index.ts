@@ -40,6 +40,8 @@ const version = packageJson.version;
 import { ToolAnnotations } from '@modelcontextprotocol/sdk/types.js';
 import { MobileAppProjectPrompt } from './prompts/index.js';
 import { MagiFeatureBriefFinalizationTool } from './tools/magi/prd/magi-prd-feature-brief-finalization/tool.js';
+import { registerMobileSdkSearchTool } from './tools/docs/mobile-sdk/search/tool.js';
+import { registerMobileSdkReadTool } from './tools/docs/mobile-sdk/read/tool.js';
 
 const server = new McpServer({
   name: 'sfdc-mobile-native-mcp-server',
@@ -121,6 +123,9 @@ prdReviewTool.register(readOnlyAnnotations);
 prdUpdateTool.register(readOnlyAnnotations);
 prdFinalizationTool.register(readOnlyAnnotations);
 prdFailureTool.register(readOnlyAnnotations);
+
+registerMobileSdkSearchTool(server);
+registerMobileSdkReadTool(server);
 
 // Register prompts
 mobileAppProjectPrompt.register();

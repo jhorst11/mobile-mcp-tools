@@ -1,3 +1,5 @@
 **/resources/*
 /docs
 **/templates/*
+packages/mobile-native-mcp-server/src/tools/docs/mobile-sdk/content/**
+packages/mobile-native-mcp-server/src/tools/docs/mobile-sdk/embeddings/**
