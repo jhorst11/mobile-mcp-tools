@@ -8,20 +8,22 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import fs from 'fs';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { PRDGenerationOrchestrator } from '../../src/tools/magi/prd/magi-prd-orchestrator/tool.js';
-import { MagiFeatureBriefGenerationTool } from '../../src/tools/magi/prd/magi-prd-feature-brief/tool.js';
-import { MagiInitialRequirementsTool } from '../../src/tools/magi/prd/magi-prd-initial-requirements/tool.js';
-import { MagiRequirementsReviewTool } from '../../src/tools/magi/prd/magi-prd-requirements-review/tool.js';
-import { MagiGapAnalysisTool } from '../../src/tools/magi/prd/magi-prd-gap-analysis/tool.js';
-import { MagiPRDGenerationTool } from '../../src/tools/magi/prd/magi-prd-generation/tool.js';
-import { MagiPRDReviewTool } from '../../src/tools/magi/prd/magi-prd-review/tool.js';
-import { PRDOrchestratorInput } from '../../src/tools/magi/prd/magi-prd-orchestrator/metadata.js';
-import { FeatureBriefWorkflowInput } from '../../src/tools/magi/prd/magi-prd-feature-brief/metadata.js';
-import { InitialRequirementsInput } from '../../src/tools/magi/prd/magi-prd-initial-requirements/metadata.js';
-import { RequirementsReviewInput } from '../../src/tools/magi/prd/magi-prd-requirements-review/metadata.js';
-import { GapAnalysisInput } from '../../src/tools/magi/prd/magi-prd-gap-analysis/metadata.js';
-import { PRDGenerationInput } from '../../src/tools/magi/prd/magi-prd-generation/metadata.js';
-import { PRDReviewInput } from '../../src/tools/magi/prd/magi-prd-review/metadata.js';
+import {
+  PRDGenerationOrchestrator,
+  MagiFeatureBriefGenerationTool,
+  MagiInitialRequirementsTool,
+  MagiRequirementsReviewTool,
+  MagiGapAnalysisTool,
+  MagiPRDGenerationTool,
+  MagiPRDReviewTool,
+  type PRDOrchestratorInput,
+  type FeatureBriefWorkflowInput,
+  type InitialRequirementsInput,
+  type RequirementsReviewInput,
+  type GapAnalysisInput,
+  type PRDGenerationInput,
+  type PRDReviewInput,
+} from '@salesforce/workflow-magi';
 
 describe('PRD Workflow Integration Test', () => {
   let server: McpServer;
