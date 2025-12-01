@@ -13,6 +13,7 @@ import { createWorkflowLogger } from '../../logging/logger.js';
 import { AbstractTool } from '../base/abstractTool.js';
 import {
   MCPToolInvocationData,
+  NodeGuidanceData,
   WORKFLOW_PROPERTY_NAMES,
   WorkflowStateData,
 } from '../../common/metadata.js';
@@ -149,36 +150,63 @@ export class OrchestratorTool extends AbstractTool<OrchestratorToolMetadata> {
     graphState = await compiledWorkflow.getState(threadConfig);
     if (graphState.next.length > 0) {
       // There are more nodes to execute.
-      const mcpToolInvocationData: MCPToolInvocationData<z.ZodObject<z.ZodRawShape>> | undefined =
+      const interruptData:
+        | NodeGuidanceData
+        | MCPToolInvocationData<z.ZodObject<z.ZodRawShape>>
+        | undefined =
         '__interrupt__' in result
           ? (
               result.__interrupt__ as Array<{
-                value: MCPToolInvocationData<z.ZodObject<z.ZodRawShape>>;
+                value: NodeGuidanceData | MCPToolInvocationData<z.ZodObject<z.ZodRawShape>>;
               }>
             )[0].value
           : undefined;
 
-      if (!mcpToolInvocationData) {
-        this.logger.error('Workflow completed without expected MCP tool invocation.');
+      if (!interruptData) {
+        this.logger.error('Workflow completed without expected interrupt data.');
         throw new Error('FATAL: Unexpected workflow state without an interrupt');
       }
 
-      this.logger.info('Invoking next MCP tool', {
-        toolName: mcpToolInvocationData.llmMetadata?.name,
-      });
+      // Check if this is new-style guidance data or legacy tool invocation data
+      const isGuidanceData = 'taskPrompt' in interruptData;
 
-      // Create orchestration prompt
-      const orchestrationPrompt = this.createOrchestrationPrompt(
-        mcpToolInvocationData,
-        workflowStateData
-      );
+      if (isGuidanceData) {
+        const nodeGuidanceData = interruptData as NodeGuidanceData;
+        this.logger.info('Processing node guidance', {
+          nodeId: nodeGuidanceData.nodeId,
+        });
 
-      // Save the workflow state.
-      await this.stateManager.saveCheckpointerState(checkpointer);
+        // Create task prompt (new architecture)
+        const taskPrompt = this.createTaskPrompt(nodeGuidanceData, workflowStateData);
 
-      return {
-        orchestrationInstructionsPrompt: orchestrationPrompt,
-      };
+        // Save the workflow state.
+        await this.stateManager.saveCheckpointerState(checkpointer);
+
+        return {
+          orchestrationInstructionsPrompt: taskPrompt,
+        };
+      } else {
+        // Legacy tool invocation path
+        const mcpToolInvocationData = interruptData as MCPToolInvocationData<
+          z.ZodObject<z.ZodRawShape>
+        >;
+        this.logger.info('Invoking next MCP tool (legacy)', {
+          toolName: mcpToolInvocationData.llmMetadata?.name,
+        });
+
+        // Create orchestration prompt (legacy architecture)
+        const orchestrationPrompt = this.createOrchestrationPrompt(
+          mcpToolInvocationData,
+          workflowStateData
+        );
+
+        // Save the workflow state.
+        await this.stateManager.saveCheckpointerState(checkpointer);
+
+        return {
+          orchestrationInstructionsPrompt: orchestrationPrompt,
+        };
+      }
     }
 
     // Workflow completed.
@@ -189,7 +217,60 @@ export class OrchestratorTool extends AbstractTool<OrchestratorToolMetadata> {
   }
 
   /**
+   * Create complete task prompt for LLM with embedded guidance and workflow state
+   * This is the new method for the single-orchestrator architecture
+   */
+  private createTaskPrompt(
+    nodeGuidanceData: NodeGuidanceData,
+    workflowStateData: WorkflowStateData
+  ): string {
+    return `
+# Your Role
+
+You are participating in a workflow orchestration process. The orchestrator is providing
+you with a specific task to complete. After completing the task, you will return the
+results to the orchestrator to continue the workflow.
+
+# Your Task
+
+${nodeGuidanceData.taskPrompt}
+
+## Task Input
+
+The following input data is provided for this task:
+
+\`\`\`json
+${JSON.stringify(nodeGuidanceData.taskInput, null, 2)}
+\`\`\`
+
+# Output Format
+
+Your response must conform to the following JSON schema:
+
+\`\`\`json
+${JSON.stringify(zodToJsonSchema(nodeGuidanceData.resultSchema), null, 2)}
+\`\`\`
+
+# Post-Task Instructions
+
+After completing the task:
+
+1. Format your results according to the schema above
+2. Invoke the \`${this.toolMetadata.toolId}\` tool to continue the workflow
+
+Provide the following input values to the orchestrator:
+
+- \`${WORKFLOW_PROPERTY_NAMES.userInput}\`: Your formatted task results
+- \`${WORKFLOW_PROPERTY_NAMES.workflowStateData}\`: ${JSON.stringify(workflowStateData)}
+
+This will continue the workflow orchestration process.
+`;
+  }
+
+  /**
    * Create orchestration prompt for LLM with embedded tool invocation data and workflow state
+   *
+   * @deprecated This is the legacy method for the multi-tool architecture. Use createTaskPrompt instead.
    */
   private createOrchestrationPrompt(
     mcpToolInvocationData: MCPToolInvocationData<z.ZodObject<z.ZodRawShape>>,

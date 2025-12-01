@@ -5,20 +5,19 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
 
+import z from 'zod';
 import {
-  AbstractToolNode,
+  AbstractGuidanceNode,
   Logger,
-  MCPToolInvocationData,
-  ToolExecutor,
+  NodeExecutor,
+  NodeGuidanceData,
 } from '@salesforce/magen-mcp-workflow';
 import { PRDState } from '../metadata.js';
-import { PRD_GENERATION_TOOL } from '../../../tools/prd/magi-prd-generation/metadata.js';
 import { MAGI_ARTIFACTS, getMagiPath, writeMagiArtifact } from '../../../utils/magiDirectory.js';
-import z from 'zod';
 
-export class PRDGenerationNode extends AbstractToolNode<PRDState> {
-  constructor(toolExecutor?: ToolExecutor, logger?: Logger) {
-    super('prdGeneration', toolExecutor, logger);
+export class PRDGenerationNode extends AbstractGuidanceNode<PRDState> {
+  constructor(nodeExecutor?: NodeExecutor, logger?: Logger) {
+    super('prdGeneration', nodeExecutor, logger);
   }
 
   execute = (state: PRDState): Partial<PRDState> => {
@@ -34,28 +33,31 @@ export class PRDGenerationNode extends AbstractToolNode<PRDState> {
       MAGI_ARTIFACTS.REQUIREMENTS
     );
 
-    const toolInvocationData: MCPToolInvocationData<typeof PRD_GENERATION_TOOL.inputSchema> = {
-      llmMetadata: {
-        name: PRD_GENERATION_TOOL.toolId,
-        description: PRD_GENERATION_TOOL.description,
-        inputSchema: PRD_GENERATION_TOOL.inputSchema,
-      },
-      input: {
+    const resultSchema = z.object({
+      prdContent: z.string(),
+    });
+
+    const guidanceData: NodeGuidanceData = {
+      nodeId: 'prdGeneration',
+      taskPrompt: this.generatePRDGenerationGuidance(featureBriefPath, requirementsPath),
+      taskInput: {
         featureBriefPath: featureBriefPath,
         requirementsPath: requirementsPath,
       },
+      resultSchema: resultSchema,
+      metadata: {
+        nodeName: this.name,
+        description: 'Generate a comprehensive Product Requirements Document',
+      },
     };
 
-    const validatedResult = this.executeToolWithLogging(
-      toolInvocationData,
-      PRD_GENERATION_TOOL.resultSchema
-    );
+    const validatedResult = this.executeWithGuidance(guidanceData) as { prdContent: string };
 
     return this.processPrdResult(validatedResult, state);
   };
 
   private processPrdResult(
-    validatedResult: z.infer<typeof PRD_GENERATION_TOOL.resultSchema>,
+    validatedResult: { prdContent: string },
     state: PRDState
   ): Partial<PRDState> {
     // Write the PRD content to disk
@@ -68,5 +70,83 @@ export class PRDGenerationNode extends AbstractToolNode<PRDState> {
     this.logger?.info(`PRD written to file: ${prdFilePath}`);
 
     return {};
+  }
+
+  private generatePRDGenerationGuidance(
+    featureBriefPath: string,
+    requirementsPath: string
+  ): string {
+    return `
+You are a technical writer tasked with creating a comprehensive Product Requirements Document (PRD) for a Salesforce mobile native app feature.
+
+## Input Context
+
+### Feature Brief
+
+**File Path**: ${featureBriefPath}
+
+Please read the feature brief file from the path above.
+
+### Current Functional Requirements
+
+**File Path**: ${requirementsPath}
+
+Please read the requirements file from the path above.
+
+**Important**: When generating the PRD, focus on **approved requirements** and **modified requirements**. Ignore **rejected requirements** and **out-of-scope requirements** as they have been explicitly excluded from the feature scope.
+
+## Your Task
+
+Generate a complete PRD file with the following structure and content:
+
+## Required PRD Structure
+
+### 1. Document Status
+- **Status**: "draft" (since this is the initial generation)
+
+### 2. Feature Brief
+Include the approved feature brief as generated during the requirements process.
+
+### 3. Functional Requirements
+List all approved requirements with:
+- Requirement ID
+- Title
+- Priority (High/Medium/Low)
+- Category
+- Detailed description
+
+### 4. Traceability
+Create a traceability table with the following structure:
+
+| Requirement ID | Technical Requirement IDs | Task IDs |
+| --------- | -------------- | --------- |
+
+For each approved and modified requirement found in the requirements content, add a row with:
+- Requirement ID: The requirement ID from the requirements document
+- Technical Requirement IDs: "TBD (populated later)"
+- Task IDs: "TBD (populated later)"
+
+## PRD Content Guidelines
+
+### Document Formatting
+- Use proper Markdown formatting
+- Include clear section headers with ##
+- Use bullet points and numbered lists appropriately
+- Ensure proper table formatting for traceability
+
+### Content Quality
+- Write in clear, professional technical language
+- Ensure all requirements are properly documented
+- Include context about the feature's purpose and scope
+- Maintain consistency in formatting and terminology
+
+### Traceability Table
+- Include ALL approved requirements from the requirements content
+- Parse requirement IDs from the markdown content
+- Use "TBD (populated later)" for Technical Requirement IDs and Task IDs
+- Ensure Requirement IDs match exactly with the requirements found in the requirements content
+
+Generate a comprehensive, well-structured PRD that serves as the definitive source of truth for this feature's requirements.
+    `;
   }
 }

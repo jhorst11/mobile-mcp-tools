@@ -32,6 +32,7 @@ export {
   WORKFLOW_TOOL_BASE_INPUT_SCHEMA,
   MCP_WORKFLOW_TOOL_OUTPUT_SCHEMA,
   type WorkflowStateData,
+  type NodeGuidanceData,
   type MCPToolInvocationData,
   type MCPWorkflowToolOutput,
   type ToolMetadata,
@@ -46,11 +47,12 @@ export {
 } from './common/propertyMetadata.js';
 export { type PropertyFulfilledResult, type IsPropertyFulfilled } from './common/types.js';
 
-// Tool Execution Infrastructure
+// Node Execution Infrastructure
+export { type NodeExecutor, LangGraphNodeExecutor } from './nodes/toolExecutor.js';
 export { type ToolExecutor, LangGraphToolExecutor } from './nodes/toolExecutor.js';
 
-// Tool Execution Utils
-export { executeToolWithLogging } from './utils/toolExecutionUtils.js';
+// Node/Tool Execution Utils
+export { executeNodeWithLogging, executeToolWithLogging } from './utils/toolExecutionUtils.js';
 
 // Base Tool Classes
 export { AbstractTool, AbstractWorkflowTool } from './tools/base/index.js';
@@ -81,6 +83,7 @@ export {
 // Base Node Classes
 export {
   BaseNode,
+  AbstractGuidanceNode,
   AbstractToolNode,
   createGetUserInputNode,
   createUserInputExtractionNode,

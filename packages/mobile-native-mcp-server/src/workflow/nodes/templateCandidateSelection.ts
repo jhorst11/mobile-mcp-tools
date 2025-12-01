@@ -5,21 +5,22 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
 
+import z from 'zod';
+import dedent from 'dedent';
 import {
-  AbstractToolNode,
+  AbstractGuidanceNode,
   Logger,
-  MCPToolInvocationData,
-  ToolExecutor,
+  NodeExecutor,
+  NodeGuidanceData,
   createComponentLogger,
 } from '@salesforce/magen-mcp-workflow';
-import { TEMPLATE_DISCOVERY_TOOL } from '../../tools/plan/sfmobile-native-template-discovery/metadata.js';
 import { State } from '../metadata.js';
 
-export class TemplateCandidateSelectionNode extends AbstractToolNode<State> {
+export class TemplateCandidateSelectionNode extends AbstractGuidanceNode<State> {
   protected readonly logger: Logger;
 
-  constructor(toolExecutor?: ToolExecutor, logger?: Logger) {
-    super('selectTemplateCandidates', toolExecutor, logger);
+  constructor(nodeExecutor?: NodeExecutor, logger?: Logger) {
+    super('selectTemplateCandidates', nodeExecutor, logger);
     this.logger = logger ?? createComponentLogger('TemplateCandidateSelectionNode');
   }
 
@@ -40,27 +41,24 @@ export class TemplateCandidateSelectionNode extends AbstractToolNode<State> {
       };
     }
 
-    // Call the tool with the template options from state
-    // Note: executeToolWithLogging calls interrupt() which pauses the workflow.
-    // When LangGraph resumes, this node will be re-executed, but interrupt() will return
-    // the result immediately instead of pausing again.
-    // We don't wrap this in try-catch to allow the interrupt to propagate properly.
-    const toolInvocationData: MCPToolInvocationData<typeof TEMPLATE_DISCOVERY_TOOL.inputSchema> = {
-      llmMetadata: {
-        name: TEMPLATE_DISCOVERY_TOOL.toolId,
-        description: TEMPLATE_DISCOVERY_TOOL.description,
-        inputSchema: TEMPLATE_DISCOVERY_TOOL.inputSchema,
-      },
-      input: {
+    // Create guidance data (new architecture - no tool invocation)
+    const guidanceData: NodeGuidanceData = {
+      nodeId: 'templateCandidateSelection',
+      taskPrompt: this.generateTemplateDiscoveryGuidance(state.platform, state.templateOptions),
+      taskInput: {
         platform: state.platform,
         templateOptions: state.templateOptions,
       },
+      resultSchema: z.object({
+        templateCandidates: z.array(z.string()).describe('Array of template paths/names'),
+      }),
+      metadata: {
+        nodeName: this.name,
+        description: 'Identify promising template candidates',
+      },
     };
 
-    const validatedResult = this.executeToolWithLogging(
-      toolInvocationData,
-      TEMPLATE_DISCOVERY_TOOL.resultSchema
-    );
+    const validatedResult = this.executeWithGuidance(guidanceData);
 
     if (!validatedResult.templateCandidates || validatedResult.templateCandidates.length === 0) {
       return {
@@ -74,4 +72,46 @@ export class TemplateCandidateSelectionNode extends AbstractToolNode<State> {
       templateCandidates: validatedResult.templateCandidates,
     };
   };
+
+  /**
+   * Generate the task prompt for template discovery
+   * This is the guidance that was previously in the MCP tool
+   */
+  private generateTemplateDiscoveryGuidance(platform: string, templateOptions: unknown): string {
+    const templateOptionsJson = JSON.stringify(templateOptions, null, 2);
+
+    return dedent`
+      # Template Discovery Guidance for ${platform}
+
+      ## Task: Identify Promising Template Candidates
+
+      The following template options have been discovered for ${platform}:
+
+      \`\`\`json
+      ${templateOptionsJson}
+      \`\`\`
+
+      Inspect the JSON above to identify templates that best match the user's requirements. Each template includes:
+      - path: the relative path to the template from the templates source
+      - description: the description of the template
+      - features: the features of the template
+      - useCase: the use case of the template
+      - complexity: the complexity of the template
+      - customizationPoints: the customization points of the template
+
+      Filter the templates to the most promising candidates (typically 1-3 templates). Prioritize templates that match multiple keywords and have comprehensive documentation.
+
+      Return a list of template paths/names as candidates. Use the template's \`path\` field from the JSON above as the candidate value.
+
+      Return your result in this format:
+
+      \`\`\`json
+      {
+        "templateCandidates": ["<TEMPLATE_PATH_1>", "<TEMPLATE_PATH_2>", ...]
+      }
+      \`\`\`
+
+      You MUST return at least one candidate. Return multiple candidates if several templates seem equally promising.
+    `;
+  }
 }

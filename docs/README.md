@@ -9,6 +9,12 @@ The documentation is organized in the `/docs` directory:
 - **`/docs/`** - Project documentation including:
   - [Project Overview](./1_project_overview.md) - High-level project goals and architecture
   - [Mobile Native App Generation](./5_mobile_native_app_generation.md) - Comprehensive MCP server design for native app generation
+  - [Execution Architecture](./10_execution_architecture.md) - Command execution and progress reporting architecture
+  - [Single Orchestrator Architecture](./11_single_orchestrator_architecture.md) - New simplified workflow orchestration design
+  - [Mobile Native Migration Complete](./MIGRATION_COMPLETE.md) - ✅ Mobile-native-mcp-server migration completion
+  - [Workflow-Magi Migration Plan](./MAGI_MIGRATION_PLAN.md) - Migration plan for workflow-magi package
+  - [Workflow-Magi Migration Complete](./MAGI_MIGRATION_COMPLETE.md) - ✅ Workflow-magi migration completion
+  - [Implementation Summary](./IMPLEMENTATION_SUMMARY.md) - Detailed implementation progress
   - [README](./README.md) - Documentation index and navigation
 
 ## Getting Started with Documentation

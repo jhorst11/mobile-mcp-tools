@@ -6,10 +6,10 @@
  */
 
 import z from 'zod';
-import { MCPToolInvocationData } from '../common/metadata.js';
+import { MCPToolInvocationData, NodeGuidanceData } from '../common/metadata.js';
 import { Logger, createComponentLogger } from '../logging/logger.js';
-import { ToolExecutor, LangGraphToolExecutor } from '../nodes/toolExecutor.js';
-import { executeToolWithLogging } from '../utils/toolExecutionUtils.js';
+import { NodeExecutor, ToolExecutor, LangGraphNodeExecutor } from '../nodes/toolExecutor.js';
+import { executeToolWithLogging, executeNodeWithLogging } from '../utils/toolExecutionUtils.js';
 
 /**
  * Abstract base class for services that execute MCP tools.
@@ -49,23 +49,46 @@ import { executeToolWithLogging } from '../utils/toolExecutionUtils.js';
 export abstract class AbstractService {
   protected readonly logger: Logger;
   protected readonly componentName: string;
+  protected readonly nodeExecutor: NodeExecutor;
+  /** @deprecated Use nodeExecutor instead */
   protected readonly toolExecutor: ToolExecutor;
 
   /**
    * Creates a new AbstractService.
    *
    * @param serviceName - Name of the service (used for logging and component identification)
-   * @param toolExecutor - Tool executor for invoking MCP tools (injectable for testing)
+   * @param nodeExecutor - Node executor for invoking with guidance (injectable for testing)
    * @param logger - Logger instance (injectable for testing)
    */
-  constructor(serviceName: string, toolExecutor?: ToolExecutor, logger?: Logger) {
+  constructor(serviceName: string, nodeExecutor?: NodeExecutor, logger?: Logger) {
     this.componentName = `Service:${serviceName}`;
     this.logger = logger ?? createComponentLogger(this.componentName);
-    this.toolExecutor = toolExecutor ?? new LangGraphToolExecutor();
+    this.nodeExecutor = nodeExecutor ?? new LangGraphNodeExecutor();
+    this.toolExecutor = this.nodeExecutor; // Backward compatibility
+  }
+
+  /**
+   * Protected method to execute a node with guidance, logging, and validation.
+   *
+   * This is the new method for the single-orchestrator architecture.
+   *
+   * @param guidanceData - The node guidance data containing task prompt and input
+   * @param resultSchema - The schema to validate the result against
+   * @param validator - Optional custom validator function
+   * @returns The validated result from the node execution
+   */
+  protected executeNodeWithLogging<TResultSchema extends z.ZodObject<z.ZodRawShape>>(
+    guidanceData: NodeGuidanceData,
+    resultSchema: TResultSchema,
+    validator?: (result: unknown, schema: TResultSchema) => z.infer<TResultSchema>
+  ): z.infer<TResultSchema> {
+    return executeNodeWithLogging(this.nodeExecutor, this.logger, guidanceData, validator);
   }
 
   /**
    * Protected method to execute a tool with logging and validation.
+   *
+   * @deprecated Use executeNodeWithLogging instead. This is kept for backward compatibility.
    *
    * By default, results are validated using the provided Zod schema's parse method.
    * Pass a custom validator function to implement additional validation logic or

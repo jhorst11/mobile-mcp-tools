@@ -5,36 +5,48 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
 
+import z from 'zod';
 import {
-  AbstractToolNode,
+  AbstractGuidanceNode,
   Logger,
-  MCPToolInvocationData,
-  ToolExecutor,
+  NodeExecutor,
+  NodeGuidanceData,
 } from '@salesforce/magen-mcp-workflow';
 import { State } from '../metadata.js';
-import { FINISH_TOOL } from '../../tools/workflow/sfmobile-native-completion/metadata.js';
 
-export class CompletionNode extends AbstractToolNode<State> {
-  constructor(toolExecutor?: ToolExecutor, logger?: Logger) {
-    super('finish', toolExecutor, logger);
+export class CompletionNode extends AbstractGuidanceNode<State> {
+  constructor(nodeExecutor?: NodeExecutor, logger?: Logger) {
+    super('finish', nodeExecutor, logger);
   }
 
   execute = (state: State): Partial<State> => {
-    const toolInvocationData: MCPToolInvocationData<typeof FINISH_TOOL.inputSchema> = {
-      llmMetadata: {
-        name: FINISH_TOOL.toolId,
-        description: FINISH_TOOL.description,
-        inputSchema: FINISH_TOOL.inputSchema,
-      },
-      input: {
+    // Create guidance data (new architecture - no tool invocation)
+    const guidanceData: NodeGuidanceData = {
+      nodeId: 'workflowCompletion',
+      taskPrompt: this.generateWorkflowCompletionGuidance(state.projectPath),
+      taskInput: {
         projectPath: state.projectPath,
+      },
+      resultSchema: z.object({}),
+      metadata: {
+        nodeName: this.name,
+        description: 'Complete the workflow and inform the user',
       },
     };
 
-    const validatedResult = this.executeToolWithLogging(
-      toolInvocationData,
-      FINISH_TOOL.resultSchema
-    );
+    const validatedResult = this.executeWithGuidance(guidanceData);
     return validatedResult;
   };
+
+  /**
+   * Generate the task prompt for workflow completion
+   * This is the guidance that was previously in the MCP tool
+   */
+  private generateWorkflowCompletionGuidance(projectPath: string): string {
+    return `
+You are the tool that closes out the workflow. Let the user know that the workflow has
+completed successfully, and tell them that they can find their project directory at
+'${projectPath}'. Thank the user for participating in the workflow.
+    `;
+  }
 }

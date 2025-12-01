@@ -7,15 +7,11 @@
 
 import z from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { ToolExecutor } from '../nodes/toolExecutor.js';
+import { NodeExecutor } from '../nodes/toolExecutor.js';
 import { AbstractService } from './abstractService.js';
 import { PropertyMetadataCollection } from '../common/propertyMetadata.js';
-import {
-  createInputExtractionMetadata,
-  INPUT_EXTRACTION_WORKFLOW_INPUT_SCHEMA,
-} from '../tools/utilities/index.js';
 import { Logger } from '../logging/logger.js';
-import { MCPToolInvocationData } from '../common/metadata.js';
+import { NodeGuidanceData } from '../common/metadata.js';
 
 /**
  * Result from property extraction containing validated properties.
@@ -43,8 +39,10 @@ export interface InputExtractionServiceProvider {
 /**
  * Service for extracting structured properties from user input.
  *
- * This service extends AbstractService to leverage common tool execution
+ * This service extends AbstractService to leverage common execution
  * patterns including standardized logging and result validation.
+ *
+ * Now uses the new guidance-based architecture instead of separate tool invocation.
  */
 export class InputExtractionService
   extends AbstractService
@@ -53,16 +51,16 @@ export class InputExtractionService
   /**
    * Creates a new InputExtractionService.
    *
-   * @param toolId - Tool ID for the input extraction tool
-   * @param toolExecutor - Tool executor for invoking the extraction tool (injectable for testing)
+   * @param toolId - Tool ID for the input extraction tool (for backward compatibility)
+   * @param nodeExecutor - Node executor for invoking with guidance (injectable for testing)
    * @param logger - Logger instance (injectable for testing)
    */
   constructor(
     private readonly toolId: string,
-    toolExecutor?: ToolExecutor,
+    nodeExecutor?: NodeExecutor,
     logger?: Logger
   ) {
-    super('InputExtractionService', toolExecutor, logger);
+    super('InputExtractionService', nodeExecutor, logger);
   }
 
   extractProperties(userInput: unknown, properties: PropertyMetadataCollection): ExtractionResult {
@@ -73,25 +71,25 @@ export class InputExtractionService
 
     const propertiesToExtract = this.preparePropertiesForExtraction(properties);
     const resultSchema = this.preparePropertyResultsSchema(properties);
-    const resultSchemaString = JSON.stringify(zodToJsonSchema(resultSchema));
-    const metadata = createInputExtractionMetadata(this.toolId);
 
-    const toolInvocationData: MCPToolInvocationData<typeof INPUT_EXTRACTION_WORKFLOW_INPUT_SCHEMA> =
-      {
-        llmMetadata: {
-          name: metadata.toolId,
-          description: metadata.description,
-          inputSchema: metadata.inputSchema,
-        },
-        input: {
-          userUtterance: userInput,
-          propertiesToExtract,
-          resultSchema: resultSchemaString,
-        },
-      };
+    // Create guidance data (new architecture)
+    const guidanceData: NodeGuidanceData = {
+      nodeId: 'inputExtraction',
+      taskPrompt: this.generateInputExtractionGuidance(userInput, propertiesToExtract),
+      taskInput: {
+        userUtterance: userInput,
+        propertiesToExtract,
+        resultSchema: JSON.stringify(zodToJsonSchema(resultSchema)),
+      },
+      resultSchema,
+      metadata: {
+        nodeName: 'inputExtraction',
+        description: 'Extract structured properties from user input',
+      },
+    };
 
-    const validatedResult = this.executeToolWithLogging(
-      toolInvocationData,
+    const validatedResult = this.executeNodeWithLogging(
+      guidanceData,
       resultSchema,
       (rawResult, schema) => this.validateAndFilterResult(rawResult, properties, schema)
     );
@@ -102,6 +100,53 @@ export class InputExtractionService
     });
 
     return validatedResult;
+  }
+
+  /**
+   * Generate the task prompt for input extraction
+   * This is the guidance that was previously in the InputExtractionTool
+   */
+  private generateInputExtractionGuidance(
+    userUtterance: unknown,
+    propertiesToExtract: Array<{ propertyName: string; description: string }>
+  ): string {
+    return `
+# ROLE
+You are a highly accurate and precise data extraction tool.
+
+# TASK
+
+Your task is to analyze a user utterance and extract values for a given list of properties.
+For each property you are asked to find, you must provide its extracted value or \`null\`
+if no value is found.
+
+---
+# CONTEXT
+
+## USER UTTERANCE TO ANALYZE
+${JSON.stringify(userUtterance)}
+
+## PROPERTIES TO EXTRACT
+Here is the list of properties you need to find values for. Use each property's description
+to understand what to look for.
+
+\`\`\`json
+${JSON.stringify(propertiesToExtract, null, 2)}
+\`\`\`
+
+---
+# INSTRUCTIONS
+1. Carefully read the "USER UTTERANCE TO ANALYZE".
+2. For each property listed in "PROPERTIES TO EXTRACT", search the text for a  
+   corresponding value.
+3. If a clear value is found for a property, place it in your output.
+4. If a property's value is not ABSOLUTELY INFERABLE from USER UTTERANCE TO ANALYZE, you
+   MUST use \`null\` as the value for that property. You MAY NOT infer your own property
+   values, in the absence of their clear specification in the USER UTTERANCE TO ANALYZE.
+5. Ensure the keys in your output JSON object exactly match the \`propertyName\` values  
+   from the input list.
+6. The exact format of your output object will be given in the section below.
+`;
   }
 
   private preparePropertiesForExtraction(

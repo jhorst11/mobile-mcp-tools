@@ -6,7 +6,7 @@
  */
 
 import { State } from '../metadata.js';
-import { BaseNode, Logger, ToolExecutor } from '@salesforce/magen-mcp-workflow';
+import { BaseNode, Logger, NodeExecutor } from '@salesforce/magen-mcp-workflow';
 import {
   BuildRecoveryService,
   BuildRecoveryServiceProvider,
@@ -17,12 +17,12 @@ export class BuildRecoveryNode extends BaseNode<State> {
 
   constructor(
     buildRecoveryService?: BuildRecoveryServiceProvider,
-    toolExecutor?: ToolExecutor,
+    nodeExecutor?: NodeExecutor,
     logger?: Logger
   ) {
     super('buildRecovery');
     this.buildRecoveryService =
-      buildRecoveryService ?? new BuildRecoveryService(toolExecutor, logger);
+      buildRecoveryService ?? new BuildRecoveryService(nodeExecutor, logger);
   }
 
   execute = (state: State): Partial<State> => {

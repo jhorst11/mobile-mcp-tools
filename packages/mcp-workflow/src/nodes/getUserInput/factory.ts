@@ -7,7 +7,7 @@
 
 import { StateType, StateDefinition } from '@langchain/langgraph';
 import { BaseNode } from '../abstractBaseNode.js';
-import { LangGraphToolExecutor } from '../toolExecutor.js';
+import { LangGraphNodeExecutor } from '../toolExecutor.js';
 import { createComponentLogger } from '../../logging/logger.js';
 import { GetInputService, GetInputServiceProvider } from '../../services/getInputService.js';
 import { GetUserInputNodeOptions, GetUserInputNode } from './node.js';
@@ -58,7 +58,7 @@ export function createGetUserInputNode<TState extends StateType<StateDefinition>
     requiredProperties,
     toolId,
     getInputService,
-    toolExecutor = new LangGraphToolExecutor(),
+    toolExecutor = new LangGraphNodeExecutor(),
     logger = createComponentLogger('GetUserInputNode'),
     isPropertyFulfilled = (state: TState, propertyName: string): PropertyFulfilledResult => {
       const isFulfilled = !!state[propertyName];
@@ -74,7 +74,7 @@ export function createGetUserInputNode<TState extends StateType<StateDefinition>
     nodeName = 'getUserInput',
   } = options;
 
-  // Create default service implementation if not provided
+  // Create default service implementation if not provided (now uses guidance-based architecture)
   const service: GetInputServiceProvider =
     getInputService ?? new GetInputService(toolId, toolExecutor, logger);
 

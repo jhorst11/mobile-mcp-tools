@@ -5,21 +5,22 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
 
+import z from 'zod';
+import dedent from 'dedent';
 import {
-  AbstractToolNode,
+  AbstractGuidanceNode,
   Logger,
-  MCPToolInvocationData,
-  ToolExecutor,
+  NodeExecutor,
+  NodeGuidanceData,
   createComponentLogger,
 } from '@salesforce/magen-mcp-workflow';
-import { TEMPLATE_SELECTION_TOOL } from '../../tools/plan/sfmobile-native-template-selection/metadata.js';
 import { State, TemplatePropertiesMetadata } from '../metadata.js';
 
-export class TemplateSelectionNode extends AbstractToolNode<State> {
+export class TemplateSelectionNode extends AbstractGuidanceNode<State> {
   protected readonly logger: Logger;
 
-  constructor(toolExecutor?: ToolExecutor, logger?: Logger) {
-    super('selectTemplate', toolExecutor, logger);
+  constructor(nodeExecutor?: NodeExecutor, logger?: Logger) {
+    super('selectTemplate', nodeExecutor, logger);
     this.logger = logger ?? createComponentLogger('TemplateSelectionNode');
   }
 
@@ -37,22 +38,24 @@ export class TemplateSelectionNode extends AbstractToolNode<State> {
       };
     }
 
-    const toolInvocationData: MCPToolInvocationData<typeof TEMPLATE_SELECTION_TOOL.inputSchema> = {
-      llmMetadata: {
-        name: TEMPLATE_SELECTION_TOOL.toolId,
-        description: TEMPLATE_SELECTION_TOOL.description,
-        inputSchema: TEMPLATE_SELECTION_TOOL.inputSchema,
-      },
-      input: {
+    // Create guidance data (new architecture - no tool invocation)
+    const guidanceData: NodeGuidanceData = {
+      nodeId: 'templateSelection',
+      taskPrompt: this.generateTemplateSelectionGuidance(state.platform, state.templateDetails),
+      taskInput: {
         platform: state.platform,
         templateDetails: state.templateDetails,
       },
+      resultSchema: z.object({
+        selectedTemplate: z.string().describe('The name/path of the selected template'),
+      }),
+      metadata: {
+        nodeName: this.name,
+        description: 'Select the most appropriate template for the mobile app',
+      },
     };
 
-    const validatedResult = this.executeToolWithLogging(
-      toolInvocationData,
-      TEMPLATE_SELECTION_TOOL.resultSchema
-    );
+    const validatedResult = this.executeWithGuidance(guidanceData);
 
     if (!validatedResult.selectedTemplate) {
       return {
@@ -71,6 +74,37 @@ export class TemplateSelectionNode extends AbstractToolNode<State> {
       templatePropertiesMetadata,
     };
   };
+
+  /**
+   * Generate the task prompt for template selection
+   * This is the guidance that was previously in the MCP tool
+   */
+  private generateTemplateSelectionGuidance(
+    platform: string,
+    templateDetails: Record<string, unknown>
+  ): string {
+    const templateDetailsJson = JSON.stringify(templateDetails, null, 2);
+
+    return dedent`
+      # Template Selection Guidance for ${platform}
+
+      ## Task: Select the Best Template
+
+      The following detailed template information has been fetched for the candidates:
+
+      \`\`\`json
+      ${templateDetailsJson}
+      \`\`\`
+
+      Review the detailed information for each template candidate and choose the template that best matches:
+      - **Platform compatibility**: ${platform}
+      - **Feature requirements**: General mobile app needs
+      - **Use case alignment**: Record management, data display, CRUD operations
+      - **Complexity level**: Appropriate for the user's requirements
+
+      Use the template path/name (the key in the templateDetails object) as the selectedTemplate value.
+    `;
+  }
 
   private extractTemplatePropertiesMetadata(
     selectedTemplate: string,

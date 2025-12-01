@@ -6,7 +6,7 @@
  */
 
 import { State } from '../metadata.js';
-import { BaseNode, Logger, ToolExecutor } from '@salesforce/magen-mcp-workflow';
+import { BaseNode, Logger, NodeExecutor } from '@salesforce/magen-mcp-workflow';
 import {
   BuildValidationService,
   BuildValidationServiceProvider,
@@ -17,12 +17,12 @@ export class BuildValidationNode extends BaseNode<State> {
 
   constructor(
     buildValidationService?: BuildValidationServiceProvider,
-    toolExecutor?: ToolExecutor,
+    nodeExecutor?: NodeExecutor,
     logger?: Logger
   ) {
     super('validateBuild');
     this.buildValidationService =
-      buildValidationService ?? new BuildValidationService(toolExecutor, logger);
+      buildValidationService ?? new BuildValidationService(nodeExecutor, undefined, logger);
   }
 
   execute = (state: State): Partial<State> => {
