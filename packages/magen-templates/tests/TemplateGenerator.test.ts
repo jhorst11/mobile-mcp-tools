@@ -11,7 +11,6 @@ import * as path from 'path';
 import * as os from 'os';
 import { TemplateGenerator } from '../src/generation/TemplateGenerator';
 import { TemplateRegistry } from '../src/registry/TemplateRegistry';
-import type { GenerationContext, TemplateMetadata } from '../src/types';
 
 describe('TemplateGenerator', () => {
   let generator: TemplateGenerator;
@@ -468,7 +467,7 @@ describe('TemplateGenerator', () => {
         return;
       }
 
-      const metadata = await registry.getMetadata(exampleTemplate.id);
+      await registry.getMetadata(exampleTemplate.id);
 
       // Create a mock template with uppercase helper
       const testTemplatePath = path.join(tempDir, 'test-template');

@@ -8,6 +8,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TemplateSelector } from '../src/selection/TemplateSelector';
 import { TemplateRegistry } from '../src/registry/TemplateRegistry';
+import { Platform } from '../src/types';
 
 describe('TemplateSelector', () => {
   let selector: TemplateSelector;
@@ -38,7 +39,7 @@ describe('TemplateSelector', () => {
 
     it('should throw error when no templates match', async () => {
       const templates = await registry.discoverTemplates();
-      const nonExistentPlatform = 'nonexistent' as any;
+      const nonExistentPlatform = 'nonexistent' as unknown as Platform;
 
       await expect(
         selector.selectTemplate(templates, {
@@ -123,7 +124,7 @@ describe('TemplateSelector', () => {
 
     it('should return empty array when no templates match', async () => {
       const templates = await registry.discoverTemplates();
-      const nonExistentPlatform = 'nonexistent' as any;
+      const nonExistentPlatform = 'nonexistent' as unknown as Platform;
 
       const ranked = await selector.rankTemplates(templates, {
         platform: nonExistentPlatform,
