@@ -1,0 +1,41 @@
+//
+//  ContentView.swift
+//  {{projectName}}
+//
+//  Created by {{organization}}
+//
+
+import SwiftUI
+
+struct ContentView: View {
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.blue)
+                
+                Text("Welcome to {{projectName}}")
+                    .font(.title)
+                    .fontWeight(.bold)
+                
+                Text("A project by {{organization}}")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Text("This is a template-generated app")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .padding()
+            .navigationTitle("{{projectName}}")
+        }
+    }
+}
+
+#Preview {
+    ContentView()
+}
+

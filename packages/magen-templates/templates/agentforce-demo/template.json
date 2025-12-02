@@ -1,0 +1,156 @@
+{
+  "$schema": "../../schemas/template-v1.json",
+  "version": "0.0.1",
+  "type": "application",
+  "id": "agentforce-demo",
+  "displayName": "Agentforce Demo",
+  "description": "A basic iOS Swift application template integrating with the AgentforceSDK for service agents. This template demonstrates how to build mobile apps that leverage Salesforce's AI-powered agent capabilities for customer service scenarios.",
+  "platform": {
+    "type": "ios",
+    "minVersion": "15.0"
+  },
+  "useCase": {
+    "primary": "iOS app with Agentforce AI agent integration",
+    "scenarios": [
+      "Customer service applications",
+      "AI-powered chat interfaces",
+      "Service agent integration",
+      "Conversational AI demos"
+    ],
+    "when": "Use this template when you need to create an iOS app that integrates with Salesforce Agentforce for AI-powered service agent capabilities."
+  },
+  "capabilities": [
+    "native-ios",
+    "swift",
+    "swiftui",
+    "agentforce-sdk",
+    "ai-agents",
+    "service-agents",
+    "conversational-ai",
+    "custom-theming"
+  ],
+  "complexity": {
+    "level": "simple",
+    "explanation": "Straightforward template demonstrating Agentforce SDK integration with minimal complexity"
+  },
+  "extensionPoints": [
+    {
+      "id": "agent-configuration",
+      "name": "Agent Configuration",
+      "description": "Configure the Agentforce agent settings and credentials",
+      "difficulty": "simple",
+      "affectedFiles": [
+        "template/AgentforceDemo/Classes/CredentialProvider.swift",
+        "template/AgentforceDemo/Classes/Settings.swift"
+      ],
+      "aiGuidance": {
+        "steps": [
+          "Update CredentialProvider.swift with your Agentforce credentials",
+          "Modify Settings.swift for custom configuration options"
+        ]
+      }
+    },
+    {
+      "id": "ui-theming",
+      "name": "UI Theming",
+      "description": "Customize the visual appearance and theming",
+      "difficulty": "simple",
+      "affectedFiles": [
+        "template/AgentforceDemo/Classes/CustomThemeManager.swift",
+        "template/AgentforceDemo/Classes/AgentforceMainView.swift"
+      ],
+      "aiGuidance": {
+        "steps": [
+          "Modify CustomThemeManager.swift to customize colors and styling",
+          "Update AgentforceMainView.swift for layout changes"
+        ]
+      }
+    }
+  ],
+  "requirements": {
+    "skillLevel": "beginner",
+    "estimatedTime": "20 minutes"
+  },
+  "templateVariables": [
+    {
+      "name": "projectName",
+      "type": "string",
+      "description": "The name of the iOS project",
+      "required": true,
+      "example": "MyAgentApp",
+      "validation": "^[A-Za-z][A-Za-z0-9_]*$"
+    },
+    {
+      "name": "organization",
+      "type": "string",
+      "description": "Organization name for Xcode project",
+      "required": true,
+      "example": "My Company"
+    },
+    {
+      "name": "bundleIdentifier",
+      "type": "string",
+      "description": "iOS bundle identifier",
+      "required": true,
+      "example": "com.mycompany.myagentapp",
+      "validation": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+    },
+    {
+      "name": "agentId",
+      "type": "string",
+      "description": "Agentforce Agent ID - the unique identifier for your Agentforce agent",
+      "required": true,
+      "example": "0XxRM00000001234ABC"
+    },
+    {
+      "name": "esDeveloperName",
+      "type": "string",
+      "description": "Einstein Studio Developer Name for your Agentforce deployment",
+      "required": true,
+      "example": "MyAgentforce_Agent"
+    },
+    {
+      "name": "salesforceOrgId",
+      "type": "string",
+      "description": "Salesforce Organization ID (18-character)",
+      "required": true,
+      "example": "00D000000000001ABC",
+      "validation": "^[a-zA-Z0-9]{15,18}$"
+    },
+    {
+      "name": "agentforceApiUrl",
+      "type": "string",
+      "description": "Agentforce API URL endpoint",
+      "required": true,
+      "example": "https://mycompany.my.salesforce.com"
+    }
+  ],
+  "generation": {
+    "fileTransforms": [
+      {
+        "pattern": "**/*.swift",
+        "processor": "handlebars"
+      },
+      {
+        "pattern": "**/*.plist",
+        "processor": "handlebars"
+      },
+      {
+        "pattern": "**/project.pbxproj",
+        "processor": "handlebars"
+      }
+    ]
+  },
+  "documentation": {
+    "gettingStarted": "https://developer.salesforce.com/docs/platform/agentforce/overview"
+  },
+  "tags": [
+    "ios",
+    "swift",
+    "swiftui",
+    "agentforce",
+    "ai",
+    "service-agents",
+    "simple"
+  ]
+}

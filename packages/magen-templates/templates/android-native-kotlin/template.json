@@ -1,0 +1,129 @@
+{
+  "$schema": "../../schemas/template-v1.json",
+  "version": "0.0.1",
+  "type": "application",
+  "id": "android-native-kotlin",
+  "displayName": "Android Native Kotlin Template",
+  "description": "A basic Android native Kotlin application template using Salesforce Mobile SDK. This template provides a foundation for building Android apps that integrate with Salesforce, featuring basic authentication, REST API integration, and a simple list-based interface.",
+  "platform": {
+    "type": "android",
+    "minVersion": "26"
+  },
+  "useCase": {
+    "primary": "Basic Android native app with Salesforce integration",
+    "scenarios": [
+      "Starting point for Salesforce Mobile SDK apps",
+      "Simple REST API integration",
+      "OAuth authentication setup"
+    ],
+    "when": "Use this template when you need to create a basic Android native app that integrates with Salesforce using Kotlin."
+  },
+  "capabilities": [
+    "native-android",
+    "kotlin",
+    "salesforce-sdk",
+    "authentication",
+    "rest-api",
+    "oauth",
+    "qr-code-login",
+    "push-notifications",
+    "dark-theme-support",
+    "edge-to-edge-ui"
+  ],
+  "complexity": {
+    "level": "simple",
+    "explanation": "Minimal but functional template with basic Salesforce REST API integration"
+  },
+  "extensionPoints": [
+    {
+      "id": "app-configuration",
+      "name": "App Configuration",
+      "description": "Customize the app name, package name, and build configuration",
+      "difficulty": "simple",
+      "affectedFiles": [
+        "template/app/build.gradle.kts",
+        "template/settings.gradle.kts",
+        "template/app/src/main/res/values/strings.xml"
+      ],
+      "aiGuidance": {
+        "steps": [
+          "Update build.gradle.kts with new package name",
+          "Modify settings.gradle.kts with new app name",
+          "Update strings.xml with display name"
+        ]
+      }
+    },
+    {
+      "id": "salesforce-integration",
+      "name": "Salesforce Integration",
+      "description": "Add custom Salesforce object queries and REST API calls",
+      "difficulty": "moderate",
+      "affectedFiles": [
+        "template/app/src/main/java/com/salesforce/androidnativekotlintemplate/MainActivity.kt",
+        "template/app/src/main/java/com/salesforce/androidnativekotlintemplate/MainApplication.kt"
+      ],
+      "aiGuidance": {
+        "steps": [
+          "Modify MainActivity.kt to add custom REST API calls",
+          "Add SObject queries in MainActivity",
+          "Update MainApplication.kt for custom SDK configuration"
+        ]
+      }
+    }
+  ],
+  "requirements": {
+    "skillLevel": "intermediate",
+    "estimatedTime": "30 minutes"
+  },
+  "templateVariables": [
+    {
+      "name": "projectName",
+      "type": "string",
+      "description": "The name of the Android project",
+      "required": true,
+      "example": "MyAndroidApp",
+      "validation": "^[A-Za-z][A-Za-z0-9_]*$"
+    },
+    {
+      "name": "packageName",
+      "type": "string",
+      "description": "Android package name",
+      "required": true,
+      "example": "com.mycompany.myandroidapp",
+      "validation": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+    },
+    {
+      "name": "organization",
+      "type": "string",
+      "description": "Organization name",
+      "required": true,
+      "example": "My Company"
+    }
+  ],
+  "generation": {
+    "fileTransforms": [
+      {
+        "pattern": "**/*.kt",
+        "processor": "handlebars"
+      },
+      {
+        "pattern": "**/*.xml",
+        "processor": "handlebars"
+      },
+      {
+        "pattern": "**/*.gradle.kts",
+        "processor": "handlebars"
+      }
+    ]
+  },
+  "documentation": {
+    "gettingStarted": "https://developer.salesforce.com/docs/platform/mobile-sdk/guide/android-get-started.html"
+  },
+  "tags": [
+    "android",
+    "kotlin",
+    "salesforce",
+    "mobile-sdk",
+    "simple"
+  ]
+}

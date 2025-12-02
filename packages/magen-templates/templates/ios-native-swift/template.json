@@ -1,0 +1,133 @@
+{
+  "$schema": "../../schemas/template-v1.json",
+  "version": "0.0.1",
+  "type": "application",
+  "id": "ios-native-swift",
+  "displayName": "iOS Native Swift Template",
+  "description": "A basic iOS native Swift application template using Salesforce Mobile SDK with MobileSync, SwiftUI, and Combine. This template provides a foundation for building iOS apps that integrate with Salesforce, featuring basic authentication, account listing, and contact management capabilities.",
+  "platform": {
+    "type": "ios",
+    "minVersion": "15.0"
+  },
+  "useCase": {
+    "primary": "Basic iOS native app with Salesforce integration",
+    "scenarios": [
+      "Starting point for Salesforce Mobile SDK apps",
+      "Simple data display and management",
+      "OAuth authentication and account management"
+    ],
+    "when": "Use this template when you need to create a basic iOS native app that integrates with Salesforce using Swift, SwiftUI, and Combine."
+  },
+  "capabilities": [
+    "native-ios",
+    "swift",
+    "swiftui",
+    "combine",
+    "salesforce-sdk",
+    "mobilesync",
+    "authentication",
+    "account-list",
+    "contact-management",
+    "smartstore",
+    "offline-capability"
+  ],
+  "complexity": {
+    "level": "simple",
+    "explanation": "Minimal but functional template with basic Salesforce integration and data management"
+  },
+  "extensionPoints": [
+    {
+      "id": "app-configuration",
+      "name": "App Configuration",
+      "description": "Customize the app name, package name, and organization details",
+      "difficulty": "simple",
+      "affectedFiles": [
+        "template/Info.plist",
+        "template/{{projectName}}.xcodeproj/project.pbxproj",
+        "template/{{projectName}}.entitlements"
+      ],
+      "aiGuidance": {
+        "steps": [
+          "Update project configuration files with new app name and bundle identifier",
+          "Modify Info.plist for app metadata",
+          "Update entitlements for app capabilities"
+        ]
+      }
+    },
+    {
+      "id": "salesforce-objects",
+      "name": "Salesforce Objects",
+      "description": "Add new Salesforce objects beyond the default Account and Contact",
+      "difficulty": "moderate",
+      "affectedFiles": [
+        "template/AccountsListModel.swift",
+        "template/ContactsForAccountModel.swift",
+        "template/ContactDetailModel.swift"
+      ],
+      "aiGuidance": {
+        "steps": [
+          "Create new model files for additional SObjects",
+          "Implement ObservableObject pattern with @Published properties",
+          "Add SmartStore queries for new objects",
+          "Create corresponding SwiftUI views"
+        ]
+      }
+    }
+  ],
+  "requirements": {
+    "skillLevel": "intermediate",
+    "estimatedTime": "30 minutes"
+  },
+  "templateVariables": [
+    {
+      "name": "projectName",
+      "type": "string",
+      "description": "The name of the iOS project",
+      "required": true,
+      "example": "MyiOSApp",
+      "validation": "^[A-Za-z][A-Za-z0-9_]*$"
+    },
+    {
+      "name": "organization",
+      "type": "string",
+      "description": "Organization name for Xcode project",
+      "required": true,
+      "example": "My Company"
+    },
+    {
+      "name": "bundleIdentifier",
+      "type": "string",
+      "description": "iOS bundle identifier",
+      "required": true,
+      "example": "com.mycompany.myiosapp",
+      "validation": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+    }
+  ],
+  "generation": {
+    "fileTransforms": [
+      {
+        "pattern": "**/*.swift",
+        "processor": "handlebars"
+      },
+      {
+        "pattern": "**/*.plist",
+        "processor": "handlebars"
+      },
+      {
+        "pattern": "**/project.pbxproj",
+        "processor": "handlebars"
+      }
+    ]
+  },
+  "documentation": {
+    "gettingStarted": "https://developer.salesforce.com/docs/platform/mobile-sdk/guide/ios-get-started.html"
+  },
+  "tags": [
+    "ios",
+    "swift",
+    "swiftui",
+    "salesforce",
+    "mobile-sdk",
+    "simple"
+  ]
+}

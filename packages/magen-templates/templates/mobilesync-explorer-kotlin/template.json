@@ -1,0 +1,132 @@
+{
+    "$schema": "../../schemas/template-v1.json",
+    "version": "0.0.1",
+    "type": "application",
+    "id": "mobilesync-explorer-kotlin",
+    "displayName": "MobileSync Explorer Kotlin",
+    "description": "A comprehensive Android Kotlin application template demonstrating advanced Salesforce Mobile SDK integration using MobileSync data framework. This template provides a full-featured contact management app with offline sync capabilities, Material Design 3 UI, and comprehensive data management.",
+    "platform": {
+        "type": "android",
+        "minVersion": "26"
+    },
+    "useCase": {
+        "primary": "Production-ready Android app with full Salesforce data synchronization",
+        "scenarios": [
+            "Offline-first mobile applications",
+            "Complex data relationships and sync",
+            "Material Design contact management",
+            "Enterprise-grade data handling"
+        ],
+        "when": "Use this template when you need to create a production-ready Android app with full Salesforce data synchronization capabilities."
+    },
+    "capabilities": [
+        "native-android",
+        "kotlin",
+        "jetpack-compose",
+        "salesforce-sdk",
+        "mobilesync",
+        "offline-sync",
+        "smartstore",
+        "contact-management",
+        "search-functionality",
+        "material-design-3",
+        "dark-mode-support"
+    ],
+    "complexity": {
+        "level": "moderate",
+        "explanation": "Full-featured template with advanced MobileSync integration and comprehensive Material Design UI"
+    },
+    "extensionPoints": [
+        {
+            "id": "salesforce-objects",
+            "name": "Salesforce Objects",
+            "description": "Add new Salesforce objects beyond the default Contact",
+            "difficulty": "moderate",
+            "affectedFiles": [
+                "template/app/src/main/java/com/salesforce/mobilesyncexplorerkotlintemplate/core/salesforceobject/"
+            ],
+            "aiGuidance": {
+                "steps": [
+                    "Create new SObject data classes following existing patterns",
+                    "Implement required interfaces",
+                    "Register in the app"
+                ]
+            }
+        },
+        {
+            "id": "ui-components",
+            "name": "UI Components",
+            "description": "Extend the Jetpack Compose interface with additional components",
+            "difficulty": "simple",
+            "affectedFiles": [
+                "template/app/src/main/java/com/salesforce/mobilesyncexplorerkotlintemplate/contacts/listcomponent/",
+                "template/app/src/main/java/com/salesforce/mobilesyncexplorerkotlintemplate/contacts/detailscomponent/"
+            ],
+            "aiGuidance": {
+                "steps": [
+                    "Add new Compose UI components following existing patterns",
+                    "Implement navigation",
+                    "Customize Material Design theming"
+                ]
+            }
+        }
+    ],
+    "requirements": {
+        "skillLevel": "intermediate",
+        "estimatedTime": "45 minutes"
+    },
+    "templateVariables": [
+        {
+            "name": "projectName",
+            "type": "string",
+            "description": "The name of the Android project",
+            "required": true,
+            "example": "MySyncApp",
+            "validation": "^[A-Za-z][A-Za-z0-9_]*$"
+        },
+        {
+            "name": "packageName",
+            "type": "string",
+            "description": "Android package name",
+            "required": true,
+            "example": "com.mycompany.mysyncapp",
+            "validation": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+        },
+        {
+            "name": "organization",
+            "type": "string",
+            "description": "Organization name",
+            "required": true,
+            "example": "My Company"
+        }
+    ],
+    "generation": {
+        "fileTransforms": [
+            {
+                "pattern": "**/*.kt",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/*.xml",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/*.gradle.kts",
+                "processor": "handlebars"
+            }
+        ]
+    },
+    "documentation": {
+        "readme": "README.md",
+        "gettingStarted": "https://developer.salesforce.com/docs/platform/mobile-sdk/guide/android-get-started.html"
+    },
+    "tags": [
+        "android",
+        "kotlin",
+        "jetpack-compose",
+        "salesforce",
+        "mobilesync",
+        "offline",
+        "moderate"
+    ]
+}
