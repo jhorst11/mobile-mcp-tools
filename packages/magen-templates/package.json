@@ -1,0 +1,48 @@
+{
+  "name": "@salesforce/magen-templates",
+  "version": "0.1.0",
+  "description": "AI-friendly mobile app template system for Salesforce platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "magen-templates": "dist/cli/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "start": "node dist/cli/cli.js",
+    "test:coverage": "vitest --coverage",
+    "validate-template": "node dist/cli/cli.js validate",
+    "generate:schema": "npx tsx scripts/generate-json-schema.ts",
+    "lint": "eslint --max-warnings 0 --config ../../eslint.config.mjs \"{src,tests}/**/*.ts\"",
+    "format": "prettier --write \"{src,tests}/**/*.ts\""
+  },
+  "keywords": [
+    "templates",
+    "scaffolding",
+    "mobile",
+    "salesforce",
+    "ai-friendly",
+    "code-generation"
+  ],
+  "author": "Salesforce",
+  "license": "MIT",
+  "dependencies": {
+    "handlebars": "^4.7.8",
+    "zod": "^3.22.4",
+    "zod-to-json-schema": "^3.24.6",
+    "glob": "^10.3.10",
+    "fs-extra": "^11.2.0"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0",
+    "@vitest/coverage-v8": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

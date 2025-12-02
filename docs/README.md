@@ -9,12 +9,14 @@ The documentation is organized in the `/docs` directory:
 - **`/docs/`** - Project documentation including:
   - [Project Overview](./1_project_overview.md) - High-level project goals and architecture
   - [Mobile Native App Generation](./5_mobile_native_app_generation.md) - Comprehensive MCP server design for native app generation
+  - [Templating Strategy](./11_templating.md) - Template system architecture for flexible, AI-friendly mobile app generation
   - [README](./README.md) - Documentation index and navigation
 
 ## Getting Started with Documentation
 
 1. **Start with the [Project Overview](./1_project_overview.md)** to understand the project's purpose and architecture
 2. **Review [Mobile Native App Generation](./5_mobile_native_app_generation.md)** for comprehensive native app development approach and detailed workflow architecture
+3. **Explore [Templating Strategy](./11_templating.md)** to understand the flexible, AI-friendly template system for app and feature generation
 
 ## Contributing to Documentation
 

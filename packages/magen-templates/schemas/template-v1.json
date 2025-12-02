@@ -1,0 +1,353 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://salesforce.github.io/magen-templates/schemas/template-v1.json",
+  "title": "Magen Template Metadata",
+  "description": "Schema for magen-templates template.json files. Provides IDE autocomplete and validation for template authors.",
+  "$ref": "#/definitions/TemplateMetadata",
+  "definitions": {
+    "TemplateMetadata": {
+      "type": "object",
+      "properties": {
+        "$schema": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "application"
+        },
+        "id": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["ios", "android", "cross-platform"]
+            },
+            "minVersion": {
+              "type": "string"
+            },
+            "targetVersion": {
+              "type": "string"
+            },
+            "language": {
+              "type": "string"
+            },
+            "framework": {
+              "type": "string"
+            }
+          },
+          "required": ["type", "minVersion"],
+          "additionalProperties": false
+        },
+        "useCase": {
+          "type": "object",
+          "properties": {
+            "primary": {
+              "type": "string"
+            },
+            "scenarios": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "when": {
+              "type": "string"
+            }
+          },
+          "required": ["primary", "scenarios", "when"],
+          "additionalProperties": false
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "complexity": {
+          "type": "object",
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": ["simple", "moderate", "advanced"]
+            },
+            "explanation": {
+              "type": "string"
+            },
+            "estimatedLearningTime": {
+              "type": "string"
+            },
+            "prerequisites": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": ["level", "explanation"],
+          "additionalProperties": false
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "required": {
+                "type": "boolean"
+              }
+            },
+            "required": ["id", "name", "description", "files", "required"],
+            "additionalProperties": false
+          }
+        },
+        "extensionPoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "difficulty": {
+                "type": "string",
+                "enum": ["simple", "moderate", "advanced"]
+              },
+              "aiGuidance": {
+                "type": "object",
+                "properties": {
+                  "overview": {
+                    "type": "string"
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "exampleFiles": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "codePattern": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "tips": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "prerequisites": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": ["steps"],
+                "additionalProperties": false
+              },
+              "affectedFiles": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "estimatedEffort": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "name", "description", "difficulty", "aiGuidance", "affectedFiles"],
+            "additionalProperties": false
+          }
+        },
+        "requirements": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "templateVariables": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": ["string", "number", "boolean", "array", "object"]
+              },
+              "description": {
+                "type": "string"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "default": {},
+              "validation": {
+                "type": "string"
+              },
+              "example": {},
+              "sensitive": {
+                "type": "boolean"
+              },
+              "options": {
+                "type": "array",
+                "items": {}
+              }
+            },
+            "required": ["name", "type", "description", "required"],
+            "additionalProperties": false
+          }
+        },
+        "generation": {
+          "type": "object",
+          "properties": {
+            "preHook": {
+              "type": "string"
+            },
+            "postHook": {
+              "type": "string"
+            },
+            "fileTransforms": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "pattern": {
+                    "type": "string"
+                  },
+                  "processor": {
+                    "type": "string",
+                    "enum": ["handlebars", "copy", "custom"]
+                  },
+                  "outputExtension": {
+                    "type": "string"
+                  }
+                },
+                "required": ["pattern", "processor"],
+                "additionalProperties": false
+              }
+            },
+            "fileOperations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": ["rename", "move", "delete"]
+                  },
+                  "from": {
+                    "type": "string"
+                  },
+                  "to": {
+                    "type": "string"
+                  }
+                },
+                "required": ["action", "from"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": ["fileTransforms"],
+          "additionalProperties": false
+        },
+        "documentation": {
+          "type": "object",
+          "properties": {
+            "readme": {
+              "type": "string"
+            },
+            "architecture": {
+              "type": "string"
+            },
+            "gettingStarted": {
+              "type": "string"
+            },
+            "externalLinks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": ["title", "url"],
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "$schema",
+        "version",
+        "type",
+        "id",
+        "displayName",
+        "description",
+        "platform",
+        "useCase",
+        "capabilities",
+        "complexity",
+        "requirements",
+        "templateVariables",
+        "generation",
+        "tags"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
