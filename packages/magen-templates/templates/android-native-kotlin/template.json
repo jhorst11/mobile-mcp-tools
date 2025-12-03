@@ -30,45 +30,27 @@
     "dark-theme-support",
     "edge-to-edge-ui"
   ],
-  "complexity": {
-    "level": "simple",
-    "explanation": "Minimal but functional template with basic Salesforce REST API integration"
-  },
   "extensionPoints": [
     {
       "id": "app-configuration",
       "name": "App Configuration",
       "description": "Customize the app name, package name, and build configuration",
-      "difficulty": "simple",
       "affectedFiles": [
         "template/app/build.gradle.kts",
         "template/settings.gradle.kts",
         "template/app/src/main/res/values/strings.xml"
       ],
-      "aiGuidance": {
-        "steps": [
-          "Update build.gradle.kts with new package name",
-          "Modify settings.gradle.kts with new app name",
-          "Update strings.xml with display name"
-        ]
-      }
+      "aiGuidance": "Update build.gradle.kts with new package name Modify settings.gradle.kts with new app name Update strings.xml with display name"
     },
     {
       "id": "salesforce-integration",
       "name": "Salesforce Integration",
       "description": "Add custom Salesforce object queries and REST API calls",
-      "difficulty": "moderate",
       "affectedFiles": [
         "template/app/src/main/java/com/salesforce/androidnativekotlintemplate/MainActivity.kt",
         "template/app/src/main/java/com/salesforce/androidnativekotlintemplate/MainApplication.kt"
       ],
-      "aiGuidance": {
-        "steps": [
-          "Modify MainActivity.kt to add custom REST API calls",
-          "Add SObject queries in MainActivity",
-          "Update MainApplication.kt for custom SDK configuration"
-        ]
-      }
+      "aiGuidance": "Modify MainActivity.kt to add custom REST API calls Add SObject queries in MainActivity Update MainApplication.kt for custom SDK configuration"
     }
   ],
   "requirements": {

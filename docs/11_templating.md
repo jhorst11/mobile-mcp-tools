@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `@salesforce/magen-templates` package provides an AI-friendly template system for generating Salesforce Mobile SDK applications. It enables both AI agents and developers to discover, select, and instantiate production-ready mobile app scaffolds through rich metadata and Handlebars-based processing.
+The `@salesforce/magen-templates` package provides an AI-friendly template system for generating Salesforce mobile applications. It enables both AI agents and developers to discover, select, and instantiate production-ready mobile app scaffolds through rich metadata and Handlebars-based processing.
 
 ---
 
@@ -10,22 +10,15 @@ The `@salesforce/magen-templates` package provides an AI-friendly template syste
 
 ### Design Philosophy
 
-The template system is built on three principles:
+The template system is built on four principles:
 
 1. **Self-Describing Templates** — Each template carries comprehensive metadata that explains its capabilities, use cases, and extension patterns, enabling AI agents to reason about and select appropriate templates autonomously.
 
-2. **AI Guidance** — Templates include step-by-step instructions and code patterns for common customizations, allowing LLMs to extend generated applications without external documentation.
+2. **Programmatic API** — Direct TypeScript/JavaScript API enables MCP server integration and other programmatic workflows without requiring CLI invocation or shell commands.
 
-3. **Simple Processing** — Handlebars templating with minimal dependencies ensures predictable, transparent file generation.
+3. **Platform Agnostic** — While initially focused on Salesforce mobile apps, the system is designed to support any application type through flexible metadata and processing patterns.
 
-### Template Types
-
-Templates generate complete, buildable mobile applications:
-
-| Platform | Language | Examples |
-|----------|----------|----------|
-| iOS | Swift/SwiftUI | `ios-native-swift`, `mobilesync-explorer-swift`, `agentforce-demo` |
-| Android | Kotlin | `android-native-kotlin`, `mobilesync-explorer-kotlin` |
+4. **Simple Processing** — Handlebars templating with minimal dependencies ensures predictable, transparent file generation.
 
 ---
 
@@ -49,8 +42,7 @@ magen-templates/
 
 | Component | Responsibility |
 |-----------|---------------|
-| `TemplateRegistry` | Discovers templates, loads metadata, provides search by platform/capabilities/tags |
-| `TemplateSelector` | Ranks templates against requirements, returns scored matches with reasoning |
+| `TemplateRegistry` | Discovers templates, loads metadata, provides filtering by platform/capabilities/tags |
 | `TemplateGenerator` | Processes template files, substitutes variables, executes hooks |
 | `TemplateValidator` | Validates template structure and metadata against schema |
 
@@ -111,11 +103,6 @@ The `template.json` file defines everything needed for discovery, selection, and
   "capabilities": ["offline-sync", "contact-management"],
   "tags": ["ios", "swift", "mobilesdk"],
   
-  "complexity": {
-    "level": "moderate",
-    "explanation": "Why this complexity level"
-  },
-  
   "templateVariables": [
     {
       "name": "projectName",
@@ -131,20 +118,21 @@ The `template.json` file defines everything needed for discovery, selection, and
       "id": "add-feature",
       "name": "Add Custom Feature",
       "description": "How to add a custom feature",
-      "difficulty": "simple",
       "affectedFiles": ["path/to/file.swift"],
-      "aiGuidance": {
-        "steps": ["Step 1", "Step 2"],
-        "codePattern": {
-          "model": "class {{Name}}Model { ... }"
-        }
-      }
+      "aiGuidance": "Create a new model file following the existing pattern. Implement the required protocol. Register the feature in the main configuration."
     }
   ],
   
   "generation": {
     "fileTransforms": [
-      { "pattern": "**/*.hbs", "processor": "handlebars" }
+      { "pattern": "**/*.hbs", "processor": "handlebars" },
+      { "pattern": "**/*.swift", "processor": "handlebars" },
+      { "pattern": "**/*.png", "processor": "copy" },
+      { "pattern": "**/Podfile", "processor": "handlebars", "outputExtension": "" }
+    ],
+    "fileOperations": [
+      { "action": "rename", "from": "ExampleApp", "to": "{{projectName}}" },
+      { "action": "delete", "from": ".DS_Store" }
     ]
   }
 }
@@ -156,9 +144,8 @@ The `template.json` file defines everything needed for discovery, selection, and
 |-------|---------|
 | `platform` | Target platform and version constraints |
 | `capabilities` | Semantic tags for capability-based search |
-| `complexity` | Difficulty level with explanation |
 | `templateVariables` | User-provided values with validation |
-| `extensionPoints` | AI guidance for post-generation customization |
+| `extensionPoints` | Guidance for post-generation customization |
 | `generation.fileTransforms` | File processing rules |
 
 ---
@@ -170,29 +157,46 @@ The `template.json` file defines everything needed for discovery, selection, and
 ```typescript
 import { 
   TemplateRegistry, 
-  TemplateSelector, 
   TemplateGenerator 
 } from '@salesforce/magen-templates';
 
 // 1. Discover available templates
 const registry = new TemplateRegistry();
-const templates = await registry.discoverTemplates();
+const allTemplates = await registry.discoverTemplates();
 
-// 2. Select best match for requirements
-const selector = new TemplateSelector();
-const match = await selector.selectTemplate(templates, {
-  platform: 'ios',
-  requiredCapabilities: ['offline-sync'],
-  complexity: 'moderate'
-});
+// 2. Filter by platform (required)
+const iosTemplates = allTemplates.filter(t => t.platform.type === 'ios');
 
-// 3. Get full metadata
-const metadata = await registry.getMetadata(match.template.id);
+// 3. Filter by capabilities (optional)
+const matchingTemplates = iosTemplates.filter(t => 
+  t.capabilities.includes('offline-sync')
+);
 
-// 4. Generate project
+// 4. Examine template metadata to make informed selection
+for (const template of matchingTemplates) {
+  console.log(`Template: ${template.displayName}`);
+  console.log(`Description: ${template.description}`);
+  console.log(`Use Case: ${template.useCase.primary}`);
+  console.log(`Capabilities: ${template.capabilities.join(', ')}`);
+  
+  // Get full metadata including extension points and variables
+  const metadata = await registry.getMetadata(template.id);
+  console.log(`Extension Points: ${metadata.extensionPoints?.length || 0}`);
+  console.log(`Required Variables:`, 
+    metadata.templateVariables.filter(v => v.required).map(v => v.name)
+  );
+}
+
+// 5. AI agent or developer selects appropriate template
+const selectedTemplateId = 'ios-native-swift'; // Based on analysis above
+
+// 6. Get full metadata for generation
+const metadata = await registry.getMetadata(selectedTemplateId);
+
+// 7. Generate project
 const generator = new TemplateGenerator(registry);
 const result = await generator.generate({
-  templateId: match.template.id,
+  templateId: selectedTemplateId,
   metadata,
   variables: {
     projectName: 'MyApp',
@@ -228,21 +232,44 @@ npx magen-templates search --capability offline-sync
 
 ---
 
-## Template Selection
+```typescript
+// Agent receives user request: "iOS app for managing contacts with offline support"
 
-The `TemplateSelector` scores templates against requirements using weighted criteria:
+// 1. Extract requirements from natural language
+const requirements = {
+  platform: 'ios',
+  capabilities: ['offline-sync', 'contact-management']
+};
 
-| Criterion | Weight | Description |
-|-----------|--------|-------------|
-| Platform match | Required | Must match exactly |
-| Capability coverage | 0.4 | Percentage of required capabilities present |
-| Complexity match | 0.3 | Distance from requested complexity level |
-| Tag relevance | 0.1 | Overlap with requested tags |
+// 2. Discover and filter
+const templates = await registry.discoverTemplates();
+const candidates = templates.filter(t => 
+  t.platform.type === requirements.platform &&
+  requirements.capabilities.every(cap => t.capabilities.includes(cap))
+);
 
-Selection returns a `TemplateMatch` with:
-- The selected template
-- Numeric score
-- Human-readable reasoning explaining the selection
+// 3. Examine each candidate
+for (const template of candidates) {
+  const metadata = await registry.getMetadata(template.id);
+  
+  // Agent reasons about:
+  // - Does use case align with "managing contacts"?
+  // - Are extension points suitable for customization?
+  // - Are capabilities comprehensive or will extensions be needed?
+  // - Do required variables match available inputs?
+}
+
+// 4. Agent makes informed selection and explains reasoning
+const selected = 'mobilesync-explorer-swift';
+const reasoning = [
+  'Matches platform: iOS with Swift/SwiftUI',
+  'Provides required capabilities: offline-sync, contact-management',
+  'Use case aligns: "Mobile SDK data explorer with offline sync"',
+  'Extension points enable adding custom SObjects',
+  'All required variables can be satisfied',
+  'Template features align well with user requirements'
+];
+```
 
 ---
 
@@ -250,7 +277,7 @@ Selection returns a `TemplateMatch` with:
 
 ```
 ┌─────────────────┐
-│ Validate Config │  Check required variables, output path
+│ Validate Config │  Check required variables, types, regex patterns, output path
 └────────┬────────┘
          ▼
 ┌─────────────────┐
@@ -274,9 +301,23 @@ Selection returns a `TemplateMatch` with:
 └─────────────────┘
 ```
 
-### Handlebars Helpers
+---
 
-Built-in helpers for common transformations:
+## Handlebars Templating
+
+The template system uses [Handlebars](https://handlebarsjs.com/) for variable substitution and file processing. Handlebars provides a simple, logic-less templating syntax that makes it easy to inject values into template files.
+
+### Basic Variable Substitution
+
+```handlebars
+// Simple variable substitution
+let projectName = "{{projectName}}";
+let bundleId = "{{bundleIdentifier}}";
+```
+
+### Built-in Helpers
+
+The system includes helpers for common string transformations:
 
 | Helper | Example Input | Output |
 |--------|---------------|--------|
@@ -286,40 +327,28 @@ Built-in helpers for common transformations:
 | `{{pascalCase name}}` | `my-app` | `MyApp` |
 | `{{camelCase name}}` | `my-app` | `myApp` |
 
+For more advanced Handlebars features (conditionals, loops, custom helpers), see the [Handlebars documentation](https://handlebarsjs.com/guide/).
+
 ---
 
 ## Extension Points
 
-Extension points provide AI guidance for post-generation customization:
+Extension points provide guidance for post-generation customization:
 
 ```json
 {
   "id": "add-sobject",
   "name": "Add SObject Support",
   "description": "Add support for a new Salesforce object",
-  "difficulty": "moderate",
   "affectedFiles": [
     "SObjects/NewObject.swift",
     "UI/NewObjectListView.swift"
   ],
-  "aiGuidance": {
-    "overview": "Create model and view files following existing patterns",
-    "steps": [
-      "Create SObjects/{{ObjectName}}.swift following Contacts.swift pattern",
-      "Create UI/{{ObjectName}}ListView.swift",
-      "Add navigation entry in Tabs.swift"
-    ],
-    "codePattern": {
-      "model": "class {{ObjectName}}: SFObject { ... }",
-      "view": "struct {{ObjectName}}ListView: View { ... }"
-    },
-    "tips": [
-      "Use existing SObject files as reference",
-      "Follow established naming conventions"
-    ]
-  }
+  "aiGuidance": "Create model and view files following existing patterns. Create SObjects/{{ObjectName}}.swift following the Contacts.swift pattern. Create UI/{{ObjectName}}ListView.swift for the list view. Add navigation entry in Tabs.swift. Use existing SObject files as reference and follow established naming conventions."
 }
 ```
+
+The `aiGuidance` field provides free-form text guidance that AI agents can use to understand how to extend the generated application. It can reference template variables using `{{variableName}}` syntax and should describe the general approach and point to example files.
 
 ---
 
@@ -338,37 +367,3 @@ const result = await registry.validateTemplate('my-template');
 ```
 
 ---
-
-## Integration with MCP Server
-
-The template system integrates with `@salesforce/mobile-native-mcp-server` to enable prompt-to-app workflows:
-
-1. **Discovery** — MCP tools expose available templates and their capabilities
-2. **Selection** — AI agents use requirements to select optimal templates
-3. **Generation** — Templates are instantiated with user-provided variables
-4. **Extension** — AI agents use extension points to customize generated apps
-
-This enables the vision described in [Mobile Native App Generation](./5_mobile_native_app_generation.md): transforming natural language intent into production-ready native mobile applications.
-
----
-
-## Creating New Templates
-
-### Workflow
-
-1. Build a working reference app with concrete values
-2. Identify customization points (project name, identifiers, etc.)
-3. Create template directory structure
-4. Add `.hbs` extension to files needing variable substitution
-5. Replace concrete values with `{{variableName}}` syntax
-6. Create `template.json` with comprehensive metadata
-7. Add extension points with AI guidance
-8. Validate with `npx magen-templates validate <template-id>`
-
-### Best Practices
-
-- **Start concrete** — Build a working app first, then templatize
-- **Minimal variables** — Only expose what genuinely needs customization
-- **Rich metadata** — Invest in descriptions, use cases, and extension guidance
-- **Test generation** — Verify the generated project builds and runs
-- **Document extensions** — Provide clear AI guidance for common customizations

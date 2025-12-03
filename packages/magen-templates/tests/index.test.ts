@@ -19,11 +19,6 @@ describe('Package Exports', () => {
     expect(typeof MagenTemplates.TemplateGenerator).toBe('function');
   });
 
-  it('should export TemplateSelector', () => {
-    expect(MagenTemplates.TemplateSelector).toBeDefined();
-    expect(typeof MagenTemplates.TemplateSelector).toBe('function');
-  });
-
   it('should export TemplateValidator', () => {
     expect(MagenTemplates.TemplateValidator).toBeDefined();
     expect(typeof MagenTemplates.TemplateValidator).toBe('function');
@@ -35,9 +30,6 @@ describe('Package Exports', () => {
 
     const generator = new MagenTemplates.TemplateGenerator(registry);
     expect(generator).toBeInstanceOf(MagenTemplates.TemplateGenerator);
-
-    const selector = new MagenTemplates.TemplateSelector(registry);
-    expect(selector).toBeInstanceOf(MagenTemplates.TemplateSelector);
 
     const validator = new MagenTemplates.TemplateValidator();
     expect(validator).toBeInstanceOf(MagenTemplates.TemplateValidator);

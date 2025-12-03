@@ -35,44 +35,26 @@
     "widget-support",
     "dark-mode-support"
   ],
-  "complexity": {
-    "level": "moderate",
-    "explanation": "Full-featured template with advanced MobileSync integration, widgets, and comprehensive UI"
-  },
   "extensionPoints": [
     {
       "id": "salesforce-objects",
       "name": "Salesforce Objects",
       "description": "Add new Salesforce objects beyond the default Contact",
-      "difficulty": "moderate",
       "affectedFiles": [
         "template/MobileSyncExplorerSwift/SObjects/Contacts.swift",
         "template/MobileSyncExplorerSwift/SObjects/SObjects.swift"
       ],
-      "aiGuidance": {
-        "steps": [
-          "Create new SObject data classes following the ContactSObjectData pattern",
-          "Implement required protocols and constants",
-          "Add to SObjects.swift registry"
-        ]
-      }
+      "aiGuidance": "Create new SObject data classes following the ContactSObjectData pattern Implement required protocols and constants Add to SObjects.swift registry"
     },
     {
       "id": "ui-components",
       "name": "UI Components",
       "description": "Extend the SwiftUI interface with additional components",
-      "difficulty": "simple",
       "affectedFiles": [
         "template/MobileSyncExplorerSwift/UI/ContactList/ContactList.swift",
         "template/MobileSyncExplorerSwift/UI/ContactDetail/ContactDetail.swift"
       ],
-      "aiGuidance": {
-        "steps": [
-          "Add new SwiftUI views following existing patterns",
-          "Implement navigation between views",
-          "Customize split-view behavior"
-        ]
-      }
+      "aiGuidance": "Add new SwiftUI views following existing patterns Implement navigation between views Customize split-view behavior"
     }
   ],
   "requirements": {

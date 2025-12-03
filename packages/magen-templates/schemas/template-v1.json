@@ -86,36 +86,6 @@
             "type": "string"
           }
         },
-        "complexity": {
-          "type": "object",
-          "properties": {
-            "level": {
-              "type": "string",
-              "enum": [
-                "simple",
-                "moderate",
-                "advanced"
-              ]
-            },
-            "explanation": {
-              "type": "string"
-            },
-            "estimatedLearningTime": {
-              "type": "string"
-            },
-            "prerequisites": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "required": [
-            "level",
-            "explanation"
-          ],
-          "additionalProperties": false
-        },
         "hidden": {
           "type": "boolean"
         },
@@ -167,73 +137,20 @@
               "description": {
                 "type": "string"
               },
-              "difficulty": {
-                "type": "string",
-                "enum": [
-                  "simple",
-                  "moderate",
-                  "advanced"
-                ]
-              },
               "aiGuidance": {
-                "type": "object",
-                "properties": {
-                  "overview": {
-                    "type": "string"
-                  },
-                  "steps": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "exampleFiles": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "codePattern": {
-                    "type": "object",
-                    "additionalProperties": {
-                      "type": "string"
-                    }
-                  },
-                  "tips": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "prerequisites": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                },
-                "required": [
-                  "steps"
-                ],
-                "additionalProperties": false
+                "type": "string"
               },
               "affectedFiles": {
                 "type": "array",
                 "items": {
                   "type": "string"
                 }
-              },
-              "estimatedEffort": {
-                "type": "string"
               }
             },
             "required": [
               "id",
               "name",
-              "description",
-              "difficulty",
-              "aiGuidance",
-              "affectedFiles"
+              "description"
             ],
             "additionalProperties": false
           }
@@ -408,7 +325,6 @@
         "platform",
         "useCase",
         "capabilities",
-        "complexity",
         "requirements",
         "templateVariables",
         "generation",

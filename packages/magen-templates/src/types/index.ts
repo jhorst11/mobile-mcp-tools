@@ -10,7 +10,6 @@
  */
 
 export type Platform = 'ios' | 'android' | 'cross-platform';
-export type ComplexityLevel = 'simple' | 'moderate' | 'advanced';
 export type FileProcessor = 'handlebars' | 'copy' | 'custom';
 export type FileAction = 'rename' | 'move' | 'delete';
 
@@ -28,30 +27,12 @@ export interface UseCaseInfo {
   when: string;
 }
 
-export interface ComplexityInfo {
-  level: ComplexityLevel;
-  explanation: string;
-  estimatedLearningTime?: string;
-  prerequisites?: string[];
-}
-
-export interface AIGuidance {
-  overview?: string;
-  steps: string[];
-  exampleFiles?: string[];
-  codePattern?: Record<string, string>;
-  tips?: string[];
-  prerequisites?: string[];
-}
-
 export interface ExtensionPoint {
   id: string;
   name: string;
   description: string;
-  difficulty: ComplexityLevel;
-  aiGuidance: AIGuidance;
-  affectedFiles: string[];
-  estimatedEffort?: string;
+  aiGuidance?: string;
+  affectedFiles?: string[];
 }
 
 export interface FeatureInfo {
@@ -118,7 +99,6 @@ export interface TemplateInfo {
   description: string;
   platform: PlatformInfo;
   capabilities: string[];
-  complexity: ComplexityInfo;
   tags: string[];
   version: string;
   useCase: UseCaseInfo;
@@ -196,35 +176,6 @@ export interface ValidationWarning {
   type: string;
   message: string;
   path?: string;
-}
-
-/**
- * Template requirements for selection
- */
-export interface TemplateRequirements {
-  platform: Platform;
-  requiredCapabilities?: string[];
-  complexity?: ComplexityLevel;
-  tags?: string[];
-}
-
-/**
- * Template match result with score
- */
-export interface TemplateMatch {
-  template: TemplateInfo;
-  score: number;
-  reasoning: string[];
-}
-
-/**
- * Ranked template with score
- */
-export interface RankedTemplate {
-  template: TemplateInfo;
-  score: number;
-  matchedCapabilities: string[];
-  missingCapabilities: string[];
 }
 
 /**

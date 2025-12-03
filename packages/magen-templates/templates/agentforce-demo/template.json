@@ -29,42 +29,26 @@
     "conversational-ai",
     "custom-theming"
   ],
-  "complexity": {
-    "level": "simple",
-    "explanation": "Straightforward template demonstrating Agentforce SDK integration with minimal complexity"
-  },
   "extensionPoints": [
     {
       "id": "agent-configuration",
       "name": "Agent Configuration",
       "description": "Configure the Agentforce agent settings and credentials",
-      "difficulty": "simple",
       "affectedFiles": [
         "template/AgentforceDemo/Classes/CredentialProvider.swift",
         "template/AgentforceDemo/Classes/Settings.swift"
       ],
-      "aiGuidance": {
-        "steps": [
-          "Update CredentialProvider.swift with your Agentforce credentials",
-          "Modify Settings.swift for custom configuration options"
-        ]
-      }
+      "aiGuidance": "Update CredentialProvider.swift with your Agentforce credentials Modify Settings.swift for custom configuration options"
     },
     {
       "id": "ui-theming",
       "name": "UI Theming",
       "description": "Customize the visual appearance and theming",
-      "difficulty": "simple",
       "affectedFiles": [
         "template/AgentforceDemo/Classes/CustomThemeManager.swift",
         "template/AgentforceDemo/Classes/AgentforceMainView.swift"
       ],
-      "aiGuidance": {
-        "steps": [
-          "Modify CustomThemeManager.swift to customize colors and styling",
-          "Update AgentforceMainView.swift for layout changes"
-        ]
-      }
+      "aiGuidance": "Modify CustomThemeManager.swift to customize colors and styling Update AgentforceMainView.swift for layout changes"
     }
   ],
   "requirements": {

@@ -9,8 +9,6 @@ import { z } from 'zod';
 
 export const PlatformSchema = z.enum(['ios', 'android', 'cross-platform']);
 
-export const ComplexityLevelSchema = z.enum(['simple', 'moderate', 'advanced']);
-
 export const PlatformInfoSchema = z.object({
   type: PlatformSchema,
   minVersion: z.string(),
@@ -25,30 +23,12 @@ export const UseCaseInfoSchema = z.object({
   when: z.string(),
 });
 
-export const ComplexityInfoSchema = z.object({
-  level: ComplexityLevelSchema,
-  explanation: z.string(),
-  estimatedLearningTime: z.string().optional(),
-  prerequisites: z.array(z.string()).optional(),
-});
-
-export const AIGuidanceSchema = z.object({
-  overview: z.string().optional(),
-  steps: z.array(z.string()),
-  exampleFiles: z.array(z.string()).optional(),
-  codePattern: z.record(z.string()).optional(),
-  tips: z.array(z.string()).optional(),
-  prerequisites: z.array(z.string()).optional(),
-});
-
 export const ExtensionPointSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  difficulty: ComplexityLevelSchema,
-  aiGuidance: AIGuidanceSchema,
-  affectedFiles: z.array(z.string()),
-  estimatedEffort: z.string().optional(),
+  aiGuidance: z.string().optional(),
+  affectedFiles: z.array(z.string()).optional(),
 });
 
 export const FeatureInfoSchema = z.object({
@@ -114,7 +94,6 @@ export const TemplateMetadataSchema = z.object({
   platform: PlatformInfoSchema,
   useCase: UseCaseInfoSchema,
   capabilities: z.array(z.string()),
-  complexity: ComplexityInfoSchema,
   /** If true, template is hidden from discovery (e.g., test-only templates) */
   hidden: z.boolean().optional(),
   features: z.array(FeatureInfoSchema).optional(),

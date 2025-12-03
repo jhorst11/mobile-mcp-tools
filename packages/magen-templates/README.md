@@ -47,27 +47,37 @@ npx magen-templates search --capability offline-sync
 ### Programmatic Usage
 
 ```typescript
-import { TemplateRegistry, TemplateSelector, TemplateGenerator } from '@salesforce/magen-templates';
+import { TemplateRegistry, TemplateGenerator } from '@salesforce/magen-templates';
 
 // Discover templates
 const registry = new TemplateRegistry();
 const templates = await registry.discoverTemplates();
 
-// Select best match
-const selector = new TemplateSelector();
-const match = await selector.selectTemplate(templates, {
-  platform: 'ios',
-  requiredCapabilities: ['contact-management', 'offline-sync'],
-  complexity: 'moderate',
-});
+// Filter by platform
+const iosTemplates = templates.filter(t => t.platform.type === 'ios');
+
+// Filter by capabilities
+const matchingTemplates = iosTemplates.filter(
+  t => t.capabilities.includes('contact-management') && t.capabilities.includes('offline-sync')
+);
+
+// Examine templates and select one
+for (const template of matchingTemplates) {
+  console.log(`${template.displayName}: ${template.description}`);
+  console.log(`Use case: ${template.useCase.primary}`);
+  console.log(`Capabilities: ${template.capabilities.join(', ')}`);
+}
+
+// Select template (based on analysis)
+const selectedTemplateId = matchingTemplates[0].id;
 
 // Get full metadata
-const metadata = await registry.getMetadata(match.template.id);
+const metadata = await registry.getMetadata(selectedTemplateId);
 
 // Generate project
 const generator = new TemplateGenerator(registry);
 const result = await generator.generate({
-  templateId: match.template.id,
+  templateId: selectedTemplateId,
   metadata,
   variables: {
     projectName: 'MyApp',
@@ -124,13 +134,8 @@ The `template.json` file contains comprehensive metadata:
       "id": "add-feature",
       "name": "Add Custom Feature",
       "description": "How to add a custom feature",
-      "aiGuidance": {
-        "steps": ["Step 1: Create new files", "Step 2: Modify existing files"],
-        "exampleFiles": ["ExampleFile.swift"],
-        "codePattern": {
-          "model": "class {{Name}}Model { ... }"
-        }
-      }
+      "affectedFiles": ["ExampleFile.swift"],
+      "aiGuidance": "Create new files following the existing pattern. Modify the main configuration to register the new feature."
     }
   ],
   "templateVariables": [
@@ -168,7 +173,7 @@ See the [Templating Strategy](../../docs/11_templating.md) documentation for com
 - **Rich Guidance**: Step-by-step instructions for customization
 - **Code Patterns**: Template snippets for common extensions
 - **Semantic Tags**: Capability-based template discovery
-- **Clear Reasoning**: Selection explanations
+- **Rich Metadata**: Comprehensive information for informed decision-making
 
 ### For Developers
 
@@ -189,24 +194,6 @@ class TemplateRegistry {
   searchByPlatform(platform: Platform): Promise<TemplateInfo[]>;
   searchByCapabilities(capabilities: string[]): Promise<TemplateInfo[]>;
   validateTemplate(templateId: string): Promise<ValidationResult>;
-}
-```
-
-### TemplateSelector
-
-```typescript
-class TemplateSelector {
-  selectTemplate(
-    templates: TemplateInfo[],
-    requirements: TemplateRequirements
-  ): Promise<TemplateMatch>;
-
-  rankTemplates(
-    templates: TemplateInfo[],
-    requirements: TemplateRequirements
-  ): Promise<RankedTemplate[]>;
-
-  explainSelection(match: TemplateMatch): string;
 }
 ```
 

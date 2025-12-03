@@ -31,47 +31,28 @@
     "smartstore",
     "offline-capability"
   ],
-  "complexity": {
-    "level": "simple",
-    "explanation": "Minimal but functional template with basic Salesforce integration and data management"
-  },
   "extensionPoints": [
     {
       "id": "app-configuration",
       "name": "App Configuration",
       "description": "Customize the app name, package name, and organization details",
-      "difficulty": "simple",
       "affectedFiles": [
         "template/Info.plist",
         "template/{{projectName}}.xcodeproj/project.pbxproj",
         "template/{{projectName}}.entitlements"
       ],
-      "aiGuidance": {
-        "steps": [
-          "Update project configuration files with new app name and bundle identifier",
-          "Modify Info.plist for app metadata",
-          "Update entitlements for app capabilities"
-        ]
-      }
+      "aiGuidance": "Update project configuration files with new app name and bundle identifier Modify Info.plist for app metadata Update entitlements for app capabilities"
     },
     {
       "id": "salesforce-objects",
       "name": "Salesforce Objects",
       "description": "Add new Salesforce objects beyond the default Account and Contact",
-      "difficulty": "moderate",
       "affectedFiles": [
         "template/AccountsListModel.swift",
         "template/ContactsForAccountModel.swift",
         "template/ContactDetailModel.swift"
       ],
-      "aiGuidance": {
-        "steps": [
-          "Create new model files for additional SObjects",
-          "Implement ObservableObject pattern with @Published properties",
-          "Add SmartStore queries for new objects",
-          "Create corresponding SwiftUI views"
-        ]
-      }
+      "aiGuidance": "Create new model files for additional SObjects Implement ObservableObject pattern with @Published properties Add SmartStore queries for new objects Create corresponding SwiftUI views"
     }
   ],
   "requirements": {
