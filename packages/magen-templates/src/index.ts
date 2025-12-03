@@ -10,6 +10,7 @@ export type * from './types/index.js';
 
 // Export main classes
 export { TemplateRegistry } from './registry/TemplateRegistry.js';
+export { TemplateComposer } from './registry/TemplateComposer.js';
 export { TemplateGenerator } from './generation/TemplateGenerator.js';
 export { TemplateValidator } from './validation/TemplateValidator.js';
 

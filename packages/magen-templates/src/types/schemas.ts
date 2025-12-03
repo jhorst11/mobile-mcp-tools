@@ -91,16 +91,20 @@ export const TemplateMetadataSchema = z.object({
   id: z.string(),
   displayName: z.string(),
   description: z.string(),
-  platform: PlatformInfoSchema,
+  /** Template ID to inherit from (base template) */
+  extends: z.string().optional(),
+  /** Platform is required unless template extends a base */
+  platform: PlatformInfoSchema.optional(),
   useCase: UseCaseInfoSchema,
   capabilities: z.array(z.string()),
-  /** If true, template is hidden from discovery (e.g., test-only templates) */
+  /** If true, template is hidden from discovery (e.g., base templates, test-only templates) */
   hidden: z.boolean().optional(),
   features: z.array(FeatureInfoSchema).optional(),
   extensionPoints: z.array(ExtensionPointSchema).optional(),
   requirements: z.record(z.unknown()),
   templateVariables: z.array(TemplateVariableSchema),
-  generation: GenerationConfigSchema,
+  /** Generation config is required unless template extends a base */
+  generation: GenerationConfigSchema.optional(),
   documentation: DocumentationLinksSchema.optional(),
   tags: z.array(z.string()),
 });

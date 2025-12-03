@@ -175,16 +175,16 @@ export class TemplateValidator {
     // Check extension points reference valid files
     if (meta.extensionPoints) {
       for (const point of meta.extensionPoints) {
-        if (point.aiGuidance?.exampleFiles) {
-          for (const file of point.aiGuidance.exampleFiles) {
-            const filePath = path.join(templateDir, file);
+        if (point.affectedFiles) {
+          for (const file of point.affectedFiles) {
+            const filePath = path.join(templateDir, 'template', file);
             // Remove template variable syntax for checking
             const cleanPath = filePath.replace(/\{\{[^}]+\}\}/g, '*');
             const exists = await fs.pathExists(cleanPath.replace('*', 'template'));
             if (!exists) {
               warnings.push({
-                type: 'example-file-not-found',
-                message: `Extension point "${point.id}" references non-existent example file: ${file}`,
+                type: 'affected-file-not-found',
+                message: `Extension point "${point.id}" references non-existent file: ${file}`,
                 path: `extensionPoints.${point.id}`,
               });
             }

@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		27F296F5D99F73C07808C786 /* Pods_AgentforceDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1F1AE1FA8EA57459906F9290 /* Pods_AgentforceDemo.framework */; };
+		27F296F5D99F73C07808C786 /* Pods_{{projectName}}.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1F1AE1FA8EA57459906F9290 /* Pods_{{projectName}}.framework */; };
 		A513670B2E958D03003DC88D /* CustomThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A513670A2E958CFF003DC88D /* CustomThemeManager.swift */; };
 		A595E1722E0B574200C8A1D9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A595E1712E0B574200C8A1D9 /* Assets.xcassets */; };
 		A5C6734C2E0B19F20031C811 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A5C673452E0B19F20031C811 /* PrivacyInfo.xcprivacy */; };
@@ -20,15 +20,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		1F1AE1FA8EA57459906F9290 /* Pods_AgentforceDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AgentforceDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		415FB1EB2E6A87A3A81C2272 /* Pods-AgentforceDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AgentforceDemo.debug.xcconfig"; path = "Target Support Files/Pods-AgentforceDemo/Pods-AgentforceDemo.debug.xcconfig"; sourceTree = "<group>"; };
-		4FD6C4741B754AF1002F9F90 /* AgentforceDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AgentforceDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		581805147846C73C408D7A75 /* Pods-AgentforceDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AgentforceDemo.release.xcconfig"; path = "Target Support Files/Pods-AgentforceDemo/Pods-AgentforceDemo.release.xcconfig"; sourceTree = "<group>"; };
+		1F1AE1FA8EA57459906F9290 /* Pods_{{projectName}}.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_{{projectName}}.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		415FB1EB2E6A87A3A81C2272 /* Pods-{{projectName}}.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-{{projectName}}.debug.xcconfig"; path = "Target Support Files/Pods-{{projectName}}/Pods-{{projectName}}.debug.xcconfig"; sourceTree = "<group>"; };
+		4FD6C4741B754AF1002F9F90 /* {{projectName}}.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = {{projectName}}.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		581805147846C73C408D7A75 /* Pods-{{projectName}}.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-{{projectName}}.release.xcconfig"; path = "Target Support Files/Pods-{{projectName}}/Pods-{{projectName}}.release.xcconfig"; sourceTree = "<group>"; };
 		A513670A2E958CFF003DC88D /* CustomThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomThemeManager.swift; sourceTree = "<group>"; };
 		A595E1712E0B574200C8A1D9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A5C6733A2E0B19F20031C811 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A5C673412E0B19F20031C811 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A5C673432E0B19F20031C811 /* AgentforceDemo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AgentforceDemo.entitlements; sourceTree = "<group>"; };
+		A5C673432E0B19F20031C811 /* {{projectName}}.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = {{projectName}}.entitlements; sourceTree = "<group>"; };
 		A5C673452E0B19F20031C811 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A5C673472E0B19F20031C811 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		A5C6735F2E0B1B0D0031C811 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
@@ -42,7 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				27F296F5D99F73C07808C786 /* Pods_AgentforceDemo.framework in Frameworks */,
+				27F296F5D99F73C07808C786 /* Pods_{{projectName}}.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -52,7 +52,7 @@
 		4FD6C46B1B754AF1002F9F90 = {
 			isa = PBXGroup;
 			children = (
-				A5C6734A2E0B19F20031C811 /* AgentforceDemo */,
+				A5C6734A2E0B19F20031C811 /* {{projectName}} */,
 				4FD6C4751B754AF1002F9F90 /* Products */,
 				E672AEA73ADFA726FD55A3BC /* Pods */,
 				8791584E5F0F97F4752A6D5E /* Frameworks */,
@@ -62,7 +62,7 @@
 		4FD6C4751B754AF1002F9F90 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4FD6C4741B754AF1002F9F90 /* AgentforceDemo.app */,
+				4FD6C4741B754AF1002F9F90 /* {{projectName}}.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -70,19 +70,19 @@
 		8791584E5F0F97F4752A6D5E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				1F1AE1FA8EA57459906F9290 /* Pods_AgentforceDemo.framework */,
+				1F1AE1FA8EA57459906F9290 /* Pods_{{projectName}}.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		A5C6734A2E0B19F20031C811 /* AgentforceDemo */ = {
+		A5C6734A2E0B19F20031C811 /* {{projectName}} */ = {
 			isa = PBXGroup;
 			children = (
-				A5C673432E0B19F20031C811 /* AgentforceDemo.entitlements */,
+				A5C673432E0B19F20031C811 /* {{projectName}}.entitlements */,
 				A5C673652E0B23090031C811 /* Classes */,
 				A5C673662E0B23260031C811 /* Supporting Files */,
 			);
-			path = AgentforceDemo;
+			path = {{projectName}};
 			sourceTree = "<group>";
 		};
 		A5C673652E0B23090031C811 /* Classes */ = {
@@ -112,8 +112,8 @@
 		E672AEA73ADFA726FD55A3BC /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				415FB1EB2E6A87A3A81C2272 /* Pods-AgentforceDemo.debug.xcconfig */,
-				581805147846C73C408D7A75 /* Pods-AgentforceDemo.release.xcconfig */,
+				415FB1EB2E6A87A3A81C2272 /* Pods-{{projectName}}.debug.xcconfig */,
+				581805147846C73C408D7A75 /* Pods-{{projectName}}.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -121,9 +121,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4FD6C4731B754AF1002F9F90 /* AgentforceDemo */ = {
+		4FD6C4731B754AF1002F9F90 /* {{projectName}} */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4FD6C4931B754AF1002F9F90 /* Build configuration list for PBXNativeTarget "AgentforceDemo" */;
+			buildConfigurationList = 4FD6C4931B754AF1002F9F90 /* Build configuration list for PBXNativeTarget "{{projectName}}" */;
 			buildPhases = (
 				8A35A8BFF7DF8D49E60E7C71 /* [CP] Check Pods Manifest.lock */,
 				4FD6C4701B754AF1002F9F90 /* Sources */,
@@ -135,9 +135,9 @@
 			);
 			dependencies = (
 			);
-			name = AgentforceDemo;
-			productName = AgentforceDemo;
-			productReference = 4FD6C4741B754AF1002F9F90 /* AgentforceDemo.app */;
+			name = {{projectName}};
+			productName = {{projectName}};
+			productReference = 4FD6C4741B754AF1002F9F90 /* {{projectName}}.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -148,7 +148,7 @@
 			attributes = {
 				LastSwiftUpdateCheck = 0710;
 				LastUpgradeCheck = 0940;
-				ORGANIZATIONNAME = AgentforceDemoOrganizationName;
+				ORGANIZATIONNAME = {{projectName}}OrganizationName;
 				TargetAttributes = {
 					4FD6C4731B754AF1002F9F90 = {
 						CreatedOnToolsVersion = 6.4;
@@ -161,7 +161,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 4FD6C46F1B754AF1002F9F90 /* Build configuration list for PBXProject "AgentforceDemo" */;
+			buildConfigurationList = 4FD6C46F1B754AF1002F9F90 /* Build configuration list for PBXProject "{{projectName}}" */;
 			compatibilityVersion = "Xcode 10.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -174,7 +174,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				4FD6C4731B754AF1002F9F90 /* AgentforceDemo */,
+				4FD6C4731B754AF1002F9F90 /* {{projectName}} */,
 			);
 		};
 /* End PBXProject section */
@@ -207,7 +207,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-AgentforceDemo-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-{{projectName}}-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -220,15 +220,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-AgentforceDemo/Pods-AgentforceDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-{{projectName}}/Pods-{{projectName}}-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-AgentforceDemo/Pods-AgentforceDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-{{projectName}}/Pods-{{projectName}}-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AgentforceDemo/Pods-AgentforceDemo-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-{{projectName}}/Pods-{{projectName}}-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -361,11 +361,11 @@
 		};
 		4FD6C4941B754AF1002F9F90 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 415FB1EB2E6A87A3A81C2272 /* Pods-AgentforceDemo.debug.xcconfig */;
+			baseConfigurationReference = 415FB1EB2E6A87A3A81C2272 /* Pods-{{projectName}}.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = AgentforceDemo/AgentforceDemo.entitlements;
-				INFOPLIST_FILE = "AgentforceDemo/Supporting Files/Info.plist";
+				CODE_SIGN_ENTITLEMENTS = {{projectName}}/{{projectName}}.entitlements;
+				INFOPLIST_FILE = "{{projectName}}/Supporting Files/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Agentforce Demo";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -373,7 +373,7 @@
 					"@executable_path/Frameworks",
 				);
 				OTHER_SWIFT_FLAGS = "-DSIGNPOST_ENABLED";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.salesforce.AgentforceDemo";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.salesforce.{{projectName}}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -381,18 +381,18 @@
 		};
 		4FD6C4951B754AF1002F9F90 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 581805147846C73C408D7A75 /* Pods-AgentforceDemo.release.xcconfig */;
+			baseConfigurationReference = 581805147846C73C408D7A75 /* Pods-{{projectName}}.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = AgentforceDemo/AgentforceDemo.entitlements;
-				INFOPLIST_FILE = "AgentforceDemo/Supporting Files/Info.plist";
+				CODE_SIGN_ENTITLEMENTS = {{projectName}}/{{projectName}}.entitlements;
+				INFOPLIST_FILE = "{{projectName}}/Supporting Files/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Agentforce Demo";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.salesforce.AgentforceDemo";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.salesforce.{{projectName}}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
@@ -401,7 +401,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4FD6C46F1B754AF1002F9F90 /* Build configuration list for PBXProject "AgentforceDemo" */ = {
+		4FD6C46F1B754AF1002F9F90 /* Build configuration list for PBXProject "{{projectName}}" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4FD6C4911B754AF1002F9F90 /* Debug */,
@@ -410,7 +410,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4FD6C4931B754AF1002F9F90 /* Build configuration list for PBXNativeTarget "AgentforceDemo" */ = {
+		4FD6C4931B754AF1002F9F90 /* Build configuration list for PBXNativeTarget "{{projectName}}" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4FD6C4941B754AF1002F9F90 /* Debug */,

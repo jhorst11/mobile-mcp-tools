@@ -111,7 +111,9 @@ export interface TemplateInfo {
 export interface TemplateMetadata extends TemplateInfo {
   $schema: string;
   type: 'application';
-  /** If true, template is hidden from discovery (e.g., test-only templates) */
+  /** Template ID to inherit from (base template) */
+  extends?: string;
+  /** If true, template is hidden from discovery (e.g., base templates, test-only templates) */
   hidden?: boolean;
   features?: FeatureInfo[];
   extensionPoints?: ExtensionPoint[];

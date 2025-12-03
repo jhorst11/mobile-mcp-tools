@@ -31,6 +31,23 @@ function collectVariables(value: string, previous: Record<string, string>): Reco
   return previous;
 }
 
+// Helper function to apply default values for template variables
+function applyDefaults(
+  metadata: import('../types/index.js').TemplateMetadata,
+  providedVariables: Record<string, unknown>
+): Record<string, unknown> {
+  const variables = { ...providedVariables };
+
+  for (const variable of metadata.templateVariables) {
+    // If variable not provided and has a default, use the default
+    if (!(variable.name in variables) && variable.default !== undefined) {
+      variables[variable.name] = variable.default;
+    }
+  }
+
+  return variables;
+}
+
 // List command
 program
   .command('list')
@@ -112,18 +129,10 @@ async function listTemplates(options: { platform?: string; json?: boolean }) {
     console.log(`ID: ${template.id}`);
     console.log(`Name: ${template.displayName}`);
     console.log(`Platform: ${template.platform.type}`);
-    console.log(`Complexity: ${template.complexity.level}`);
     console.log(`Description: ${template.description}`);
     console.log(`Tags: ${template.tags.join(', ')}`);
-
-    // Show usage example
-    console.log('\nUsage Example:');
-    console.log(`  magen-templates generate \\`);
-    console.log(`    --template ${template.id} \\`);
-    console.log(`    --output ./MyApp \\`);
-    console.log(`    --variable key=value`);
-    console.log('\nFor detailed information and required variables:');
-    console.log(`  magen-templates info ${template.id}`);
+    console.log('');
+    console.log(`For more details: magen-templates info ${template.id}`);
     console.log('');
   }
 }
@@ -145,8 +154,6 @@ async function showTemplateInfo(templateId: string, options: { json?: boolean })
   console.log(`\nUse Case:`);
   console.log(`  ${metadata.useCase.primary}`);
   console.log(`  When: ${metadata.useCase.when}`);
-  console.log(`\nComplexity: ${metadata.complexity.level}`);
-  console.log(`  ${metadata.complexity.explanation}`);
   console.log(`\nCapabilities (${metadata.capabilities.length}):`);
   console.log(`  ${metadata.capabilities.join(', ')}`);
 
@@ -163,7 +170,7 @@ async function showTemplateInfo(templateId: string, options: { json?: boolean })
   if (metadata.extensionPoints && metadata.extensionPoints.length > 0) {
     console.log(`\nExtension Points (${metadata.extensionPoints.length}):`);
     for (const point of metadata.extensionPoints) {
-      console.log(`  - ${point.name} (${point.difficulty})`);
+      console.log(`  - ${point.name}`);
       console.log(`    ${point.description}`);
     }
   }
@@ -191,10 +198,13 @@ async function generateProject(options: {
   console.log(`Generating project from template: ${metadata.displayName}`);
   console.log(`Output path: ${options.output}\n`);
 
+  // Apply default values for variables not provided
+  const variables = applyDefaults(metadata, options.variable);
+
   const result = await generator.generate({
     templateId: options.template,
     metadata,
-    variables: options.variable,
+    variables,
     outputPath: options.output,
     options: { overwrite: options.overwrite },
   });
@@ -245,7 +255,7 @@ async function searchTemplates(options: { platform?: string; tag?: string; json?
   for (const template of templates) {
     console.log(`- ${template.displayName} (${template.id})`);
     console.log(`  ${template.description}`);
-    console.log(`  Platform: ${template.platform.type} | Complexity: ${template.complexity.level}`);
+    console.log(`  Platform: ${template.platform.type}`);
     console.log(`\n  Usage:`);
     console.log(`    magen-templates info ${template.id}`);
     console.log('');

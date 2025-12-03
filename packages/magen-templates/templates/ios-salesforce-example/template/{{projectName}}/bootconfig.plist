@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>remoteAccessConsumerKey</key>
+	<string>{{salesforceConsumerKey}}</string>
+	<key>oauthRedirectURI</key>
+	<string>{{salesforceCallbackUrl}}</string>
+	<key>oauthScopes</key>
+	<array>
+{{#each salesforceOAuthScopes}}
+		<string>{{this}}</string>
+{{/each}}
+	</array>
+	<key>shouldAuthenticate</key>
+	<true/>
+	<key>attemptOfflineLogin</key>
+	<false/>
+</dict>
+</plist>

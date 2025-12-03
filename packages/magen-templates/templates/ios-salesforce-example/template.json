@@ -1,0 +1,63 @@
+{
+  "$schema": "../../schemas/template-v1.json",
+  "extends": "ios-salesforce-base",
+  "version": "0.0.1",
+  "type": "application",
+  "id": "ios-salesforce-example",
+  "displayName": "iOS Salesforce Example App",
+  "description": "A simple example iOS application demonstrating Salesforce Mobile SDK integration with basic account and contact browsing capabilities. Perfect for learning and quick prototyping.",
+  "platform": {
+    "minVersion": "15.0"
+  },
+  "useCase": {
+    "primary": "Simple Salesforce iOS app for learning and prototyping",
+    "scenarios": [
+      "Learning Salesforce Mobile SDK basics",
+      "Quick proof-of-concept applications",
+      "Starting point for custom Salesforce apps",
+      "Testing Connected App configurations"
+    ],
+    "when": "Use this template when you need a simple, working example of a Salesforce iOS app to learn from or build upon."
+  },
+  "capabilities": [
+    "account-browsing",
+    "contact-browsing",
+    "rest-api",
+    "basic-ui"
+  ],
+  "tags": ["example", "learning", "simple", "beginner"],
+  "templateVariables": [],
+  "extensionPoints": [
+    {
+      "id": "add-sobjects",
+      "name": "Add SObject Support",
+      "description": "Add support for additional Salesforce objects beyond Account and Contact",
+      "affectedFiles": [
+        "{{projectName}}/AccountsListView.swift",
+        "{{projectName}}/ContactsForAccountListView.swift"
+      ],
+      "aiGuidance": "Create new SwiftUI views following the AccountsListView pattern. Use the Salesforce RestClient to query your SObject. Add navigation to the new view from the main ContentView or InitialViewController."
+    },
+    {
+      "id": "customize-ui",
+      "name": "Customize UI",
+      "description": "Modify the user interface and add custom branding",
+      "affectedFiles": [
+        "{{projectName}}/ContentView.swift",
+        "Assets.xcassets/"
+      ],
+      "aiGuidance": "Update SwiftUI views to match your design requirements. Add custom colors, fonts, and images to Assets.xcassets. Modify navigation patterns in ContentView.swift."
+    }
+  ],
+  "requirements": {
+    "skillLevel": "beginner",
+    "estimatedTime": "15 minutes"
+  },
+  "generation": {
+    "fileTransforms": []
+  },
+  "documentation": {
+    "readme": "README.md"
+  }
+}
+

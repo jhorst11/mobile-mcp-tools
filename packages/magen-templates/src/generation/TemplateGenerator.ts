@@ -406,8 +406,17 @@ export class TemplateGenerator {
   }
 
   private matchesPattern(file: string, pattern: string): boolean {
+    // Simple glob pattern matching
     // Convert glob pattern to regex
-    const regexPattern = pattern.replace(/\./g, '\\.').replace(/\*/g, '.*').replace(/\?/g, '.');
+    // Note: **/ matches zero or more path segments
+    const regexPattern = pattern
+      .replace(/\./g, '\\.') // Escape dots
+      .replace(/\*\*/g, '<!GLOBSTAR!>') // Temp placeholder for **
+      .replace(/\*/g, '[^/]*') // * matches anything except /
+      .replace(/<!GLOBSTAR!>\//g, '(?:.*/)?') // **/ matches zero or more directories
+      .replace(/\/<!GLOBSTAR!>/g, '(?:/.*)?') // /** matches zero or more path segments
+      .replace(/<!GLOBSTAR!>/g, '.*'); // ** alone matches anything
+
     const regex = new RegExp(`^${regexPattern}$`);
     return regex.test(file);
   }

@@ -1,0 +1,139 @@
+{
+    "$schema": "../../schemas/template-v1.json",
+    "extends": "ios-base",
+    "version": "1.0.0",
+    "type": "application",
+    "id": "ios-salesforce-base",
+    "displayName": "iOS Salesforce Base Template",
+    "description": "Foundation template for iOS applications using Salesforce Mobile SDK. Extends ios-base with Salesforce-specific configuration, OAuth setup, and SDK integration.",
+    "hidden": true,
+    "platform": {
+        "minVersion": "17.0",
+        "framework": "salesforce-mobile-sdk"
+    },
+    "useCase": {
+        "primary": "Base template for Salesforce Mobile SDK iOS applications",
+        "scenarios": [
+            "Internal base - not for direct use",
+            "Salesforce authenticated apps",
+            "Apps requiring SmartStore"
+        ],
+        "when": "This is a base template and should not be instantiated directly. Use templates that extend this."
+    },
+    "capabilities": [
+        "salesforce-sdk",
+        "oauth",
+        "smartstore"
+    ],
+    "tags": [
+        "salesforce",
+        "mobile-sdk"
+    ],
+    "templateVariables": [
+        {
+            "name": "salesforceMobileSDKVersion",
+            "type": "string",
+            "description": "Salesforce Mobile SDK version to use",
+            "required": false,
+            "example": "13.1",
+            "default": "13.1"
+        },
+        {
+            "name": "salesforceConsumerKey",
+            "type": "string",
+            "description": "Salesforce Connected App Consumer Key (Client ID)",
+            "required": true,
+            "sensitive": true,
+            "example": "3MVG9...",
+            "default": ""
+        },
+        {
+            "name": "salesforceLoginHost",
+            "type": "string",
+            "description": "Salesforce login host (e.g. login.salesforce.com)",
+            "required": false,
+            "example": "login.salesforce.com",
+            "default": "login.salesforce.com"
+        },
+        {
+            "name": "salesforceCallbackUrl",
+            "type": "string",
+            "description": "OAuth callback URL configured in Connected App",
+            "required": false,
+            "example": "myapp://auth/callback",
+            "default": "myapp://auth/callback"
+        },
+        {
+            "name": "salesforceOAuthScopes",
+            "type": "array",
+            "description": "OAuth scopes to request",
+            "required": false,
+            "default": [
+                "api",
+                "web",
+                "refresh_token"
+            ],
+            "example": [
+                "api",
+                "web",
+                "refresh_token"
+            ]
+        }
+    ],
+    "extensionPoints": [
+        {
+            "id": "salesforce-auth",
+            "name": "Salesforce Authentication",
+            "description": "Configure OAuth and Connected App settings",
+            "affectedFiles": [
+                "bootconfig.plist",
+                "Info.plist"
+            ],
+            "aiGuidance": "Update bootconfig.plist with your Connected App credentials. Set remoteAccessConsumerKey to your Consumer Key and oauthRedirectURI to your callback URL. Configure URL schemes in Info.plist to match your callback URL scheme."
+        },
+        {
+            "id": "smartstore-setup",
+            "name": "SmartStore Configuration",
+            "description": "Configure local data storage and soup definitions",
+            "affectedFiles": [
+                "userstore.json"
+            ],
+            "aiGuidance": "Define SmartStore soups in userstore.json. Each soup represents a local data table with indexing specifications. Follow the existing patterns for defining soup names, features (ExternalStorage), and indexes."
+        }
+    ],
+    "requirements": {
+        "salesforce": {
+            "connectedApp": true,
+            "mobileSDKVersion": "13.1+"
+        }
+    },
+    "generation": {
+        "fileTransforms": [
+            {
+                "pattern": "**/bootconfig.plist",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/userstore.json",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/usersyncs.json",
+                "processor": "handlebars"
+            }
+        ]
+    },
+    "documentation": {
+        "gettingStarted": "https://developer.salesforce.com/docs/platform/mobile-sdk/guide/ios-get-started.html",
+        "externalLinks": [
+            {
+                "title": "Mobile SDK iOS Documentation",
+                "url": "https://developer.salesforce.com/docs/platform/mobile-sdk/guide/ios.html"
+            },
+            {
+                "title": "Creating a Connected App",
+                "url": "https://help.salesforce.com/s/articleView?id=sf.connected_app_create.htm"
+            }
+        ]
+    }
+}

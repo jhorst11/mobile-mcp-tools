@@ -1,7 +1,7 @@
 platform :ios, '18.0'
 
-project 'AgentforceDemo.xcodeproj'
-target 'AgentforceDemo' do
+project '{{projectName}}.xcodeproj'
+target '{{projectName}}' do
   source 'https://github.com/forcedotcom/SalesforceMobileSDK-iOS-Specs.git' 
   source 'https://github.com/livekit/podspecs.git'
   source 'https://cdn.cocoapods.org/'

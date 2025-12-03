@@ -1,0 +1,112 @@
+{
+    "$schema": "../../schemas/template-v1.json",
+    "version": "1.0.0",
+    "type": "application",
+    "id": "ios-base",
+    "displayName": "iOS Base Template",
+    "description": "Foundation template for all iOS applications. Provides common project structure, variables, and file processing rules.",
+    "hidden": true,
+    "platform": {
+        "type": "ios",
+        "minVersion": "15.0",
+        "language": "swift",
+        "framework": "swiftui"
+    },
+    "useCase": {
+        "primary": "Base template for iOS applications",
+        "scenarios": [
+            "Internal base - not for direct use"
+        ],
+        "when": "This is a base template and should not be instantiated directly. Use templates that extend this."
+    },
+    "capabilities": [
+        "native-ios",
+        "swift",
+        "swiftui"
+    ],
+    "tags": [
+        "ios",
+        "swift",
+        "base"
+    ],
+    "templateVariables": [
+        {
+            "name": "projectName",
+            "type": "string",
+            "description": "The name of the iOS project",
+            "required": true,
+            "validation": "^[A-Za-z][A-Za-z0-9_]*$",
+            "example": "MyApp"
+        },
+        {
+            "name": "organization",
+            "type": "string",
+            "description": "Organization name for Xcode project",
+            "required": true,
+            "example": "My Company"
+        },
+        {
+            "name": "bundleIdentifier",
+            "type": "string",
+            "description": "iOS bundle identifier in reverse DNS format",
+            "required": true,
+            "validation": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$",
+            "example": "com.mycompany.myapp"
+        }
+    ],
+    "extensionPoints": [],
+    "requirements": {},
+    "generation": {
+        "fileTransforms": [
+            {
+                "pattern": "**/*.swift",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/Podfile",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/*.plist",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/project.pbxproj",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/*.xcscheme",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/*.png",
+                "processor": "copy"
+            },
+            {
+                "pattern": "**/*.jpg",
+                "processor": "copy"
+            },
+            {
+                "pattern": "**/*.jpeg",
+                "processor": "copy"
+            },
+            {
+                "pattern": "**/*.webp",
+                "processor": "copy"
+            },
+            {
+                "pattern": "**/*.json",
+                "processor": "copy"
+            }
+        ],
+        "fileOperations": [
+            {
+                "action": "delete",
+                "from": ".DS_Store"
+            }
+        ]
+    },
+    "documentation": {
+        "gettingStarted": "https://developer.apple.com/documentation/xcode/creating-an-xcode-project-for-an-app"
+    }
+}

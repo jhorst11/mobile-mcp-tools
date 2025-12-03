@@ -4,8 +4,6 @@
 
 The `@salesforce/magen-templates` package provides an AI-friendly template system for generating Salesforce mobile applications. It enables both AI agents and developers to discover, select, and instantiate production-ready mobile app scaffolds through rich metadata and Handlebars-based processing.
 
----
-
 ## Core Concepts
 
 ### Design Philosophy
@@ -88,6 +86,7 @@ The `template.json` file defines everything needed for discovery, selection, and
   "id": "my-template",
   "displayName": "My Template",
   "description": "What this template provides",
+  "extends": "ios-base",
   
   "platform": {
     "type": "ios",
@@ -142,11 +141,13 @@ The `template.json` file defines everything needed for discovery, selection, and
 
 | Field | Purpose |
 |-------|---------|
+| `extends` | Template ID to inherit from (optional) |
 | `platform` | Target platform and version constraints |
 | `capabilities` | Semantic tags for capability-based search |
 | `templateVariables` | User-provided values with validation |
 | `extensionPoints` | Guidance for post-generation customization |
 | `generation.fileTransforms` | File processing rules |
+| `hidden` | If true, hide from discovery (for base templates) |
 
 ---
 
@@ -302,6 +303,418 @@ const reasoning = [
 ```
 
 ---
+
+## Template Composition and Layering
+
+### Motivation
+
+As template libraries grow, duplication becomes a maintenance burden. Multiple templates targeting the same platform often share:
+
+- Common project structure and build configurations
+- Standard template variables (e.g., `projectName`, `bundleIdentifier`)
+- Shared file transforms and operations
+- Platform-specific capabilities and extension points
+- Boilerplate metadata
+
+The composition system eliminates this duplication through template inheritance and merging.
+
+---
+
+### Composition Strategy
+
+Templates can inherit from **base templates** and override or extend specific sections. This creates a layered architecture:
+
+```
+┌─────────────────────────────────────────┐
+│  Concrete Template (ios-salesforce-    │  ← User-facing, specialized
+│                      example)           │
+│  - Specific capabilities                │
+│  - Additional variables                 │
+│  - Custom extension points              │
+└──────────────┬──────────────────────────┘
+               │ extends
+┌──────────────▼──────────────────────────┐
+│  Base Template (ios-salesforce-base)    │  ← Platform foundation
+│  - Common iOS + Salesforce setup        │
+│  - Standard variables                   │
+│  - Shared file transforms               │
+└──────────────┬──────────────────────────┘
+               │ extends
+┌──────────────▼──────────────────────────┐
+│  Platform Base (ios-base)               │  ← Pure platform defaults
+│  - iOS project structure                │
+│  - Standard iOS variables               │
+│  - Platform capabilities                │
+└─────────────────────────────────────────┘
+```
+
+---
+
+### Metadata Schema Extension
+
+Add an `extends` field to `template.json`:
+
+```json
+{
+  "$schema": "../../schemas/template-v1.json",
+  "extends": "ios-salesforce-base",
+  "version": "0.0.1",
+  "type": "application",
+  "id": "ios-mobilesync",
+  "displayName": "iOS MobileSync",
+  "description": "Production-ready iOS app with MobileSync",
+  
+  "capabilities": ["mobilesync", "offline-sync"],
+  
+  "templateVariables": [
+    {
+      "name": "enableWidgets",
+      "type": "boolean",
+      "description": "Enable iOS widget support",
+      "required": false,
+      "default": false
+    }
+  ]
+}
+```
+
+The `extends` field references a base template by ID. Templates in `templates/` with `hidden: true` are reserved for base templates.
+
+---
+
+### Merge Semantics
+
+When loading a template with `extends`, the system performs a deep merge:
+
+| Field | Merge Behavior |
+|-------|----------------|
+| **Scalar fields** (`id`, `displayName`, `description`, `version`) | Child overrides parent |
+| **`platform`** | Deep merge: child overrides specific keys, inherits others |
+| **`useCase`** | Deep merge: child can override `primary`, append to `scenarios` |
+| **`capabilities`** | **Union**: child capabilities added to parent's |
+| **`tags`** | **Union**: child tags added to parent's |
+| **`templateVariables`** | **Merge by name**: child variables override or extend parent's |
+| **`extensionPoints`** | **Merge by id**: child extension points override or extend parent's |
+| **`generation.fileTransforms`** | **Prepend**: child transforms processed before parent's |
+| **`generation.fileOperations`** | **Prepend**: child operations processed before parent's |
+| **`documentation`** | Deep merge: child overrides specific keys |
+| **`requirements`** | Deep merge: child overrides or adds requirements |
+
+---
+
+### Example: iOS Base Template
+
+Create `templates/ios-base/template.json` (hidden base):
+
+```json
+{
+  "$schema": "../../schemas/template-v1.json",
+  "version": "1.0.0",
+  "type": "application",
+  "id": "ios-base",
+  "displayName": "iOS Base Template",
+  "description": "Foundation for all iOS templates",
+  "hidden": true,
+  
+  "platform": {
+    "type": "ios",
+    "minVersion": "15.0",
+    "language": "swift",
+    "framework": "swiftui"
+  },
+  
+  "capabilities": ["native-ios", "swift", "swiftui"],
+  "tags": ["ios", "swift"],
+  
+  "templateVariables": [
+    {
+      "name": "projectName",
+      "type": "string",
+      "description": "The name of the iOS project",
+      "required": true,
+      "validation": "^[A-Za-z][A-Za-z0-9_]*$",
+      "example": "MyApp"
+    },
+    {
+      "name": "organization",
+      "type": "string",
+      "description": "Organization name for Xcode project",
+      "required": true,
+      "example": "My Company"
+    },
+    {
+      "name": "bundleIdentifier",
+      "type": "string",
+      "description": "iOS bundle identifier",
+      "required": true,
+      "validation": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$",
+      "example": "com.mycompany.myapp"
+    }
+  ],
+  
+  "generation": {
+    "fileTransforms": [
+      { "pattern": "**/*.swift", "processor": "handlebars" },
+      { "pattern": "**/*.plist", "processor": "handlebars" },
+      { "pattern": "**/project.pbxproj", "processor": "handlebars" },
+      { "pattern": "**/*.png", "processor": "copy" },
+      { "pattern": "**/*.jpg", "processor": "copy" }
+    ]
+  },
+  
+  "requirements": {},
+  "useCase": {
+    "primary": "iOS application base",
+    "scenarios": [],
+    "when": "Internal base template"
+  }
+}
+```
+
+---
+
+### Example: iOS Salesforce Base Template
+
+Create `templates/ios-salesforce-base/template.json`:
+
+```json
+{
+  "$schema": "../../schemas/template-v1.json",
+  "extends": "ios-base",
+  "version": "1.0.0",
+  "type": "application",
+  "id": "ios-salesforce-base",
+  "displayName": "iOS Salesforce Base Template",
+  "description": "Foundation for iOS Salesforce Mobile SDK apps",
+  "hidden": true,
+  
+  "capabilities": ["salesforce-sdk", "oauth", "smartstore"],
+  "tags": ["salesforce"],
+  
+  "templateVariables": [
+    {
+      "name": "salesforceConsumerKey",
+      "type": "string",
+      "description": "Salesforce Connected App Consumer Key",
+      "required": false,
+      "sensitive": true,
+      "example": "3MVG9..."
+    },
+    {
+      "name": "salesforceCallbackUrl",
+      "type": "string",
+      "description": "OAuth callback URL",
+      "required": false,
+      "default": "myapp://auth/callback"
+    }
+  ],
+  
+  "extensionPoints": [
+    {
+      "id": "salesforce-auth",
+      "name": "Salesforce Authentication",
+      "description": "Configure OAuth and connected app settings",
+      "aiGuidance": "Update bootconfig.plist with your Connected App credentials"
+    }
+  ],
+  
+  "generation": {
+    "fileTransforms": [
+      { "pattern": "**/bootconfig.plist", "processor": "handlebars" },
+      { "pattern": "**/Podfile", "processor": "handlebars" }
+    ]
+  },
+  
+  "requirements": {
+    "salesforce": {
+      "connectedApp": true
+    }
+  },
+  
+  "useCase": {
+    "primary": "Salesforce iOS base",
+    "scenarios": [],
+    "when": "Internal base template"
+  }
+}
+```
+
+---
+
+### Example: Concrete Template Using Composition
+
+Simplified `ios-mobilesync/template.json`:
+
+```json
+{
+  "$schema": "../../schemas/template-v1.json",
+  "extends": "ios-salesforce-base",
+  "version": "0.0.1",
+  "id": "ios-mobilesync",
+  "displayName": "iOS MobileSync",
+  "description": "Production-ready iOS app with MobileSync",
+  
+  "useCase": {
+    "primary": "Production-ready iOS app with full Salesforce data synchronization",
+    "scenarios": [
+      "Offline-first mobile applications",
+      "Complex data relationships and sync"
+    ],
+    "when": "Use when you need full Salesforce data synchronization"
+  },
+  
+  "capabilities": ["mobilesync", "offline-sync", "contact-management"],
+  "tags": ["mobilesync", "offline"],
+  
+  "extensionPoints": [
+    {
+      "id": "salesforce-objects",
+      "name": "Salesforce Objects",
+      "description": "Add new Salesforce objects",
+      "affectedFiles": [
+        "template/MobileSyncExplorerSwift/SObjects/Contacts.swift"
+      ],
+      "aiGuidance": "Create SObject data classes following ContactSObjectData pattern"
+    }
+  ],
+  
+  "requirements": {
+    "skillLevel": "intermediate",
+    "estimatedTime": "45 minutes"
+  }
+}
+```
+
+**Result after merge:**
+- Inherits all iOS base variables (`projectName`, `bundleIdentifier`, etc.)
+- Inherits Salesforce variables (`salesforceConsumerKey`, etc.)
+- Adds MobileSync-specific capabilities
+- Combines extension points from all layers
+- All file transforms from base templates apply
+
+---
+
+### Implementation Considerations
+
+#### 1. Template Resolution Order
+
+```typescript
+// In TemplateRegistry.getMetadata(templateId)
+async getMetadata(templateId: string): Promise<TemplateMetadata> {
+  const template = await this.loadTemplate(templateId);
+  
+  if (!template.extends) {
+    return template;
+  }
+  
+  // Recursive resolution
+  const parent = await this.getMetadata(template.extends);
+  return this.mergeTemplates(parent, template);
+}
+```
+
+#### 2. Circular Dependency Detection
+
+```typescript
+private resolveChain(templateId: string, visited = new Set()): void {
+  if (visited.has(templateId)) {
+    throw new Error(`Circular dependency detected: ${[...visited, templateId].join(' → ')}`);
+  }
+  visited.add(templateId);
+  
+  const template = this.loadTemplate(templateId);
+  if (template.extends) {
+    this.resolveChain(template.extends, visited);
+  }
+}
+```
+
+#### 3. File System Layering
+
+**Important**: Only concrete templates have a `template/` directory with actual files.
+
+Base templates are **metadata-only**:
+
+```
+ios-base/
+  └── template.json           # Metadata only
+
+ios-salesforce-base/
+  └── template.json           # Metadata only
+
+ios-salesforce-example/
+  ├── template.json           # Metadata (extends parent)
+  └── template/               # Actual code files
+      └── ... all source files
+```
+
+When generating from `ios-salesforce-example`:
+1. Metadata is merged from all layers (ios-base → ios-salesforce-base → ios-salesforce-example)
+2. Files are taken **only** from `ios-salesforce-example/template/`
+3. The merged file transforms (from all layers) are applied to those files
+
+**If multiple concrete templates extend the same base**:
+```
+ios-salesforce-example/template/  ← Example app files
+ios-salesforce-production/template/  ← Production app files (different implementation)
+```
+Both inherit the same Salesforce metadata, but provide different code implementations.
+
+#### 4. Variable Inheritance and Overrides
+
+```typescript
+function mergeVariables(
+  parent: TemplateVariable[],
+  child: TemplateVariable[]
+): TemplateVariable[] {
+  const merged = new Map<string, TemplateVariable>();
+  
+  // Start with parent variables
+  for (const v of parent) {
+    merged.set(v.name, v);
+  }
+  
+  // Child overrides or adds
+  for (const v of child) {
+    merged.set(v.name, v);
+  }
+  
+  return Array.from(merged.values());
+}
+```
+
+---
+
+### Best Practices
+
+#### 1. Base Template Design
+
+- **Keep base templates minimal**: Only shared essentials
+- **Metadata only**: Base templates should NOT have a `template/` directory with code files
+- **Use `hidden: true`**: Prevent direct instantiation
+- **Document inheritance**: Explain what children should override
+
+**Rule of Thumb**: Base templates define **what** to process (file transforms, variables). Concrete templates provide **what** to process (actual files).
+
+#### 2. Inheritance Depth
+
+- **Limit to 2-3 levels**: Avoid deep hierarchies
+- **Recommended structure**:
+  - Level 1: Platform base (`ios-base`, `android-base`)
+  - Level 2: SDK/framework base (`ios-salesforce-base`, `android-salesforce-base`)
+  - Level 3: Feature-specific templates (`ios-mobilesync`, `ios-agentforce-demo`)
+
+#### 3. Capability Naming
+
+- **Inherit platform capabilities**: Don't redefine `native-ios`, `swift`
+- **Add feature capabilities**: `mobilesync`, `offline-sync`, `agentforce`
+
+#### 4. Documentation Inheritance
+
+Child templates should:
+- Inherit common getting-started links
+- Override `readme` with feature-specific content
+- Add `externalLinks` for specialized features
 
 ## Handlebars Templating
 

@@ -27,6 +27,9 @@
         "description": {
           "type": "string"
         },
+        "extends": {
+          "type": "string"
+        },
         "platform": {
           "type": "object",
           "properties": {
@@ -322,12 +325,10 @@
         "id",
         "displayName",
         "description",
-        "platform",
         "useCase",
         "capabilities",
         "requirements",
         "templateVariables",
-        "generation",
         "tags"
       ],
       "additionalProperties": false
