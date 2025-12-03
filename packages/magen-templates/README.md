@@ -147,7 +147,7 @@ The `template.json` file contains comprehensive metadata:
 
 ## Creating Templates
 
-See the [documentation](../../docs/11_templating.md) for comprehensive template authoring guide.
+See the [Templating Strategy](../../docs/11_templating.md) documentation for comprehensive template authoring guide.
 
 ### Quick Template Creation Workflow
 
