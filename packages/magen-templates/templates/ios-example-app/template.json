@@ -2,7 +2,7 @@
   "$schema": "../../schemas/template-v1.json",
   "version": "0.0.1",
   "type": "application",
-  "id": "example-ios-app",
+  "id": "ios-example-app",
   "displayName": "Example iOS App",
   "description": "A simple iOS app template demonstrating the magen-templates system (test-only)",
   "hidden": true,

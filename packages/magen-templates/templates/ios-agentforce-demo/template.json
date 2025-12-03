@@ -2,7 +2,7 @@
   "$schema": "../../schemas/template-v1.json",
   "version": "0.0.1",
   "type": "application",
-  "id": "agentforce-demo",
+  "id": "ios-agentforce-demo",
   "displayName": "Agentforce Demo",
   "description": "A basic iOS Swift application template integrating with the AgentforceSDK for service agents. This template demonstrates how to build mobile apps that leverage Salesforce's AI-powered agent capabilities for customer service scenarios.",
   "platform": {

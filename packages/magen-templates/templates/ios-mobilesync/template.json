@@ -2,8 +2,8 @@
   "$schema": "../../schemas/template-v1.json",
   "version": "0.0.1",
   "type": "application",
-  "id": "mobilesync-explorer-swift",
-  "displayName": "MobileSync Explorer Swift",
+  "id": "ios-mobilesync",
+  "displayName": "iOS MobileSync",
   "description": "A comprehensive iOS Swift application template demonstrating advanced Salesforce Mobile SDK integration using MobileSync data framework. This template provides a full-featured contact management app with offline sync capabilities, search functionality, and a modern SwiftUI interface with split-view navigation.",
   "platform": {
     "type": "ios",

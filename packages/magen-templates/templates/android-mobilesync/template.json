@@ -2,8 +2,8 @@
   "$schema": "../../schemas/template-v1.json",
   "version": "0.0.1",
   "type": "application",
-  "id": "mobilesync-explorer-kotlin",
-  "displayName": "MobileSync Explorer Kotlin",
+  "id": "android-mobilesync",
+  "displayName": "Android MobileSync",
   "description": "A comprehensive Android Kotlin application template demonstrating advanced Salesforce Mobile SDK integration using MobileSync data framework. This template provides a full-featured contact management app with offline sync capabilities, Material Design 3 UI, and comprehensive data management.",
   "platform": {
     "type": "android",

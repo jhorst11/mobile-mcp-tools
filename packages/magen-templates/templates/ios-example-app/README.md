@@ -15,7 +15,7 @@ Generate a project from this template:
 
 ```bash
 npx magen-templates generate \
-  --template example-ios-app \
+  --template ios-example-app \
   --output ./MyNewApp \
   --projectName MyNewApp \
   --organization "My Company"

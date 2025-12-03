@@ -35,10 +35,10 @@ describe('TemplateGenerator', () => {
   describe('generate', () => {
     it('should generate a project from example template', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -62,10 +62,10 @@ describe('TemplateGenerator', () => {
 
     it('should substitute variables in file content', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -103,10 +103,10 @@ describe('TemplateGenerator', () => {
 
     it('should handle Handlebars helpers', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -140,10 +140,10 @@ describe('TemplateGenerator', () => {
 
     it('should apply file operations (rename directories)', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -174,10 +174,10 @@ describe('TemplateGenerator', () => {
 
     it('should handle custom variables with special characters', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -206,10 +206,10 @@ describe('TemplateGenerator', () => {
 
     it('should fail when required variables are missing', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -236,10 +236,10 @@ describe('TemplateGenerator', () => {
   describe('preview', () => {
     it('should preview generation without writing files', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -272,10 +272,10 @@ describe('TemplateGenerator', () => {
 
     it('should indicate which files will be processed', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -306,10 +306,10 @@ describe('TemplateGenerator', () => {
   describe('validateConfig', () => {
     it('should validate required variables', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -332,10 +332,10 @@ describe('TemplateGenerator', () => {
 
     it('should fail validation when required variables are missing', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -363,10 +363,10 @@ describe('TemplateGenerator', () => {
 
     it('should validate variable formats with regex', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -392,10 +392,10 @@ describe('TemplateGenerator', () => {
 
     it('should warn when output path already exists', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -423,10 +423,10 @@ describe('TemplateGenerator', () => {
 
     it('should allow overwrite when option is set', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -460,10 +460,10 @@ describe('TemplateGenerator', () => {
   describe('Handlebars helpers', () => {
     it('should support uppercase helper', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -494,10 +494,10 @@ describe('TemplateGenerator', () => {
 
     it('should support pascalCase helper', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
@@ -538,10 +538,10 @@ describe('TemplateGenerator', () => {
   describe('dryRun mode', () => {
     it('should not write files in dry run mode', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'example-ios-app');
+      const exampleTemplate = templates.find(t => t.id === 'ios-example-app');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - example-ios-app template not found');
+        console.log('Skipping test - ios-example-app template not found');
         return;
       }
 
