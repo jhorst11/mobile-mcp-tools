@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://salesforce.github.io/magen-templates/schemas/template-v1.json",
   "title": "Magen Template Metadata",
-  "description": "Schema for magen-templates template.json files. Provides IDE autocomplete and validation for template authors.",
+  "description": "Schema for magen-templates template.json files. Provides IDE autocomplete and validation for template authors.\n\n⚠️ WARNING: This file is AUTO-GENERATED from src/types/schemas.ts. Do NOT manually edit this file.\n   To update this schema, modify the Zod schemas and run: npm run generate:schema",
   "$ref": "#/definitions/TemplateMetadata",
   "definitions": {
     "TemplateMetadata": {
@@ -32,7 +32,11 @@
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["ios", "android", "cross-platform"]
+              "enum": [
+                "ios",
+                "android",
+                "cross-platform"
+              ]
             },
             "minVersion": {
               "type": "string"
@@ -47,7 +51,10 @@
               "type": "string"
             }
           },
-          "required": ["type", "minVersion"],
+          "required": [
+            "type",
+            "minVersion"
+          ],
           "additionalProperties": false
         },
         "useCase": {
@@ -66,7 +73,11 @@
               "type": "string"
             }
           },
-          "required": ["primary", "scenarios", "when"],
+          "required": [
+            "primary",
+            "scenarios",
+            "when"
+          ],
           "additionalProperties": false
         },
         "capabilities": {
@@ -80,7 +91,11 @@
           "properties": {
             "level": {
               "type": "string",
-              "enum": ["simple", "moderate", "advanced"]
+              "enum": [
+                "simple",
+                "moderate",
+                "advanced"
+              ]
             },
             "explanation": {
               "type": "string"
@@ -95,7 +110,10 @@
               }
             }
           },
-          "required": ["level", "explanation"],
+          "required": [
+            "level",
+            "explanation"
+          ],
           "additionalProperties": false
         },
         "hidden": {
@@ -125,7 +143,13 @@
                 "type": "boolean"
               }
             },
-            "required": ["id", "name", "description", "files", "required"],
+            "required": [
+              "id",
+              "name",
+              "description",
+              "files",
+              "required"
+            ],
             "additionalProperties": false
           }
         },
@@ -145,7 +169,11 @@
               },
               "difficulty": {
                 "type": "string",
-                "enum": ["simple", "moderate", "advanced"]
+                "enum": [
+                  "simple",
+                  "moderate",
+                  "advanced"
+                ]
               },
               "aiGuidance": {
                 "type": "object",
@@ -184,7 +212,9 @@
                     }
                   }
                 },
-                "required": ["steps"],
+                "required": [
+                  "steps"
+                ],
                 "additionalProperties": false
               },
               "affectedFiles": {
@@ -197,7 +227,14 @@
                 "type": "string"
               }
             },
-            "required": ["id", "name", "description", "difficulty", "aiGuidance", "affectedFiles"],
+            "required": [
+              "id",
+              "name",
+              "description",
+              "difficulty",
+              "aiGuidance",
+              "affectedFiles"
+            ],
             "additionalProperties": false
           }
         },
@@ -215,7 +252,13 @@
               },
               "type": {
                 "type": "string",
-                "enum": ["string", "number", "boolean", "array", "object"]
+                "enum": [
+                  "string",
+                  "number",
+                  "boolean",
+                  "array",
+                  "object"
+                ]
               },
               "description": {
                 "type": "string"
@@ -236,7 +279,12 @@
                 "items": {}
               }
             },
-            "required": ["name", "type", "description", "required"],
+            "required": [
+              "name",
+              "type",
+              "description",
+              "required"
+            ],
             "additionalProperties": false
           }
         },
@@ -259,13 +307,20 @@
                   },
                   "processor": {
                     "type": "string",
-                    "enum": ["handlebars", "copy", "custom"]
+                    "enum": [
+                      "handlebars",
+                      "copy",
+                      "custom"
+                    ]
                   },
                   "outputExtension": {
                     "type": "string"
                   }
                 },
-                "required": ["pattern", "processor"],
+                "required": [
+                  "pattern",
+                  "processor"
+                ],
                 "additionalProperties": false
               }
             },
@@ -276,7 +331,11 @@
                 "properties": {
                   "action": {
                     "type": "string",
-                    "enum": ["rename", "move", "delete"]
+                    "enum": [
+                      "rename",
+                      "move",
+                      "delete"
+                    ]
                   },
                   "from": {
                     "type": "string"
@@ -285,12 +344,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["action", "from"],
+                "required": [
+                  "action",
+                  "from"
+                ],
                 "additionalProperties": false
               }
             }
           },
-          "required": ["fileTransforms"],
+          "required": [
+            "fileTransforms"
+          ],
           "additionalProperties": false
         },
         "documentation": {
@@ -317,7 +381,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["title", "url"],
+                "required": [
+                  "title",
+                  "url"
+                ],
                 "additionalProperties": false
               }
             }

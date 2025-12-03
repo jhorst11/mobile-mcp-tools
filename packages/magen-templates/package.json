@@ -15,6 +15,7 @@
     "test:coverage": "vitest --coverage",
     "validate-template": "node dist/cli/cli.js validate",
     "generate:schema": "npx tsx scripts/generate-json-schema.ts",
+    "verify:schema": "npx tsx scripts/verify-schema-sync.ts",
     "lint": "eslint --max-warnings 0 --config ../../eslint.config.mjs \"{src,tests}/**/*.ts\"",
     "format": "prettier --write \"{src,tests}/**/*.ts\""
   },
