@@ -1,0 +1,4 @@
+{
+  "schemas/template-v1.json": ["npm run verify:schema"],
+  "src/types/schemas.ts": ["npm run verify:schema"]
+}

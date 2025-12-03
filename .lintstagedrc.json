@@ -3,11 +3,5 @@
     "prettier --check",
     "eslint --config eslint.config.mjs --max-warnings=0"
   ],
-  "**/*.{json,md}": ["prettier --check"],
-  "packages/magen-templates/schemas/template-v1.json": [
-    "cd packages/magen-templates && npm run verify:schema"
-  ],
-  "packages/magen-templates/src/types/schemas.ts": [
-    "cd packages/magen-templates && npm run verify:schema"
-  ]
+  "**/*.{json,md}": ["prettier --check"]
 }

@@ -47,13 +47,28 @@ if (!fs.existsSync(outputPath)) {
 
 const existingSchema = fs.readJsonSync(outputPath);
 
-// Compare schemas (normalize by stringifying and parsing to handle formatting differences)
-const normalizeSchema = (schema: unknown): string => {
-  return JSON.stringify(schema, Object.keys(schema as Record<string, unknown>).sort());
+// Deep normalization function that recursively sorts object keys
+const normalizeSchema = (obj: unknown): unknown => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeSchema);
+  }
+
+  // Sort keys and recursively normalize values
+  const sorted: Record<string, unknown> = {};
+  const keys = Object.keys(obj as Record<string, unknown>).sort();
+  for (const key of keys) {
+    sorted[key] = normalizeSchema((obj as Record<string, unknown>)[key]);
+  }
+  return sorted;
 };
 
-const expectedNormalized = normalizeSchema(expectedSchema);
-const existingNormalized = normalizeSchema(existingSchema);
+// Compare schemas by normalizing both and stringifying
+const expectedNormalized = JSON.stringify(normalizeSchema(expectedSchema));
+const existingNormalized = JSON.stringify(normalizeSchema(existingSchema));
 
 if (expectedNormalized !== existingNormalized) {
   console.error('❌ Schema file is out of sync with Zod schema definitions!');
