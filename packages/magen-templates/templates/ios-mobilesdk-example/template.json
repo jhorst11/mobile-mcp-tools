@@ -1,12 +1,13 @@
 {
   "$schema": "../../schemas/template-v1.json",
-  "extends": "ios-salesforce-base",
+  "extends": "ios-mobilesdk-base",
   "version": "0.0.1",
   "type": "application",
-  "id": "ios-salesforce-example",
-  "displayName": "iOS Salesforce Example App",
+  "id": "ios-mobilesdk-example",
+  "displayName": "iOS Mobile SDK Example App",
   "description": "A simple example iOS application demonstrating Salesforce Mobile SDK integration with basic account and contact browsing capabilities. Perfect for learning and quick prototyping.",
   "platform": {
+    "type": "ios",
     "minVersion": "15.0"
   },
   "useCase": {

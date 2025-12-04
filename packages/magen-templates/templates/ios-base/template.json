@@ -77,26 +77,6 @@
             {
                 "pattern": "**/*.xcscheme",
                 "processor": "handlebars"
-            },
-            {
-                "pattern": "**/*.png",
-                "processor": "copy"
-            },
-            {
-                "pattern": "**/*.jpg",
-                "processor": "copy"
-            },
-            {
-                "pattern": "**/*.jpeg",
-                "processor": "copy"
-            },
-            {
-                "pattern": "**/*.webp",
-                "processor": "copy"
-            },
-            {
-                "pattern": "**/*.json",
-                "processor": "copy"
             }
         ],
         "fileOperations": [

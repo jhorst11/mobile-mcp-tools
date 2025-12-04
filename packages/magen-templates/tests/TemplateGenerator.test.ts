@@ -35,10 +35,10 @@ describe('TemplateGenerator', () => {
   describe('generate', () => {
     it('should generate a project from example template', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -56,6 +56,9 @@ describe('TemplateGenerator', () => {
         outputPath,
       });
 
+      if (!result.success) {
+        console.log('Generation failed:', result.errors);
+      }
       expect(result.success).toBe(true);
       expect(result.files.length).toBeGreaterThan(0);
       expect(await fs.pathExists(outputPath)).toBe(true);
@@ -63,10 +66,10 @@ describe('TemplateGenerator', () => {
 
     it('should substitute variables in file content', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -103,10 +106,10 @@ describe('TemplateGenerator', () => {
 
     it('should handle Handlebars helpers', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -139,10 +142,10 @@ describe('TemplateGenerator', () => {
 
     it('should apply file operations (rename directories)', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -173,10 +176,10 @@ describe('TemplateGenerator', () => {
 
     it('should handle custom variables with special characters', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -205,10 +208,10 @@ describe('TemplateGenerator', () => {
 
     it('should fail when required variables are missing', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -240,10 +243,10 @@ describe('TemplateGenerator', () => {
   describe('preview', () => {
     it('should preview generation without writing files', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -276,10 +279,10 @@ describe('TemplateGenerator', () => {
 
     it('should indicate which files will be processed', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -310,10 +313,10 @@ describe('TemplateGenerator', () => {
   describe('validateConfig', () => {
     it('should validate required variables', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -336,10 +339,10 @@ describe('TemplateGenerator', () => {
 
     it('should fail validation when required variables are missing', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -370,10 +373,10 @@ describe('TemplateGenerator', () => {
 
     it('should validate variable formats with regex', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -399,10 +402,10 @@ describe('TemplateGenerator', () => {
 
     it('should warn when output path already exists', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -430,10 +433,10 @@ describe('TemplateGenerator', () => {
 
     it('should allow overwrite when option is set', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -467,10 +470,10 @@ describe('TemplateGenerator', () => {
   describe('Handlebars helpers', () => {
     it('should support uppercase helper', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -501,10 +504,10 @@ describe('TemplateGenerator', () => {
 
     it('should support pascalCase helper', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -540,10 +543,10 @@ describe('TemplateGenerator', () => {
   describe('dryRun mode', () => {
     it('should not write files in dry run mode', async () => {
       const templates = await registry.discoverTemplates(true);
-      const exampleTemplate = templates.find(t => t.id === 'ios-salesforce-example');
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
 
       if (!exampleTemplate) {
-        console.log('Skipping test - ios-salesforce-example template not found');
+        console.log('Skipping test - ios-mobilesdk-example template not found');
         return;
       }
 
@@ -568,6 +571,116 @@ describe('TemplateGenerator', () => {
 
       // Files should not actually exist
       expect(await fs.pathExists(outputPath)).toBe(false);
+    });
+  });
+
+  describe('glob pattern matching', () => {
+    it('should support brace expansion in patterns', async () => {
+      const templates = await registry.discoverTemplates(true);
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
+
+      if (!exampleTemplate) {
+        console.log('Skipping test - ios-mobilesdk-example template not found');
+        return;
+      }
+
+      // Get metadata and modify fileTransforms to use brace expansion
+      const metadata = await registry.getMetadata(exampleTemplate.id);
+      const testMetadata = {
+        ...metadata,
+        generation: {
+          ...metadata.generation,
+          fileTransforms: [
+            { pattern: '**/*.{swift,plist}', processor: 'handlebars' as const },
+          ],
+        },
+      };
+
+      const outputPath = path.join(tempDir, 'BraceExpansionApp');
+
+      const preview = await generator.preview({
+        templateId: exampleTemplate.id,
+        metadata: testMetadata,
+        variables: {
+          projectName: 'BraceExpansionApp',
+          organization: 'Test Org',
+        },
+        outputPath,
+      });
+
+      // Check that both .swift and .plist files are marked for processing
+      const swiftFiles = preview.files.filter(f => f.source.endsWith('.swift'));
+      const plistFiles = preview.files.filter(f => f.source.endsWith('.plist'));
+      const jsonFiles = preview.files.filter(f => f.source.endsWith('.json'));
+
+      // Swift and plist should be marked for processing
+      if (swiftFiles.length > 0) {
+        swiftFiles.forEach(file => {
+          expect(file.willProcess).toBe(true);
+        });
+      }
+
+      if (plistFiles.length > 0) {
+        plistFiles.forEach(file => {
+          expect(file.willProcess).toBe(true);
+        });
+      }
+
+      // JSON files should NOT be marked for processing (not in pattern)
+      if (jsonFiles.length > 0) {
+        jsonFiles.forEach(file => {
+          expect(file.willProcess).toBe(false);
+        });
+      }
+    });
+
+    it('should support complex brace patterns', async () => {
+      const templates = await registry.discoverTemplates(true);
+      const exampleTemplate = templates.find(t => t.id === 'ios-mobilesdk-example');
+
+      if (!exampleTemplate) {
+        console.log('Skipping test - ios-mobilesdk-example template not found');
+        return;
+      }
+
+      const metadata = await registry.getMetadata(exampleTemplate.id);
+      const testMetadata = {
+        ...metadata,
+        generation: {
+          ...metadata.generation,
+          fileTransforms: [
+            // Test multiple extensions with nested paths
+            { pattern: '**/{Classes,Models}/*.{swift,h,m}', processor: 'handlebars' as const },
+          ],
+        },
+      };
+
+      const outputPath = path.join(tempDir, 'ComplexBraceApp');
+
+      const preview = await generator.preview({
+        templateId: exampleTemplate.id,
+        metadata: testMetadata,
+        variables: {
+          projectName: 'ComplexBraceApp',
+          organization: 'Test Org',
+        },
+        outputPath,
+      });
+
+      // Files in Classes/ or Models/ with .swift/.h/.m should be processed
+      const matchingFiles = preview.files.filter(f => {
+        const inCorrectDir = f.source.includes('/Classes/') || f.source.includes('/Models/');
+        const hasCorrectExt =
+          f.source.endsWith('.swift') || f.source.endsWith('.h') || f.source.endsWith('.m');
+        return inCorrectDir && hasCorrectExt;
+      });
+
+      // All matching files should be marked for processing
+      if (matchingFiles.length > 0) {
+        matchingFiles.forEach(file => {
+          expect(file.willProcess).toBe(true);
+        });
+      }
     });
   });
 });

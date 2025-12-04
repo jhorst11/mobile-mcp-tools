@@ -9,6 +9,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import Handlebars from 'handlebars';
 import { glob } from 'glob';
+import { minimatch } from 'minimatch';
 import type {
   GenerationContext,
   GenerationResult,
@@ -154,20 +155,18 @@ export class TemplateGenerator {
       // Substitute variables in file path
       destinationPath = this.substituteVariables(destinationPath, context.variables);
 
-      // Determine if this file will be processed
-      const willProcess = context.metadata.generation.fileTransforms.some(transform =>
+      // Determine if this file will be processed (not just copied)
+      // Files are only "processed" if they match a transform (currently only handlebars)
+      const matchingTransform = context.metadata.generation.fileTransforms.find(transform =>
         this.matchesPattern(file, transform.pattern)
       );
+      const willProcess = !!matchingTransform;
 
       // If processed, update extension
-      if (willProcess) {
-        const transform = context.metadata.generation.fileTransforms.find(t =>
-          this.matchesPattern(file, t.pattern)
-        );
-        if (transform?.outputExtension) {
-          const ext = path.extname(destinationPath);
-          destinationPath = destinationPath.slice(0, -ext.length) + `.${transform.outputExtension}`;
-        }
+      if (willProcess && matchingTransform?.outputExtension) {
+        const ext = path.extname(destinationPath);
+        destinationPath =
+          destinationPath.slice(0, -ext.length) + `.${matchingTransform.outputExtension}`;
       }
 
       return {
@@ -288,11 +287,11 @@ export class TemplateGenerator {
       // Substitute variables in path
       destinationFile = this.substituteVariables(destinationFile, variables);
 
-      // Find matching transform
+      // Find matching transform - default behavior is to copy
       const transform = transforms.find(t => this.matchesPattern(file, t.pattern));
 
       if (transform) {
-        // Process with specified processor
+        // Process with specified processor (currently only handlebars)
         await this.processFile(sourceFile, destinationFile, variables, transform, dryRun);
 
         // Update destination with output extension if specified
@@ -301,7 +300,7 @@ export class TemplateGenerator {
           destinationFile = destinationFile.slice(0, -ext.length) + `.${transform.outputExtension}`;
         }
       } else {
-        // Copy as-is
+        // Default: Copy as-is
         if (!dryRun) {
           await fs.ensureDir(path.dirname(destinationFile));
           await fs.copy(sourceFile, destinationFile);
@@ -321,6 +320,7 @@ export class TemplateGenerator {
     transform: GenerationContext['metadata']['generation']['fileTransforms'][0],
     dryRun: boolean
   ): Promise<void> {
+    // Currently only handlebars processor is supported
     if (transform.processor === 'handlebars') {
       const content = await fs.readFile(sourceFile, 'utf-8');
       const template = Handlebars.compile(content);
@@ -334,13 +334,7 @@ export class TemplateGenerator {
         await fs.ensureDir(path.dirname(destinationFile));
         await fs.writeFile(destinationFile, output, 'utf-8');
       }
-    } else if (transform.processor === 'copy') {
-      if (!dryRun) {
-        await fs.ensureDir(path.dirname(destinationFile));
-        await fs.copy(sourceFile, destinationFile);
-      }
     }
-    // 'custom' processor would be handled by hooks
   }
 
   private async applyFileOperations(
@@ -406,19 +400,8 @@ export class TemplateGenerator {
   }
 
   private matchesPattern(file: string, pattern: string): boolean {
-    // Simple glob pattern matching
-    // Convert glob pattern to regex
-    // Note: **/ matches zero or more path segments
-    const regexPattern = pattern
-      .replace(/\./g, '\\.') // Escape dots
-      .replace(/\*\*/g, '<!GLOBSTAR!>') // Temp placeholder for **
-      .replace(/\*/g, '[^/]*') // * matches anything except /
-      .replace(/<!GLOBSTAR!>\//g, '(?:.*/)?') // **/ matches zero or more directories
-      .replace(/\/<!GLOBSTAR!>/g, '(?:/.*)?') // /** matches zero or more path segments
-      .replace(/<!GLOBSTAR!>/g, '.*'); // ** alone matches anything
-
-    const regex = new RegExp(`^${regexPattern}$`);
-    return regex.test(file);
+    // Use minimatch for proper glob pattern matching including brace expansion
+    return minimatch(file, pattern, { dot: true });
   }
 
   private registerHandlebarsHelpers(): void {

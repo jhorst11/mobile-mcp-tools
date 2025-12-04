@@ -53,7 +53,7 @@ export const TemplateVariableSchema = z.object({
 
 export const FileTransformSchema = z.object({
   pattern: z.string(),
-  processor: z.enum(['handlebars', 'copy', 'custom']),
+  processor: z.enum(['handlebars']),
   outputExtension: z.string().optional(),
 });
 

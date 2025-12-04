@@ -66,11 +66,16 @@ my-template/
 
 ### File Processing Rules
 
+**Default Behavior: Files are copied as-is** (safe, predictable)
+
 | Pattern | Behavior |
 |---------|----------|
-| `*.hbs` | Handlebars processing, `.hbs` extension stripped |
+| Files matching `fileTransforms` with `processor: "handlebars"` | Handlebars processing applied |
+| `*.hbs` extension | Handlebars processing, `.hbs` extension stripped |
 | Path contains `{{var}}` | Variable substitution in path |
-| All other files | Copied verbatim |
+| **All other files** | **Copied verbatim (default)** |
+
+You only need to specify transforms for files that require processing. Binary files, assets, and files with `{{}}` syntax that isn't meant to be templated will be safely copied without modification.
 
 ---
 
@@ -124,10 +129,9 @@ The `template.json` file defines everything needed for discovery, selection, and
   
   "generation": {
     "fileTransforms": [
-      { "pattern": "**/*.hbs", "processor": "handlebars" },
-      { "pattern": "**/*.swift", "processor": "handlebars" },
-      { "pattern": "**/*.png", "processor": "copy" },
+      { "pattern": "**/*.{hbs,swift}", "processor": "handlebars" },
       { "pattern": "**/Podfile", "processor": "handlebars", "outputExtension": "" }
+      // All other files (images, assets, etc.) are copied as-is by default
     ],
     "fileOperations": [
       { "action": "rename", "from": "ExampleApp", "to": "{{projectName}}" },
@@ -146,8 +150,44 @@ The `template.json` file defines everything needed for discovery, selection, and
 | `capabilities` | Semantic tags for capability-based search |
 | `templateVariables` | User-provided values with validation |
 | `extensionPoints` | Guidance for post-generation customization |
-| `generation.fileTransforms` | File processing rules |
+| `generation.fileTransforms` | File processing rules (opt-in for processing) |
 | `hidden` | If true, hide from discovery (for base templates) |
+
+### File Processor Types
+
+| Processor | Behavior | When to Use |
+|-----------|----------|-------------|
+| `handlebars` | Processes file content with Handlebars, substitutes `{{variables}}` | Text files that need variable substitution (source code, config files) |
+| *(omitted)* | **Default: Copies file as-is** | Binary files, images, assets, or any file that shouldn't be processed |
+
+**Best Practice:** Only specify `fileTransforms` for files that need Handlebars processing. All other files will be safely copied by default.
+
+**Glob Pattern Support:** The `pattern` field supports full glob syntax including:
+- `**` - Match any number of directories
+- `*` - Match any characters within a directory name
+- `{ext1,ext2}` - Brace expansion for multiple options (e.g., `**/*.{swift,plist}`)
+- `{dir1,dir2}` - Match multiple directory names (e.g., `**/{Classes,Models}/*.swift`)
+
+This allows you to efficiently match multiple file types with a single pattern.
+
+### Custom Processing with Hooks
+
+For advanced file transformations beyond Handlebars templating, use `preHook` and `postHook` scripts. These hooks have full access to the output directory and can perform any custom processing needed.
+
+**Example:**
+```json
+{
+  "generation": {
+    "preHook": "scripts/prepare.js",
+    "postHook": "scripts/finalize.js",
+    "fileTransforms": [
+      { "pattern": "**/*.swift", "processor": "handlebars" }
+    ]
+  }
+}
+```
+
+The `postHook` can process any generated files, including those that were copied without processing. Hooks receive context about the generation process including paths and variables. See the Generation Pipeline section below for more details on hook execution order.
 
 ---
 
@@ -326,7 +366,7 @@ Templates can inherit from **base templates** and override or extend specific se
 
 ```
 ┌─────────────────────────────────────────┐
-│  Concrete Template (ios-salesforce-    │  ← User-facing, specialized
+│  Concrete Template (ios-mobilesdk-      │  ← User-facing, specialized
 │                      example)           │
 │  - Specific capabilities                │
 │  - Additional variables                 │
@@ -334,7 +374,7 @@ Templates can inherit from **base templates** and override or extend specific se
 └──────────────┬──────────────────────────┘
                │ extends
 ┌──────────────▼──────────────────────────┐
-│  Base Template (ios-salesforce-base)    │  ← Platform foundation
+│  Base Template (ios-mobilesdk-base)     │  ← Platform foundation
 │  - Common iOS + Salesforce setup        │
 │  - Standard variables                   │
 │  - Shared file transforms               │
@@ -357,7 +397,7 @@ Add an `extends` field to `template.json`:
 ```json
 {
   "$schema": "../../schemas/template-v1.json",
-  "extends": "ios-salesforce-base",
+  "extends": "ios-mobilesdk-base",
   "version": "0.0.1",
   "type": "application",
   "id": "ios-mobilesync",
@@ -454,11 +494,9 @@ Create `templates/ios-base/template.json` (hidden base):
   
   "generation": {
     "fileTransforms": [
-      { "pattern": "**/*.swift", "processor": "handlebars" },
-      { "pattern": "**/*.plist", "processor": "handlebars" },
-      { "pattern": "**/project.pbxproj", "processor": "handlebars" },
-      { "pattern": "**/*.png", "processor": "copy" },
-      { "pattern": "**/*.jpg", "processor": "copy" }
+      { "pattern": "**/*.{swift,plist}", "processor": "handlebars" },
+      { "pattern": "**/project.pbxproj", "processor": "handlebars" }
+      // Binary files like images are copied automatically
     ]
   },
   
@@ -473,9 +511,9 @@ Create `templates/ios-base/template.json` (hidden base):
 
 ---
 
-### Example: iOS Salesforce Base Template
+### Example: iOS Mobile SDK Base Template
 
-Create `templates/ios-salesforce-base/template.json`:
+Create `templates/ios-mobilesdk-base/template.json`:
 
 ```json
 {
@@ -483,8 +521,8 @@ Create `templates/ios-salesforce-base/template.json`:
   "extends": "ios-base",
   "version": "1.0.0",
   "type": "application",
-  "id": "ios-salesforce-base",
-  "displayName": "iOS Salesforce Base Template",
+  "id": "ios-mobilesdk-base",
+  "displayName": "iOS Mobile SDK Base Template",
   "description": "Foundation for iOS Salesforce Mobile SDK apps",
   "hidden": true,
   
@@ -548,7 +586,7 @@ Simplified `ios-mobilesync/template.json`:
 ```json
 {
   "$schema": "../../schemas/template-v1.json",
-  "extends": "ios-salesforce-base",
+  "extends": "ios-mobilesdk-base",
   "version": "0.0.1",
   "id": "ios-mobilesync",
   "displayName": "iOS MobileSync",
@@ -594,99 +632,6 @@ Simplified `ios-mobilesync/template.json`:
 
 ---
 
-### Implementation Considerations
-
-#### 1. Template Resolution Order
-
-```typescript
-// In TemplateRegistry.getMetadata(templateId)
-async getMetadata(templateId: string): Promise<TemplateMetadata> {
-  const template = await this.loadTemplate(templateId);
-  
-  if (!template.extends) {
-    return template;
-  }
-  
-  // Recursive resolution
-  const parent = await this.getMetadata(template.extends);
-  return this.mergeTemplates(parent, template);
-}
-```
-
-#### 2. Circular Dependency Detection
-
-```typescript
-private resolveChain(templateId: string, visited = new Set()): void {
-  if (visited.has(templateId)) {
-    throw new Error(`Circular dependency detected: ${[...visited, templateId].join(' → ')}`);
-  }
-  visited.add(templateId);
-  
-  const template = this.loadTemplate(templateId);
-  if (template.extends) {
-    this.resolveChain(template.extends, visited);
-  }
-}
-```
-
-#### 3. File System Layering
-
-**Important**: Only concrete templates have a `template/` directory with actual files.
-
-Base templates are **metadata-only**:
-
-```
-ios-base/
-  └── template.json           # Metadata only
-
-ios-salesforce-base/
-  └── template.json           # Metadata only
-
-ios-salesforce-example/
-  ├── template.json           # Metadata (extends parent)
-  └── template/               # Actual code files
-      └── ... all source files
-```
-
-When generating from `ios-salesforce-example`:
-1. Metadata is merged from all layers (ios-base → ios-salesforce-base → ios-salesforce-example)
-2. Files are taken **only** from `ios-salesforce-example/template/`
-3. The merged file transforms (from all layers) are applied to those files
-
-**If multiple concrete templates extend the same base**:
-```
-ios-salesforce-example/template/  ← Example app files
-ios-salesforce-production/template/  ← Production app files (different implementation)
-```
-Both inherit the same Salesforce metadata, but provide different code implementations.
-
-#### 4. Variable Inheritance and Overrides
-
-```typescript
-function mergeVariables(
-  parent: TemplateVariable[],
-  child: TemplateVariable[]
-): TemplateVariable[] {
-  const merged = new Map<string, TemplateVariable>();
-  
-  // Start with parent variables
-  for (const v of parent) {
-    merged.set(v.name, v);
-  }
-  
-  // Child overrides or adds
-  for (const v of child) {
-    merged.set(v.name, v);
-  }
-  
-  return Array.from(merged.values());
-}
-```
-
----
-
-### Best Practices
-
 #### 1. Base Template Design
 
 - **Keep base templates minimal**: Only shared essentials
@@ -701,7 +646,7 @@ function mergeVariables(
 - **Limit to 2-3 levels**: Avoid deep hierarchies
 - **Recommended structure**:
   - Level 1: Platform base (`ios-base`, `android-base`)
-  - Level 2: SDK/framework base (`ios-salesforce-base`, `android-salesforce-base`)
+  - Level 2: SDK/framework base (`ios-mobilesdk-base`, `android-mobilesdk-base`)
   - Level 3: Feature-specific templates (`ios-mobilesync`, `ios-agentforce-demo`)
 
 #### 3. Capability Naming
@@ -742,30 +687,7 @@ The system includes helpers for common string transformations:
 
 For more advanced Handlebars features (conditionals, loops, custom helpers), see the [Handlebars documentation](https://handlebarsjs.com/guide/).
 
----
 
-## Extension Points
-
-Extension points provide guidance for post-generation customization:
-
-```json
-{
-  "id": "add-sobject",
-  "name": "Add SObject Support",
-  "description": "Add support for a new Salesforce object",
-  "affectedFiles": [
-    "SObjects/NewObject.swift",
-    "UI/NewObjectListView.swift"
-  ],
-  "aiGuidance": "Create model and view files following existing patterns. Create SObjects/{{ObjectName}}.swift following the Contacts.swift pattern. Create UI/{{ObjectName}}ListView.swift for the list view. Add navigation entry in Tabs.swift. Use existing SObject files as reference and follow established naming conventions."
-}
-```
-
-The `aiGuidance` field provides free-form text guidance that AI agents can use to understand how to extend the generated application. It can reference template variables using `{{variableName}}` syntax and should describe the general approach and point to example files.
-
----
-
-## Validation
 
 Templates are validated against:
 

@@ -10,7 +10,16 @@
  */
 
 export type Platform = 'ios' | 'android' | 'cross-platform';
-export type FileProcessor = 'handlebars' | 'copy' | 'custom';
+
+/**
+ * File processor types:
+ * - 'handlebars': Process file content with Handlebars templating
+ *
+ * Files that don't match any fileTransform pattern are copied as-is by default.
+ * For custom processing logic, use preHook/postHook which have full access
+ * to the output directory and can process files as needed.
+ */
+export type FileProcessor = 'handlebars';
 export type FileAction = 'rename' | 'move' | 'delete';
 
 export interface PlatformInfo {

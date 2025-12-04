@@ -3,9 +3,9 @@
     "extends": "ios-base",
     "version": "1.0.0",
     "type": "application",
-    "id": "ios-salesforce-base",
-    "displayName": "iOS Salesforce Base Template",
-    "description": "Foundation template for iOS applications using Salesforce Mobile SDK. Extends ios-base with Salesforce-specific configuration, OAuth setup, and SDK integration.",
+  "id": "ios-mobilesdk-base",
+  "displayName": "iOS Mobile SDK Base Template",
+  "description": "Foundation template for iOS applications using Salesforce Mobile SDK. Extends ios-base with Salesforce-specific configuration, OAuth setup, and SDK integration.",
     "hidden": true,
     "platform": {
         "minVersion": "17.0",
@@ -42,7 +42,7 @@
             "name": "salesforceConsumerKey",
             "type": "string",
             "description": "Salesforce Connected App Consumer Key (Client ID)",
-            "required": true,
+            "required": false,
             "sensitive": true,
             "example": "3MVG9...",
             "default": ""
