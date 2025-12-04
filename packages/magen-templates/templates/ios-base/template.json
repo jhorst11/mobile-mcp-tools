@@ -8,9 +8,7 @@
     "hidden": true,
     "platform": {
         "type": "ios",
-        "minVersion": "15.0",
-        "language": "swift",
-        "framework": "swiftui"
+        "minVersion": "15.0"
     },
     "useCase": {
         "primary": "Base template for iOS applications",
@@ -55,7 +53,6 @@
         }
     ],
     "extensionPoints": [],
-    "requirements": {},
     "generation": {
         "fileTransforms": [
             {

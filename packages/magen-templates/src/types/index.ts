@@ -25,9 +25,6 @@ export type FileAction = 'rename' | 'move' | 'delete';
 export interface PlatformInfo {
   type: Platform;
   minVersion: string;
-  targetVersion?: string;
-  language?: string;
-  framework?: string;
 }
 
 export interface UseCaseInfo {
@@ -50,11 +47,6 @@ export interface FeatureInfo {
   description: string;
   files: string[];
   required: boolean;
-}
-
-export interface Requirements {
-  system?: Record<string, unknown>;
-  salesforce?: Record<string, unknown>;
 }
 
 export interface TemplateVariable {
@@ -126,7 +118,6 @@ export interface TemplateMetadata extends TemplateInfo {
   hidden?: boolean;
   features?: FeatureInfo[];
   extensionPoints?: ExtensionPoint[];
-  requirements: Requirements;
   templateVariables: TemplateVariable[];
   generation: GenerationConfig;
   documentation?: DocumentationLinks;

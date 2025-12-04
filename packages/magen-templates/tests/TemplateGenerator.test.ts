@@ -590,9 +590,7 @@ describe('TemplateGenerator', () => {
         ...metadata,
         generation: {
           ...metadata.generation,
-          fileTransforms: [
-            { pattern: '**/*.{swift,plist}', processor: 'handlebars' as const },
-          ],
+          fileTransforms: [{ pattern: '**/*.{swift,plist}', processor: 'handlebars' as const }],
         },
       };
 

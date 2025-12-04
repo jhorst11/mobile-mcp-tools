@@ -50,10 +50,6 @@
       "aiGuidance": "Update SwiftUI views to match your design requirements. Add custom colors, fonts, and images to Assets.xcassets. Modify navigation patterns in ContentView.swift."
     }
   ],
-  "requirements": {
-    "skillLevel": "beginner",
-    "estimatedTime": "15 minutes"
-  },
   "generation": {
     "fileTransforms": []
   },

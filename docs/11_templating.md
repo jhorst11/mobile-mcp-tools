@@ -146,7 +146,7 @@ The `template.json` file defines everything needed for discovery, selection, and
 | Field | Purpose |
 |-------|---------|
 | `extends` | Template ID to inherit from (optional) |
-| `platform` | Target platform and version constraints |
+| `platform` | Target platform (`type`) and minimum version (`minVersion`). |
 | `capabilities` | Semantic tags for capability-based search |
 | `templateVariables` | User-provided values with validation |
 | `extensionPoints` | Guidance for post-generation customization |
@@ -438,7 +438,6 @@ When loading a template with `extends`, the system performs a deep merge:
 | **`generation.fileTransforms`** | **Prepend**: child transforms processed before parent's |
 | **`generation.fileOperations`** | **Prepend**: child operations processed before parent's |
 | **`documentation`** | Deep merge: child overrides specific keys |
-| **`requirements`** | Deep merge: child overrides or adds requirements |
 
 ---
 
@@ -458,9 +457,7 @@ Create `templates/ios-base/template.json` (hidden base):
   
   "platform": {
     "type": "ios",
-    "minVersion": "15.0",
-    "language": "swift",
-    "framework": "swiftui"
+    "minVersion": "15.0"
   },
   
   "capabilities": ["native-ios", "swift", "swiftui"],
@@ -500,7 +497,6 @@ Create `templates/ios-base/template.json` (hidden base):
     ]
   },
   
-  "requirements": {},
   "useCase": {
     "primary": "iOS application base",
     "scenarios": [],
@@ -563,12 +559,6 @@ Create `templates/ios-mobilesdk-base/template.json`:
     ]
   },
   
-  "requirements": {
-    "salesforce": {
-      "connectedApp": true
-    }
-  },
-  
   "useCase": {
     "primary": "Salesforce iOS base",
     "scenarios": [],
@@ -614,12 +604,7 @@ Simplified `ios-mobilesync/template.json`:
       ],
       "aiGuidance": "Create SObject data classes following ContactSObjectData pattern"
     }
-  ],
-  
-  "requirements": {
-    "skillLevel": "intermediate",
-    "estimatedTime": "45 minutes"
-  }
+  ]
 }
 ```
 

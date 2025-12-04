@@ -91,12 +91,6 @@ export class TemplateComposer {
 
       // documentation: deep merge with child overriding specific keys
       documentation: this.mergeDocumentation(parent.documentation, child.documentation),
-
-      // requirements: deep merge with child overriding or adding
-      requirements: {
-        ...parent.requirements,
-        ...child.requirements,
-      },
     };
   }
 

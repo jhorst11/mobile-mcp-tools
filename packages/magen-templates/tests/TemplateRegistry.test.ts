@@ -29,7 +29,6 @@ describe('TemplateRegistry', () => {
         expect(template).toHaveProperty('displayName');
         expect(template).toHaveProperty('platform');
         expect(template).toHaveProperty('capabilities');
-        expect(template).toHaveProperty('complexity');
         expect(template).toHaveProperty('tags');
       }
     });

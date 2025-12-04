@@ -12,9 +12,6 @@ export const PlatformSchema = z.enum(['ios', 'android', 'cross-platform']);
 export const PlatformInfoSchema = z.object({
   type: PlatformSchema,
   minVersion: z.string(),
-  targetVersion: z.string().optional(),
-  language: z.string().optional(),
-  framework: z.string().optional(),
 });
 
 export const UseCaseInfoSchema = z.object({
@@ -101,7 +98,6 @@ export const TemplateMetadataSchema = z.object({
   hidden: z.boolean().optional(),
   features: z.array(FeatureInfoSchema).optional(),
   extensionPoints: z.array(ExtensionPointSchema).optional(),
-  requirements: z.record(z.unknown()),
   templateVariables: z.array(TemplateVariableSchema),
   /** Generation config is required unless template extends a base */
   generation: GenerationConfigSchema.optional(),

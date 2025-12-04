@@ -83,10 +83,6 @@
       "aiGuidance": "Modify CustomThemeManager.swift to customize colors and styling Update AgentforceMainView.swift for layout changes"
     }
   ],
-  "requirements": {
-    "skillLevel": "beginner",
-    "estimatedTime": "20 minutes"
-  },
   "documentation": {
     "gettingStarted": "https://developer.salesforce.com/docs/platform/agentforce/overview"
   }

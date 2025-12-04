@@ -8,8 +8,7 @@
   "description": "Foundation template for iOS applications using Salesforce Mobile SDK. Extends ios-base with Salesforce-specific configuration, OAuth setup, and SDK integration.",
     "hidden": true,
     "platform": {
-        "minVersion": "17.0",
-        "framework": "salesforce-mobile-sdk"
+        "minVersion": "17.0"
     },
     "useCase": {
         "primary": "Base template for Salesforce Mobile SDK iOS applications",
@@ -101,12 +100,6 @@
             "aiGuidance": "Define SmartStore soups in userstore.json. Each soup represents a local data table with indexing specifications. Follow the existing patterns for defining soup names, features (ExternalStorage), and indexes."
         }
     ],
-    "requirements": {
-        "salesforce": {
-            "connectedApp": true,
-            "mobileSDKVersion": "13.1+"
-        }
-    },
     "generation": {
         "fileTransforms": [
             {

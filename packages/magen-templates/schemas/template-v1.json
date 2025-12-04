@@ -35,22 +35,20 @@
           "properties": {
             "type": {
               "type": "string",
-              "enum": ["ios", "android", "cross-platform"]
+              "enum": [
+                "ios",
+                "android",
+                "cross-platform"
+              ]
             },
             "minVersion": {
               "type": "string"
-            },
-            "targetVersion": {
-              "type": "string"
-            },
-            "language": {
-              "type": "string"
-            },
-            "framework": {
-              "type": "string"
             }
           },
-          "required": ["type", "minVersion"],
+          "required": [
+            "type",
+            "minVersion"
+          ],
           "additionalProperties": false
         },
         "useCase": {
@@ -69,7 +67,11 @@
               "type": "string"
             }
           },
-          "required": ["primary", "scenarios", "when"],
+          "required": [
+            "primary",
+            "scenarios",
+            "when"
+          ],
           "additionalProperties": false
         },
         "capabilities": {
@@ -105,7 +107,13 @@
                 "type": "boolean"
               }
             },
-            "required": ["id", "name", "description", "files", "required"],
+            "required": [
+              "id",
+              "name",
+              "description",
+              "files",
+              "required"
+            ],
             "additionalProperties": false
           }
         },
@@ -133,13 +141,13 @@
                 }
               }
             },
-            "required": ["id", "name", "description"],
+            "required": [
+              "id",
+              "name",
+              "description"
+            ],
             "additionalProperties": false
           }
-        },
-        "requirements": {
-          "type": "object",
-          "additionalProperties": {}
         },
         "templateVariables": {
           "type": "array",
@@ -151,7 +159,13 @@
               },
               "type": {
                 "type": "string",
-                "enum": ["string", "number", "boolean", "array", "object"]
+                "enum": [
+                  "string",
+                  "number",
+                  "boolean",
+                  "array",
+                  "object"
+                ]
               },
               "description": {
                 "type": "string"
@@ -172,7 +186,12 @@
                 "items": {}
               }
             },
-            "required": ["name", "type", "description", "required"],
+            "required": [
+              "name",
+              "type",
+              "description",
+              "required"
+            ],
             "additionalProperties": false
           }
         },
@@ -195,13 +214,18 @@
                   },
                   "processor": {
                     "type": "string",
-                    "enum": ["handlebars"]
+                    "enum": [
+                      "handlebars"
+                    ]
                   },
                   "outputExtension": {
                     "type": "string"
                   }
                 },
-                "required": ["pattern", "processor"],
+                "required": [
+                  "pattern",
+                  "processor"
+                ],
                 "additionalProperties": false
               }
             },
@@ -212,7 +236,11 @@
                 "properties": {
                   "action": {
                     "type": "string",
-                    "enum": ["rename", "move", "delete"]
+                    "enum": [
+                      "rename",
+                      "move",
+                      "delete"
+                    ]
                   },
                   "from": {
                     "type": "string"
@@ -221,12 +249,17 @@
                     "type": "string"
                   }
                 },
-                "required": ["action", "from"],
+                "required": [
+                  "action",
+                  "from"
+                ],
                 "additionalProperties": false
               }
             }
           },
-          "required": ["fileTransforms"],
+          "required": [
+            "fileTransforms"
+          ],
           "additionalProperties": false
         },
         "documentation": {
@@ -253,7 +286,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["title", "url"],
+                "required": [
+                  "title",
+                  "url"
+                ],
                 "additionalProperties": false
               }
             }
@@ -276,7 +312,6 @@
         "description",
         "useCase",
         "capabilities",
-        "requirements",
         "templateVariables",
         "tags"
       ],
