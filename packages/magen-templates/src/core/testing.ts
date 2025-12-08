@@ -13,6 +13,7 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
+import { watch } from 'chokidar';
 import { getTemplate } from './discovery.js';
 import { generateApp } from './generator.js';
 import {
@@ -34,6 +35,8 @@ export interface TestTemplateOptions {
   variables?: Record<string, string | number | boolean>;
   /** Force regeneration even if test directory exists */
   regenerate?: boolean;
+  /** Watch for changes and auto-regenerate */
+  watch?: boolean;
 }
 
 /**
@@ -108,7 +111,25 @@ function loadTemplateDescriptor(templateDirectory: string): TemplateDescriptor {
  * Note: test/ contains resolved files, work/ contains templated files for diffs
  */
 export function testTemplate(options: TestTemplateOptions): TestTemplateResult {
-  const { templateName, variables = {}, regenerate = false } = options;
+  const { templateName, variables = {}, regenerate = false, watch: watchMode = false } = options;
+
+  // If watch mode is enabled, start watching and return initial result
+  if (watchMode) {
+    const cleanup = watchTemplate(options);
+
+    // Set up signal handlers to cleanup on exit
+    const handleExit = () => {
+      cleanup();
+      process.exit(0);
+    };
+
+    process.on('SIGINT', handleExit);
+    process.on('SIGTERM', handleExit);
+
+    // Keep process alive
+    // The function will effectively never return in watch mode
+    return new Promise(() => {}) as never;
+  }
 
   // Determine template directory
   const templateDirectory =
@@ -221,4 +242,108 @@ export function hasTestInstance(templateDirectory: string): boolean {
   }
   const entries = readdirSync(testDirectory);
   return entries.length > 0;
+}
+
+/**
+ * Options for watching a template
+ */
+export interface WatchTemplateOptions extends TestTemplateOptions {
+  /** Callback when test directory is regenerated */
+  onChange?: (result: TestTemplateResult) => void;
+}
+
+/**
+ * Watch a template's work directory and regenerate test directory on changes
+ * Returns a cleanup function to stop watching
+ */
+export function watchTemplate(options: WatchTemplateOptions): () => void {
+  const { templateName, onChange } = options;
+
+  // Determine template directory
+  const templateDirectory =
+    options.templateDirectory || join(process.cwd(), 'templates', templateName);
+
+  // Load template to determine if it's layered
+  let template: TemplateDescriptor;
+  try {
+    template = loadTemplateDescriptor(templateDirectory);
+  } catch (_e) {
+    template = getTemplate(templateName);
+  }
+
+  // For layered templates, watch work/ directory
+  // For base templates, watch template/ directory
+  const watchDir = template.basedOn
+    ? join(templateDirectory, 'work')
+    : join(templateDirectory, 'template');
+
+  if (!existsSync(watchDir)) {
+    throw new Error(`Watch directory not found: ${watchDir}`);
+  }
+
+  console.log(`\n👀 Watching ${watchDir} for changes...`);
+  console.log('Press Ctrl+C to stop watching\n');
+
+  // Initial build
+  const initialResult = testTemplate({
+    ...options,
+    regenerate: true,
+  });
+
+  console.log(`✓ Initial test instance created: ${initialResult.workDirectory}\n`);
+
+  // Debounce regeneration to avoid multiple rebuilds
+  let debounceTimer: NodeJS.Timeout | null = null;
+  const debounceMs = 300;
+
+  const handleChange = (path: string) => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+
+    debounceTimer = setTimeout(() => {
+      const relativePath = path.replace(watchDir, '').replace(/^\//, '');
+      console.log(`\n📝 Change detected: ${relativePath}`);
+      console.log('🔄 Regenerating test instance...');
+
+      try {
+        const result = testTemplate({
+          ...options,
+          regenerate: true,
+        });
+
+        console.log(`✓ Test instance regenerated: ${result.workDirectory}\n`);
+
+        if (onChange) {
+          onChange(result);
+        }
+      } catch (error) {
+        console.error(`✗ Error regenerating test instance:`);
+        console.error(error instanceof Error ? error.message : String(error));
+        console.log(''); // Empty line for readability
+      }
+    }, debounceMs);
+  };
+
+  // Watch for changes
+  const watcher = watch(watchDir, {
+    ignored: /(^|[/\\])\../, // ignore dotfiles
+    persistent: true,
+    ignoreInitial: true,
+  });
+
+  watcher
+    .on('add', handleChange)
+    .on('change', handleChange)
+    .on('unlink', handleChange)
+    .on('error', error => console.error(`Watcher error: ${error}`));
+
+  // Return cleanup function
+  return () => {
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+    watcher.close();
+    console.log('\n👋 Stopped watching\n');
+  };
 }

@@ -37,10 +37,16 @@ magen-template show ios-base
 magen-template generate ios-salesforce --out ./my-app
 
 # Create a new template
-magen-template template create my-template --from ios-base
+magen-template template create my-template --based-on ios-base
 
-# Finalize a template after editing
-magen-template template finalize my-template
+# Test a template (creates test/ directory)
+magen-template template test my-template
+
+# Watch for changes and auto-regenerate test directory
+magen-template template test my-template --watch
+
+# Create a layer patch from changes
+magen-template template layer my-template
 ```
 
 ### Programmatic Usage

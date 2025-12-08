@@ -26,10 +26,15 @@ export type { TemplateInfo, TemplateRoot } from './core/discovery.js';
 export { generateApp } from './core/generator.js';
 export {
   testTemplate,
+  watchTemplate,
   getTestDirectory,
   getWorkDirectory, // deprecated, use getTestDirectory
   hasTestInstance,
 } from './core/testing.js';
-export type { TestTemplateOptions, TestTemplateResult } from './core/testing.js';
+export type {
+  TestTemplateOptions,
+  TestTemplateResult,
+  WatchTemplateOptions,
+} from './core/testing.js';
 export { createLayer, materializeTemplate, detectCycle } from './core/layering.js';
 export type { CreateLayerOptions, CreateLayerResult, MaterializeOptions } from './core/layering.js';

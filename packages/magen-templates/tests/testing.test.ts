@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { testTemplate, getWorkDirectory, hasTestInstance } from '../src/core/testing.js';
+import {
+  testTemplate,
+  getWorkDirectory,
+  hasTestInstance,
+  watchTemplate,
+} from '../src/core/testing.js';
 import { createLayer } from '../src/core/layering.js';
 
 describe('Template Testing', () => {
@@ -314,6 +319,82 @@ let bundleId = "{{bundleId}}"
       // Verify output file uses defaults
       const appContent = readFileSync(join(result.workDirectory, 'App.txt'), 'utf-8');
       expect(appContent).toBe('App: DefaultApp\nFeature: BaseFeature\nTitle: Welcome to');
+    });
+  });
+
+  describe('Watch functionality', () => {
+    it('should create initial test instance when watch is started', () => {
+      const templateDir = join(testDir, 'watch-test');
+      mkdirSync(join(templateDir, 'template'), { recursive: true });
+
+      writeFileSync(
+        join(templateDir, 'template.json'),
+        JSON.stringify({
+          name: 'watch-test',
+          platform: 'ios',
+          version: '1.0.0',
+        })
+      );
+
+      const variables = {
+        variables: [
+          {
+            name: 'appName',
+            type: 'string',
+            required: true,
+            default: 'WatchApp',
+          },
+        ],
+      };
+
+      writeFileSync(join(templateDir, 'variables.json'), JSON.stringify(variables));
+      writeFileSync(join(templateDir, 'template', 'App.txt'), 'App: {{appName}}');
+
+      // Start watching
+      const cleanup = watchTemplate({
+        templateName: 'watch-test',
+        templateDirectory: templateDir,
+        variables: {},
+      });
+
+      // Verify test directory was created
+      const testDirectory = join(templateDir, 'test');
+      expect(existsSync(testDirectory)).toBe(true);
+      expect(existsSync(join(testDirectory, 'App.txt'))).toBe(true);
+
+      const content = readFileSync(join(testDirectory, 'App.txt'), 'utf-8');
+      expect(content).toBe('App: WatchApp');
+
+      // Cleanup
+      cleanup();
+    });
+
+    it('should return cleanup function that stops watching', () => {
+      const templateDir = join(testDir, 'cleanup-test');
+      mkdirSync(join(templateDir, 'template'), { recursive: true });
+
+      writeFileSync(
+        join(templateDir, 'template.json'),
+        JSON.stringify({
+          name: 'cleanup-test',
+          platform: 'ios',
+          version: '1.0.0',
+        })
+      );
+
+      writeFileSync(join(templateDir, 'variables.json'), JSON.stringify({ variables: [] }));
+      writeFileSync(join(templateDir, 'template', 'test.txt'), 'test');
+
+      const cleanup = watchTemplate({
+        templateName: 'cleanup-test',
+        templateDirectory: templateDir,
+      });
+
+      // Cleanup should be a function
+      expect(typeof cleanup).toBe('function');
+
+      // Should not throw when called
+      expect(() => cleanup()).not.toThrow();
     });
   });
 });

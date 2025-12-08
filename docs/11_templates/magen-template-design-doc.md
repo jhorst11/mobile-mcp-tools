@@ -51,7 +51,7 @@ magen-templates/templates/<templateName>/
 A fully concrete buildable project generated from the template for testing purposes:
 
 ```
-magen-template template test <name> [--regenerate]
+magen-template template test <name> [--regenerate] [--watch]
 ```
 
 Lives within each template's directory at:
@@ -133,9 +133,9 @@ The `magen-templates` package provides a CLI binary: `magen-template`
 
 #### For Base Templates:
 1. **Edit template**: Directly edit files in `templates/<name>/template/` with Handlebars placeholders (e.g., `{{appName}}`)
-2. **Test template**: `template test <name>` → generates concrete app in `work/` for testing
-3. **Build and validate**: Open `work/` in Xcode, build, run, verify the template generates correctly
-4. **Iterate**: Edit template files and re-run `template test <name> --regenerate`
+2. **Test template**: `template test <name>` → generates concrete app in `test/` for testing
+3. **Build and validate**: Open `test/` in Xcode, build, run, verify the template generates correctly
+4. **Iterate**: Edit template files and re-run `template test <name> --regenerate`, or use `--watch` to auto-regenerate on changes
 5. **Generate apps**: `generate <name> --out ~/MyApp --var appName="MyApp"` → creates production apps
 
 #### For Layered Templates (diff-only):
@@ -231,12 +231,23 @@ magen-templates/                    # New package
         MyProject.xcodeproj/
 ```
 
-### Work Directory Lifecycle
+### Test Directory Lifecycle
 
-1. **Test**: `template test <name>` generates concrete test app in `work/`
-2. **Validate**: Open `work/` in Xcode, build, run, validate template output
-3. **Iterate**: Edit template files, re-run `template test <name> --regenerate`
+1. **Test**: `template test <name>` generates concrete test app in `test/`
+2. **Validate**: Open `test/` in Xcode, build, run, validate template output
+3. **Iterate**: Edit template files, re-run `template test <name> --regenerate`, or use `--watch` for automatic regeneration
 4. **Generate**: Use `generate` command to create production apps from the template
+
+#### Watch Mode
+
+For rapid development, use the `--watch` flag to automatically regenerate the test directory when changes are detected:
+
+```bash
+# Watch for changes in template/ (base) or work/ (layered)
+magen-template template test <name> --watch
+```
+
+This monitors the source directory and automatically regenerates the `test/` directory with a 300ms debounce to prevent multiple rapid rebuilds. Press Ctrl+C to stop watching.
 
 ---
 

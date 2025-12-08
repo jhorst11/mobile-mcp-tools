@@ -11,7 +11,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { listTemplates, getTemplate, findTemplate } from '../core/discovery.js';
 import { generateApp } from '../core/generator.js';
-import { testTemplate } from '../core/testing.js';
+import { testTemplate, watchTemplate } from '../core/testing.js';
 import { createLayer } from '../core/layering.js';
 import type { TemplateVariable } from '../core/schema.js';
 
@@ -486,6 +486,7 @@ function commandTemplateTest(args: string[]): void {
     console.error('Usage: magen-template template test <name> [options]');
     console.error('Options:');
     console.error('  --regenerate          Force regeneration even if test directory exists');
+    console.error('  --watch               Watch for changes and auto-regenerate');
     console.error('  --out <path>          Template directory (default: ./templates/<name>)');
     console.error('  --var <name>=<value>  Override template variable');
     process.exit(1);
@@ -493,6 +494,7 @@ function commandTemplateTest(args: string[]): void {
 
   // Parse options
   const regenerate = args.includes('--regenerate');
+  const watchMode = args.includes('--watch');
   const outIndex = args.indexOf('--out');
   const templateDirectory =
     outIndex !== -1 && outIndex + 1 < args.length
@@ -502,6 +504,26 @@ function commandTemplateTest(args: string[]): void {
   const variables = parseVariables(args);
 
   try {
+    // Watch mode
+    if (watchMode) {
+      const cleanup = watchTemplate({
+        templateName,
+        templateDirectory,
+        variables,
+        regenerate: true, // Always regenerate in watch mode
+      });
+
+      // Handle Ctrl+C gracefully
+      process.on('SIGINT', () => {
+        cleanup();
+        process.exit(0);
+      });
+
+      // Keep process alive
+      return;
+    }
+
+    // Non-watch mode (normal test)
     console.log(`\nTesting template: ${templateName}`);
     console.log(`Template directory: ${templateDirectory}`);
     if (regenerate) {
@@ -534,6 +556,9 @@ function commandTemplateTest(args: string[]): void {
     console.log(`  2. Build and run your app to validate the template`);
     console.log(`  3. To modify template: edit template/ (base) or work/ (layered)`);
     console.log(`  4. Regenerate test: magen-template template test ${templateName} --regenerate`);
+    console.log(
+      `  5. Auto-regenerate on changes: magen-template template test ${templateName} --watch`
+    );
     console.log('');
   } catch (error) {
     console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);

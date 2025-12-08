@@ -171,15 +171,15 @@ describe('Template Discovery', () => {
     it('should load variables from work/variables.json for layered templates', () => {
       // ios-salesforce is a layered template (based on ios-base)
       const template = getTemplate('ios-salesforce');
-      
+
       // Should have variables (loaded from work/variables.json)
       expect(template.variables.length).toBeGreaterThan(0);
-      
+
       // Should include both base variables and extended variables (with potentially overridden defaults)
       const appNameVar = template.variables.find(v => v.name === 'appName');
       expect(appNameVar).toBeDefined();
       expect(appNameVar?.default).toBe('Salesforce App'); // Overridden in layered template
-      
+
       // Should include layered template's own variables
       const orgIdVar = template.variables.find(v => v.name === 'orgId');
       expect(orgIdVar).toBeDefined();
