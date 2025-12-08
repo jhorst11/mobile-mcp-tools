@@ -1,0 +1,171 @@
+# Magen Template System – Implementation Plan (Phased with Integration Tests)
+
+## Phase 0 – Project Setup & Skeleton
+
+### Scope
+- Initialize Node.js + TypeScript project.
+- Establish project layout (`src/cli`, `src/core`).
+- Add build, lint, format, and test frameworks. Should follow pattern established by other packages in project.
+- Create minimal CLI with `--help` and `--version`.
+
+### Integration Tests (Must Pass Before Phase 1)
+1. CLI bootstrap: `--help`, `--version` return 0 and output expected text.
+2. CI pipeline runs lint + test reliably.
+3. Node/TypeScript compatibility verified in CI matrix.
+
+---
+
+## Phase 1 – Template Discovery & Metadata Schema
+
+### Scope
+- Implement template roots: project-local, user-level, env-based.
+- Implement `template.json` schema + validation.
+- Add `listTemplates()` + `getTemplate(name)`.
+- Add CLI commands: `magen-template list`, `magen-template show <name>`.
+
+### Integration Tests (Must Pass Before Phase 2)
+1. Template discovery across multiple roots.
+2. `template.json` schema validation with clear errors.
+3. Platform filtering support.
+4. Corrupt template isolation resilience.
+
+---
+
+## Phase 2 – Core Generation Engine (Flat Templates)
+
+### Scope
+- Implement Handlebars-based rendering for:
+  - File contents
+  - Filenames
+  - Directory names
+- Implement `magen-template generate <template>`.
+
+### Integration Tests (Must Pass Before Phase 3)
+1. Content templating correctness.
+2. Filename templating correctness.
+3. Directory templating correctness.
+4. Required variable enforcement.
+5. Type handling for string/number/boolean.
+6. Overwrite safety rules.
+
+---
+
+## Phase 3 – Inline Annotations & Finalize (Single-Layer Templates)
+
+### Scope
+- Implement annotation parser:
+  - `magen:var`
+  - `magen:regex`
+  - `magen:enum`
+  - `magen:filename`
+- Implement `template finalize` for root templates:
+  - Extract schema
+  - Rewrite literals → Handlebars
+  - Handle filenames
+  - Validate template structure
+
+**Note**: This phase focuses on single-layer templates. Git-based patch creation is added in Phase 5.
+
+### Integration Tests (Must Pass Before Phase 4)
+1. Variable extraction correctness.
+2. Regex + enum extraction correctness.
+3. Filename templating correctness.
+4. Idempotent finalize.
+5. Conflict detection in annotations.
+6. Detection of missing variables.
+
+---
+
+## Phase 4 – Authoring Instances & dev Flow (Single-Layer)
+
+### Scope
+- Implement management of authoring instances under `.magen/work/<templateName>/`.
+- Implement:
+  - `template create`
+  - `template dev`
+- Guarantee round-trip consistency.
+
+### Integration Tests (Must Pass Before Phase 5)
+1. Create → finalize round trip consistency.
+2. New variable detection from authoring.
+3. Missing authoring directory detection.
+4. Inline default restoration.
+5. Authoring persistence behavior confirmed.
+
+---
+
+## Phase 5 – Layering & layer.patch
+
+### Scope
+- Add `basedOn` support.
+- Implement git-based layer creation using `git diff`.
+- Implement git-based patch application using `git apply`.
+- Ensure git is available in the environment.
+- Integrate with `template dev` and generation workflows.
+
+**Critical Requirement**: All patch operations must use native git commands. Do NOT implement custom diff/patch logic.
+
+### Integration Tests (Must Pass Before Phase 6)
+1. Single-layer application correctness using `git apply`.
+2. Layered generation correctness.
+3. Multi-level layering correctness.
+4. Patch conflict detection via `git apply` errors.
+5. Patch determinism on unchanged finalize.
+6. Git availability check during initialization.
+
+---
+
+## Phase 6 – iOS-Specific: .xcodeproj Integration & Filename Templating
+
+### Scope
+- Treat `.xcodeproj/project.pbxproj` as templated.
+- Implement pbxproj rewrites during finalize and generation.
+- Ensure generated projects are Xcode-buildable.
+
+### Integration Tests (Must Pass Before Phase 7)
+1. Filename → pbxproj consistency.
+2. Multi-file rename correctness.
+3. CI macOS build smoke test.
+4. Non-iOS template safety.
+
+---
+
+## Phase 7 – TypeScript Library API for AI Agents
+
+### Scope
+- Implement and export stable TS API:
+  - `listTemplates()`
+  - `getTemplate(name)`
+  - `generateApp(options)`
+- Share core logic between CLI and library.
+
+### Integration Tests (Must Pass Before Phase 8)
+1. Library and CLI output parity.
+2. Template discovery API tests.
+3. Error propagation tests.
+4. Full type safety via TS strict mode.
+
+---
+
+## Phase 8 – End-to-End Scenarios & Regression Suite
+
+### Scope
+- Build real example templates:
+  - `ios-base`
+  - `ios-salesforce`
+- Test the entire system end-to-end.
+
+### Integration Tests (Final Gate Before v1 Release)
+1. E2E: Base template generation + Xcode build.
+2. E2E: Layered Salesforce template generation + build.
+3. Layer regression tests for base template changes.
+4. Error-path smoke tests.
+
+---
+
+## Completion Criteria for Magen Template System v1
+- All phases green in CI.
+- All integration tests passing.
+- End-to-end flows validated.
+- iOS templates verified with real `xcodebuild`.
+- TypeScript library stable for AI-driven workflows.
