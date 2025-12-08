@@ -6,7 +6,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { validateTemplateDescriptor, safeValidateTemplateDescriptor } from '../src/core/schema.js';
+import {
+  validateTemplateDescriptor,
+  safeValidateTemplateDescriptor,
+  validateTemplateVariables,
+} from '../src/core/schema.js';
 import { ZodError } from 'zod';
 
 describe('Template Schema Validation', () => {
@@ -14,15 +18,6 @@ describe('Template Schema Validation', () => {
     name: 'test-template',
     platform: 'ios',
     version: '1.0.0',
-    variables: [
-      {
-        name: 'appName',
-        type: 'string',
-        required: true,
-        description: 'App name',
-        default: 'MyApp',
-      },
-    ],
   };
 
   describe('validateTemplateDescriptor', () => {
@@ -116,8 +111,7 @@ describe('Template Schema Validation', () => {
     it('should validate variable types', () => {
       const types = ['string', 'number', 'boolean'] as const;
       types.forEach(type => {
-        const template = {
-          ...validTemplate,
+        const variables = {
           variables: [
             {
               name: 'testVar',
@@ -127,33 +121,32 @@ describe('Template Schema Validation', () => {
             },
           ],
         };
-        const result = validateTemplateDescriptor(template);
+        const result = validateTemplateVariables(variables);
         expect(result.variables[0].type).toBe(type);
       });
     });
 
     it('should reject invalid variable types', () => {
-      const template = {
-        ...validTemplate,
+      const variables = {
         variables: [
           {
             name: 'testVar',
-            type: 'invalid',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            type: 'invalid' as any,
             required: true,
             description: 'Test',
           },
         ],
       };
-      expect(() => validateTemplateDescriptor(template)).toThrow();
+      expect(() => validateTemplateVariables(variables)).toThrow();
     });
 
     it('should validate optional variable fields', () => {
-      const template = {
-        ...validTemplate,
+      const variables = {
         variables: [
           {
             name: 'testVar',
-            type: 'string',
+            type: 'string' as const,
             required: true,
             description: 'Test',
             default: 'default value',
@@ -162,40 +155,38 @@ describe('Template Schema Validation', () => {
           },
         ],
       };
-      const result = validateTemplateDescriptor(template);
+      const result = validateTemplateVariables(variables);
       expect(result.variables[0].default).toBe('default value');
       expect(result.variables[0].regex).toBe('^[a-z]+$');
       expect(result.variables[0].enum).toEqual(['option1', 'option2']);
     });
 
     it('should require variable name', () => {
-      const template = {
-        ...validTemplate,
+      const variables = {
         variables: [
           {
             name: '',
-            type: 'string',
+            type: 'string' as const,
             required: true,
             description: 'Test',
           },
         ],
       };
-      expect(() => validateTemplateDescriptor(template)).toThrow();
+      expect(() => validateTemplateVariables(variables)).toThrow();
     });
 
     it('should require variable description', () => {
-      const template = {
-        ...validTemplate,
+      const variables = {
         variables: [
           {
             name: 'testVar',
-            type: 'string',
+            type: 'string' as const,
             required: true,
             description: '',
           },
         ],
       };
-      expect(() => validateTemplateDescriptor(template)).toThrow();
+      expect(() => validateTemplateVariables(variables)).toThrow();
     });
   });
 
@@ -212,11 +203,6 @@ describe('Template Schema Validation', () => {
 
     it('should require version field', () => {
       const { version: _version, ...template } = validTemplate;
-      expect(() => validateTemplateDescriptor(template)).toThrow();
-    });
-
-    it('should require variables array', () => {
-      const { variables: _variables, ...template } = validTemplate;
       expect(() => validateTemplateDescriptor(template)).toThrow();
     });
   });

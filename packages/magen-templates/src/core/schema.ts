@@ -30,7 +30,7 @@ export const LayerConfigSchema = z.object({
 });
 
 /**
- * Zod schema for template.json
+ * Zod schema for template.json (metadata only, no variables)
  */
 export const TemplateDescriptorSchema = z.object({
   name: z.string().min(1, 'Template name is required'),
@@ -38,9 +38,15 @@ export const TemplateDescriptorSchema = z.object({
   basedOn: z.string().optional(),
   version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Version must follow semver format (e.g., 0.1.0)'),
   layer: LayerConfigSchema.optional(),
-  variables: z.array(TemplateVariableSchema),
   tags: z.array(z.string()).optional(),
   description: z.string().optional(),
+});
+
+/**
+ * Zod schema for variables.json (variables only)
+ */
+export const TemplateVariablesSchema = z.object({
+  variables: z.array(TemplateVariableSchema),
 });
 
 /**
@@ -48,17 +54,31 @@ export const TemplateDescriptorSchema = z.object({
  */
 export type TemplateVariable = z.infer<typeof TemplateVariableSchema>;
 export type LayerConfig = z.infer<typeof LayerConfigSchema>;
-export type TemplateDescriptor = z.infer<typeof TemplateDescriptorSchema>;
+export type TemplateDescriptor = z.infer<typeof TemplateDescriptorSchema> & {
+  variables: TemplateVariable[]; // Added at runtime from variables.json
+};
+export type TemplateVariables = z.infer<typeof TemplateVariablesSchema>;
 
 /**
  * Validates a template descriptor against the schema
  *
  * @param data - The raw template data to validate
- * @returns The validated template descriptor
+ * @returns The validated template descriptor (without variables)
  * @throws {z.ZodError} if validation fails
  */
-export function validateTemplateDescriptor(data: unknown): TemplateDescriptor {
+export function validateTemplateDescriptor(data: unknown): Omit<TemplateDescriptor, 'variables'> {
   return TemplateDescriptorSchema.parse(data);
+}
+
+/**
+ * Validates template variables against the schema
+ *
+ * @param data - The raw variables data to validate
+ * @returns The validated template variables
+ * @throws {z.ZodError} if validation fails
+ */
+export function validateTemplateVariables(data: unknown): TemplateVariables {
+  return TemplateVariablesSchema.parse(data);
 }
 
 /**
@@ -69,8 +89,33 @@ export function validateTemplateDescriptor(data: unknown): TemplateDescriptor {
  */
 export function safeValidateTemplateDescriptor(
   data: unknown
-): { success: true; data: TemplateDescriptor } | { success: false; errors: string[] } {
+):
+  | { success: true; data: Omit<TemplateDescriptor, 'variables'> }
+  | { success: false; errors: string[] } {
   const result = TemplateDescriptorSchema.safeParse(data);
+
+  if (result.success) {
+    return { success: true, data: result.data as Omit<TemplateDescriptor, 'variables'> };
+  }
+
+  const errors = result.error.errors.map(err => {
+    const path = err.path.join('.');
+    return path ? `${path}: ${err.message}` : err.message;
+  });
+
+  return { success: false, errors };
+}
+
+/**
+ * Safely validates template variables, returning errors instead of throwing
+ *
+ * @param data - The raw variables data to validate
+ * @returns Success result with data or error result with formatted errors
+ */
+export function safeValidateTemplateVariables(
+  data: unknown
+): { success: true; data: TemplateVariables } | { success: false; errors: string[] } {
+  const result = TemplateVariablesSchema.safeParse(data);
 
   if (result.success) {
     return { success: true, data: result.data };

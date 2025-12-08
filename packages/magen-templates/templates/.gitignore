@@ -1,0 +1,6 @@
+# Work directories for layered templates (templated files for creating diffs)
+*/work/
+
+# Test directories (resolved/concrete apps for validation)
+*/test/
+

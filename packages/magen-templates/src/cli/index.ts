@@ -6,12 +6,14 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
 
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, cpSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { listTemplates, getTemplate } from '../core/discovery.js';
+import { listTemplates, getTemplate, findTemplate } from '../core/discovery.js';
 import { generateApp } from '../core/generator.js';
 import { testTemplate } from '../core/testing.js';
+import { createLayer } from '../core/layering.js';
+import type { TemplateVariable } from '../core/schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,7 +35,9 @@ Commands:
   list                                List available templates
   show <name>                         Show template metadata and schema
   generate <template>                 Generate a concrete app from template
+  template create <name>              Create new template (optionally layered)
   template test <name>                Generate/validate test instance
+  template layer <name>               Create layer patch from template
   template validate <name>            Validate template structure
 
 Options:
@@ -217,7 +221,7 @@ function commandTemplate(args: string[]): void {
   if (args.length === 0) {
     console.error('Error: Subcommand is required.');
     console.error('Usage: magen-template template <subcommand> [options]');
-    console.error('Subcommands: test, validate');
+    console.error('Subcommands: create, test, layer, validate');
     process.exit(1);
   }
 
@@ -225,20 +229,252 @@ function commandTemplate(args: string[]): void {
   const subcommandArgs = args.slice(1);
 
   switch (subcommand) {
+    case 'create':
+      commandTemplateCreate(subcommandArgs);
+      break;
+
     case 'test':
       commandTemplateTest(subcommandArgs);
       break;
 
+    case 'layer':
+      commandTemplateLayer(subcommandArgs);
+      break;
+
     case 'validate':
       console.error(`Subcommand not yet implemented: ${subcommand}`);
-      console.error('Currently available: test');
+      console.error('Currently available: create, test, layer');
       process.exit(1);
       break;
 
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Available subcommands: test, validate');
+      console.error('Available subcommands: create, test, layer, validate');
       process.exit(1);
+  }
+}
+
+function commandTemplateCreate(args: string[]): void {
+  const templateName = args[0];
+
+  if (!templateName) {
+    console.error('Error: Template name is required.');
+    console.error('Usage: magen-template template create <name> [options]');
+    console.error('Options:');
+    console.error('  --based-on <parent>   Parent template name (for layered templates)');
+    console.error('  --platform <platform> Platform: ios, android, web (default: ios)');
+    console.error('  --out <path>          Template directory (default: ./templates/<name>)');
+    process.exit(1);
+  }
+
+  // Parse options
+  const basedOnIndex = args.indexOf('--based-on');
+  const basedOn =
+    basedOnIndex !== -1 && basedOnIndex + 1 < args.length ? args[basedOnIndex + 1] : undefined;
+
+  const platformIndex = args.indexOf('--platform');
+  const platform =
+    platformIndex !== -1 && platformIndex + 1 < args.length ? args[platformIndex + 1] : 'ios';
+
+  const outIndex = args.indexOf('--out');
+  const templateDirectory =
+    outIndex !== -1 && outIndex + 1 < args.length
+      ? args[outIndex + 1]
+      : join(process.cwd(), 'templates', templateName);
+
+  try {
+    console.log(`\nCreating template: ${templateName}`);
+    console.log(`Platform: ${platform}`);
+    if (basedOn) {
+      console.log(`Based on: ${basedOn}`);
+    }
+    console.log(`Template directory: ${templateDirectory}\n`);
+
+    // Check if template directory already exists
+    if (existsSync(templateDirectory)) {
+      const entries = readdirSync(templateDirectory);
+      if (entries.length > 0) {
+        throw new Error(`Template directory already exists and is not empty: ${templateDirectory}`);
+      }
+    }
+
+    // Load parent template if specified
+    let parentVariables: TemplateVariable[] = [];
+
+    if (basedOn) {
+      try {
+        const parentTemplateInfo = findTemplate(basedOn);
+        if (!parentTemplateInfo) {
+          throw new Error(`Parent template not found: ${basedOn}`);
+        }
+
+        parentVariables = parentTemplateInfo.descriptor.variables;
+        console.log(`✓ Found parent template: ${basedOn}`);
+
+        // For layered templates, copy parent to work/ directory for editing
+        // (template/ directory is NOT used for layered templates - only the patch)
+        const workDir = join(templateDirectory, 'work');
+        const parentTemplateDir = join(parentTemplateInfo.templatePath, 'template');
+
+        if (existsSync(parentTemplateDir)) {
+          cpSync(parentTemplateDir, workDir, { recursive: true });
+          console.log(`✓ Copied parent template files to work/ directory for editing`);
+        }
+
+        // Also copy parent's variables.json to work/ so it can be modified via git diff
+        const parentVariablesPath = join(parentTemplateInfo.templatePath, 'variables.json');
+        if (existsSync(parentVariablesPath)) {
+          cpSync(parentVariablesPath, join(workDir, 'variables.json'));
+          console.log(`✓ Copied parent variables.json to work/ directory`);
+        }
+      } catch (_error) {
+        console.warn(`⚠ Warning: Could not load parent template ${basedOn}`);
+        console.warn(`  You can still create the template, but variables won't be inherited.`);
+      }
+    } else {
+      // For base templates, create empty template/ directory
+      mkdirSync(join(templateDirectory, 'template'), { recursive: true });
+    }
+
+    // Create template.json (metadata only, no variables)
+    const templateJson: {
+      name: string;
+      platform: string;
+      version: string;
+      description: string;
+      tags: string[];
+      basedOn?: string;
+      layer?: { patchFile: string };
+    } = {
+      name: templateName,
+      platform: platform,
+      version: '1.0.0',
+      description: `${templateName} template${basedOn ? ` based on ${basedOn}` : ''}`,
+      tags: [],
+    };
+
+    // Add layer configuration if based on another template
+    if (basedOn) {
+      templateJson.basedOn = basedOn;
+      templateJson.layer = {
+        patchFile: 'layer.patch',
+      };
+    }
+
+    writeFileSync(
+      join(templateDirectory, 'template.json'),
+      JSON.stringify(templateJson, null, 2) + '\n',
+      'utf-8'
+    );
+
+    // Create variables.json (only for base templates, not layered)
+    // For layered templates, variables.json is in work/ and will be part of the patch
+    let variablesJson;
+    if (!basedOn) {
+      variablesJson = {
+        variables: [
+          {
+            name: 'appName',
+            type: 'string',
+            required: true,
+            description: 'The name of the application',
+            default: 'MyApp',
+          },
+        ],
+      };
+
+      writeFileSync(
+        join(templateDirectory, 'variables.json'),
+        JSON.stringify(variablesJson, null, 2) + '\n',
+        'utf-8'
+      );
+    } else {
+      // For layered templates, read variables from work/variables.json for README
+      const workVariablesPath = join(templateDirectory, 'work', 'variables.json');
+      if (existsSync(workVariablesPath)) {
+        variablesJson = JSON.parse(readFileSync(workVariablesPath, 'utf-8'));
+      } else {
+        variablesJson = { variables: parentVariables };
+      }
+    }
+
+    // Create a basic README
+    const readmeContent = `# ${templateName}
+
+${templateJson.description}
+
+## Variables
+
+${variablesJson.variables
+  .map((v: TemplateVariable) => {
+    const required = v.required ? '(required)' : '(optional)';
+    const defaultVal = v.default !== undefined ? ` - default: \`${v.default}\`` : '';
+    const desc = v.description || '';
+    return `- **${v.name}** (\`${v.type}\`) ${required}: ${desc}${defaultVal}`;
+  })
+  .join('\n')}
+
+## Usage
+
+\`\`\`bash
+magen-template generate ${templateName} --out ~/MyApp --var appName="MyApp"
+\`\`\`
+
+${
+  basedOn
+    ? `## Development
+
+This template is based on \`${basedOn}\`. To modify:
+
+1. Edit files in \`work/\` directory (concrete files copied from parent)
+2. Make your changes (add/modify/delete files)
+3. Generate layer patch: \`magen-template template layer ${templateName}\`
+4. Test: \`magen-template template test ${templateName}\`
+
+**Note**: Only \`template.json\`, \`layer.patch\`, and \`README.md\` are checked into version control.
+The \`work/\` directory is for development only (add to .gitignore).
+`
+    : `## Development
+
+1. Create your template files in \`template/\` directory
+2. Use Handlebars placeholders like \`{{appName}}\`
+3. Test: \`magen-template template test ${templateName}\`
+`
+}`;
+
+    writeFileSync(join(templateDirectory, 'README.md'), readmeContent, 'utf-8');
+
+    console.log('✓ Template created successfully!');
+    console.log(`\n  Template directory: ${templateDirectory}`);
+    console.log(`  template.json: Created`);
+    if (!basedOn) {
+      console.log(`  variables.json: Created with ${variablesJson.variables.length} variables`);
+    } else {
+      console.log(
+        `  work/variables.json: Inherited ${variablesJson.variables.length} variables from parent`
+      );
+    }
+    console.log(`  README.md: Created`);
+
+    console.log('\nNext steps:');
+    if (basedOn) {
+      console.log(`  1. Edit files in: ${join(templateDirectory, 'work')}/`);
+      console.log(`  2. Make your changes (add/modify/delete files)`);
+      console.log(`  3. Generate layer patch: magen-template template layer ${templateName}`);
+      console.log(`  4. Test: magen-template template test ${templateName}`);
+      console.log(
+        `\nNote: For layered templates, only template.json and layer.patch are checked in.`
+      );
+      console.log(`      The work/ directory is just for development (add it to .gitignore).`);
+    } else {
+      console.log(`  1. Create template files in: ${join(templateDirectory, 'template')}/`);
+      console.log(`  2. Use Handlebars placeholders like {{appName}}`);
+      console.log(`  3. Test: magen-template template test ${templateName}`);
+    }
+    console.log('');
+  } catch (error) {
+    console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
   }
 }
 
@@ -249,7 +485,7 @@ function commandTemplateTest(args: string[]): void {
     console.error('Error: Template name is required.');
     console.error('Usage: magen-template template test <name> [options]');
     console.error('Options:');
-    console.error('  --regenerate          Force regeneration even if work directory exists');
+    console.error('  --regenerate          Force regeneration even if test directory exists');
     console.error('  --out <path>          Template directory (default: ./templates/<name>)');
     console.error('  --var <name>=<value>  Override template variable');
     process.exit(1);
@@ -269,7 +505,7 @@ function commandTemplateTest(args: string[]): void {
     console.log(`\nTesting template: ${templateName}`);
     console.log(`Template directory: ${templateDirectory}`);
     if (regenerate) {
-      console.log('Regenerating work directory...');
+      console.log('Regenerating test directory...');
     }
 
     const result = testTemplate({
@@ -284,7 +520,7 @@ function commandTemplateTest(args: string[]): void {
     } else {
       console.log('✓ Using existing test instance');
     }
-    console.log(`\n  Work directory: ${result.workDirectory}`);
+    console.log(`\n  Test directory: ${result.workDirectory}`);
 
     if (Object.keys(result.variables).length > 0) {
       console.log('\n  Variables used:');
@@ -295,9 +531,58 @@ function commandTemplateTest(args: string[]): void {
 
     console.log('\nNext steps:');
     console.log(`  1. Open ${result.workDirectory} in Xcode`);
-    console.log(`  2. Build and test your app`);
-    console.log(`  3. Edit template files in: ${templateDirectory}/template/`);
-    console.log(`  4. Regenerate: magen-template template test ${templateName} --regenerate`);
+    console.log(`  2. Build and run your app to validate the template`);
+    console.log(`  3. To modify template: edit template/ (base) or work/ (layered)`);
+    console.log(`  4. Regenerate test: magen-template template test ${templateName} --regenerate`);
+    console.log('');
+  } catch (error) {
+    console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+}
+
+function commandTemplateLayer(args: string[]): void {
+  const templateName = args[0];
+
+  if (!templateName) {
+    console.error('Error: Template name is required.');
+    console.error('Usage: magen-template template layer <name> [options]');
+    console.error('Options:');
+    console.error('  --based-on <parent>   Parent template name (overrides template.json)');
+    console.error('  --out <path>          Template directory (default: ./templates/<name>)');
+    process.exit(1);
+  }
+
+  // Parse options
+  const basedOnIndex = args.indexOf('--based-on');
+  const parentTemplateName =
+    basedOnIndex !== -1 && basedOnIndex + 1 < args.length ? args[basedOnIndex + 1] : undefined;
+
+  const outIndex = args.indexOf('--out');
+  const templateDirectory =
+    outIndex !== -1 && outIndex + 1 < args.length
+      ? args[outIndex + 1]
+      : join(process.cwd(), 'templates', templateName);
+
+  try {
+    console.log(`\nCreating layer patch for: ${templateName}`);
+    console.log(`Template directory: ${templateDirectory}`);
+
+    const result = createLayer({
+      templateName,
+      templateDirectory,
+      parentTemplateName,
+    });
+
+    console.log('✓ Layer patch created successfully!');
+    console.log(`\n  Parent template: ${result.parentTemplate}`);
+    console.log(`  Child template: ${result.childTemplate}`);
+    console.log(`  Patch file: ${result.patchPath}`);
+
+    console.log('\nNext steps:');
+    console.log(`  1. Verify layer.patch in ${templateDirectory}`);
+    console.log(`  2. Update template.json to include layer configuration`);
+    console.log(`  3. Test generation: magen-template generate ${templateName} --out ~/test-app`);
     console.log('');
   } catch (error) {
     console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);

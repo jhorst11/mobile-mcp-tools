@@ -2,30 +2,6 @@
     "name": "android-base",
     "platform": "android",
     "version": "1.0.0",
-    "variables": [
-        {
-            "name": "appName",
-            "type": "string",
-            "required": true,
-            "description": "The display name of the application",
-            "default": "MyAndroidApp"
-        },
-        {
-            "name": "packageName",
-            "type": "string",
-            "required": true,
-            "description": "Java package name for the Android app",
-            "default": "com.example.myapp",
-            "regex": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
-        },
-        {
-            "name": "minSdk",
-            "type": "number",
-            "required": true,
-            "description": "Minimum Android SDK version",
-            "default": 24
-        }
-    ],
     "tags": [
         "android",
         "base"

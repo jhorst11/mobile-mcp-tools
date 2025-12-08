@@ -25,11 +25,21 @@ This co-locates templates with the tooling, ensuring version consistency and sim
 ## 2. Core Concepts
 
 ### Template
-A non-buildable structure containing Handlebars placeholders. Each template includes:
+A non-buildable structure containing Handlebars placeholders. 
 
-- `template.json` (metadata + variables)
-- `layer.patch` (diff vs parent, optional for base templates)
+**Base templates** include:
+- `template.json` (metadata only: name, platform, version, description, tags)
+- `variables.json` (template variables)
 - `template/` (canonical templated files)
+- `README.md` (documentation)
+
+**Layered templates** (with `basedOn`) include:
+- `template.json` (metadata + basedOn reference)
+- `layer.patch` (git diff vs parent, including variables.json changes)
+- `README.md` (documentation)
+- `work/` (development directory with variables.json, gitignored)
+
+Note: Layered templates are **diff-only** — they don't duplicate parent files. The `work/` directory (including `work/variables.json`) is used during development to make changes and generate the patch. Variables are inherited through the git patch mechanism naturally — changes to parent variables show up in the diff. Only `template.json`, `layer.patch`, and `README.md` are checked into version control.
 
 Templates live within the `magen-templates` package at:
 
@@ -114,16 +124,27 @@ The `magen-templates` package provides a CLI binary: `magen-template`
 | `magen-template list` | List templates |
 | `magen-template show <name>` | Show metadata/schema |
 | `magen-template generate <template>` | Generate concrete app |
+| `magen-template template create <name> [--based-on <parent>]` | Scaffold a new template (layered or base) |
+| `magen-template template layer <name>` | Create layer.patch from work directory |
 | `magen-template template test <name>` | Generate/validate test instance in work directory |
 | `magen-template template validate <name>` | Validate template structure |
 
 ### Workflow
 
+#### For Base Templates:
 1. **Edit template**: Directly edit files in `templates/<name>/template/` with Handlebars placeholders (e.g., `{{appName}}`)
 2. **Test template**: `template test <name>` → generates concrete app in `work/` for testing
 3. **Build and validate**: Open `work/` in Xcode, build, run, verify the template generates correctly
 4. **Iterate**: Edit template files and re-run `template test <name> --regenerate`
 5. **Generate apps**: `generate <name> --out ~/MyApp --var appName="MyApp"` → creates production apps
+
+#### For Layered Templates (diff-only):
+1. **Create layered template**: `template create <name> --based-on <parent>` → creates template with parent files in `work/`
+2. **Edit work directory**: Make changes to concrete files in `templates/<name>/work/`
+3. **Generate patch**: `template layer <name>` → creates `layer.patch` with git diff
+4. **Test**: `template test <name>` → validates the layered template generates correctly
+5. **Commit**: Only check in `template.json`, `layer.patch`, and `README.md` (not `work/`)
+6. **Generate apps**: `generate <name> --out ~/MyApp --var appName="MyApp"` → materializes parent + patch, then renders
 
 ---
 

@@ -2,23 +2,6 @@
     "name": "ios-base",
     "platform": "ios",
     "version": "0.1.0",
-    "variables": [
-        {
-            "name": "appName",
-            "type": "string",
-            "required": true,
-            "description": "The display name of the application",
-            "default": "MyApp"
-        },
-        {
-            "name": "bundleId",
-            "type": "string",
-            "required": true,
-            "description": "Bundle identifier for the iOS app",
-            "default": "com.example.myapp",
-            "regex": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+$"
-        }
-    ],
     "tags": [
         "ios",
         "base"

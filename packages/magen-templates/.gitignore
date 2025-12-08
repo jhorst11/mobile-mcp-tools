@@ -1,0 +1,9 @@
+# Build output
+dist/
+
+# Test output (temporary test fixtures)
+test-output/
+
+# Node modules (should be covered by root .gitignore but added for clarity)
+node_modules/
+

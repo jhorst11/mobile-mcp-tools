@@ -3,15 +3,24 @@
  *
  * Handles:
  * - Creating test instances from templates
- * - Managing work directories
+ * - Managing test directories (resolved/concrete apps)
  * - Regenerating test instances
+ *
+ * Note: Test instances go in test/ directory (not work/)
+ * - work/ = templated files for creating diffs
+ * - test/ = resolved files for validation
  */
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { getTemplate } from './discovery.js';
 import { generateApp } from './generator.js';
-import { validateTemplateDescriptor, type TemplateDescriptor } from './schema.js';
+import {
+  validateTemplateDescriptor,
+  safeValidateTemplateVariables,
+  type TemplateDescriptor,
+  type TemplateVariable,
+} from './schema.js';
 
 /**
  * Options for testing a template
@@ -23,7 +32,7 @@ export interface TestTemplateOptions {
   templateDirectory?: string;
   /** Override default variables */
   variables?: Record<string, string | number | boolean>;
-  /** Force regeneration even if work directory exists */
+  /** Force regeneration even if test directory exists */
   regenerate?: boolean;
 }
 
@@ -31,13 +40,13 @@ export interface TestTemplateOptions {
  * Result of testing a template
  */
 export interface TestTemplateResult {
-  /** Path to the work directory */
-  workDirectory: string;
+  /** Path to the test directory (resolved app) */
+  workDirectory: string; // Keep name for backwards compatibility, but it's actually test/
   /** Variables used for generation */
   variables: Record<string, string | number | boolean>;
   /** Path to template directory */
   templateDirectory: string;
-  /** Whether the work directory was newly created (false if reused existing) */
+  /** Whether the test directory was newly created (false if reused existing) */
   created: boolean;
 }
 
@@ -52,20 +61,45 @@ function loadTemplateDescriptor(templateDirectory: string): TemplateDescriptor {
   }
 
   const content = readFileSync(templateJsonPath, 'utf-8');
-  const descriptor = JSON.parse(content);
+  const metadataDescriptor = JSON.parse(content);
 
-  // Validate the descriptor
-  validateTemplateDescriptor(descriptor);
+  // Validate the metadata
+  validateTemplateDescriptor(metadataDescriptor);
+
+  // Load variables.json (if present)
+  const variablesPath = join(templateDirectory, 'variables.json');
+  let variables: TemplateVariable[] = [];
+
+  if (existsSync(variablesPath)) {
+    const variablesContent = readFileSync(variablesPath, 'utf-8');
+    const variablesData = JSON.parse(variablesContent);
+    const variablesResult = safeValidateTemplateVariables(variablesData);
+
+    if (!variablesResult.success) {
+      throw new Error(
+        `Invalid variables.json at ${variablesPath}:\n  ${variablesResult.errors.join('\n  ')}`
+      );
+    }
+    variables = variablesResult.data.variables;
+  }
+
+  // Combine metadata and variables
+  const descriptor: TemplateDescriptor = {
+    ...metadataDescriptor,
+    variables,
+  };
 
   return descriptor;
 }
 
 /**
- * Test a template by creating a concrete instance in the work directory.
+ * Test a template by creating a concrete instance in the test directory.
  *
- * This generates a buildable app for validation purposes.
- * If work directory exists and regenerate=false, returns existing directory.
- * If regenerate=true, clears and regenerates the work directory.
+ * This generates a buildable app for validation purposes in test/.
+ * If test directory exists and regenerate=false, returns existing directory.
+ * If regenerate=true, clears and regenerates the test directory.
+ *
+ * Note: test/ contains resolved files, work/ contains templated files for diffs
  */
 export function testTemplate(options: TestTemplateOptions): TestTemplateResult {
   const { templateName, variables = {}, regenerate = false } = options;
@@ -83,19 +117,19 @@ export function testTemplate(options: TestTemplateOptions): TestTemplateResult {
     template = getTemplate(templateName);
   }
 
-  // Determine work directory
-  const workDirectory = join(templateDirectory, 'work');
+  // Determine test directory
+  const testDirectory = join(templateDirectory, 'test');
 
-  // Check if work directory already exists
-  const workDirExists = existsSync(workDirectory);
+  // Check if test directory already exists
+  const testDirExists = existsSync(testDirectory);
   let created = false;
 
-  if (workDirExists) {
-    const entries = readdirSync(workDirectory);
+  if (testDirExists) {
+    const entries = readdirSync(testDirectory);
     const hasFiles = entries.length > 0;
 
     if (hasFiles && !regenerate) {
-      // Return existing work directory
+      // Return existing test directory
       const mergedVariables: Record<string, string | number | boolean> = {};
       for (const varDef of template.variables) {
         if (varDef.default !== undefined) {
@@ -107,22 +141,22 @@ export function testTemplate(options: TestTemplateOptions): TestTemplateResult {
       }
 
       return {
-        workDirectory,
+        workDirectory: testDirectory,
         variables: mergedVariables,
         templateDirectory,
         created: false,
       };
     }
 
-    // Clear work directory for regeneration
+    // Clear test directory for regeneration
     if (regenerate && hasFiles) {
-      rmSync(workDirectory, { recursive: true, force: true });
-      mkdirSync(workDirectory, { recursive: true });
+      rmSync(testDirectory, { recursive: true, force: true });
+      mkdirSync(testDirectory, { recursive: true });
       created = true;
     }
   } else {
-    // Create work directory
-    mkdirSync(workDirectory, { recursive: true });
+    // Create test directory
+    mkdirSync(testDirectory, { recursive: true });
     created = true;
   }
 
@@ -143,14 +177,14 @@ export function testTemplate(options: TestTemplateOptions): TestTemplateResult {
   // Generate the test instance
   generateApp({
     templateName,
-    outputDirectory: workDirectory,
+    outputDirectory: testDirectory,
     variables: mergedVariables,
     overwrite: regenerate,
     templateDirectory,
   });
 
   return {
-    workDirectory,
+    workDirectory: testDirectory,
     variables: mergedVariables,
     templateDirectory,
     created,
@@ -158,23 +192,27 @@ export function testTemplate(options: TestTemplateOptions): TestTemplateResult {
 }
 
 /**
- * Get the path to the work directory for a template
+ * Get the test directory path for a template
  */
-export function getWorkDirectory(templateName: string, templateDirectory?: string): string {
-  const templateDir = templateDirectory || join(process.cwd(), 'templates', templateName);
-  return join(templateDir, 'work');
+export function getTestDirectory(templateDirectory: string): string {
+  return join(templateDirectory, 'test');
+}
+
+/**
+ * @deprecated Use getTestDirectory instead
+ */
+export function getWorkDirectory(templateDirectory: string): string {
+  return getTestDirectory(templateDirectory);
 }
 
 /**
  * Check if a test instance exists for a template
  */
-export function hasTestInstance(templateName: string, templateDirectory?: string): boolean {
-  const workDir = getWorkDirectory(templateName, templateDirectory);
-
-  if (!existsSync(workDir)) {
+export function hasTestInstance(templateDirectory: string): boolean {
+  const testDirectory = getTestDirectory(templateDirectory);
+  if (!existsSync(testDirectory)) {
     return false;
   }
-
-  const entries = readdirSync(workDir);
+  const entries = readdirSync(testDirectory);
   return entries.length > 0;
 }

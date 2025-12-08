@@ -1,0 +1,31 @@
+{
+    "variables": [
+        {
+            "name": "appName",
+            "type": "string",
+            "required": true,
+            "description": "The display name of the application",
+            "default": "Salesforce App"
+        },
+        {
+            "name": "orgId",
+            "type": "string",
+            "required": true,
+            "description": "Salesforce organization ID",
+            "regex": "^[0-9A-Za-z]{15,18}$"
+        },
+        {
+            "name": "environment",
+            "type": "string",
+            "required": false,
+            "description": "Deployment environment",
+            "default": "production",
+            "enum": [
+                "development",
+                "staging",
+                "production"
+            ]
+        }
+    ]
+}
+

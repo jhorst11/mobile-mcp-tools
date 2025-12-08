@@ -26,6 +26,9 @@ describe('Template Testing', () => {
       platform: 'ios',
       version: '1.0.0',
       description: 'Test template',
+    };
+
+    const variablesJson = {
       variables: [
         {
           name: 'appName',
@@ -45,6 +48,7 @@ describe('Template Testing', () => {
     };
 
     writeFileSync(join(templateDir, 'template.json'), JSON.stringify(templateJson, null, 2));
+    writeFileSync(join(templateDir, 'variables.json'), JSON.stringify(variablesJson, null, 2));
 
     const appFile = `
 // {{appName}}App.swift
@@ -69,7 +73,7 @@ let bundleId = "{{bundleId}}"
         templateDirectory: templateDir,
       });
 
-      expect(result.workDirectory).toBe(join(templateDir, 'work'));
+      expect(result.workDirectory).toBe(join(templateDir, 'test'));
       expect(result.variables.appName).toBe('TestApp');
       expect(result.variables.bundleId).toBe('com.test.app');
       expect(result.created).toBe(true);
@@ -154,20 +158,15 @@ let bundleId = "{{bundleId}}"
   });
 
   describe('getWorkDirectory', () => {
-    it('should return correct work directory path', () => {
-      const workDir = getWorkDirectory('test-template', templateDir);
-      expect(workDir).toBe(join(templateDir, 'work'));
-    });
-
-    it('should use default path when no template directory provided', () => {
-      const workDir = getWorkDirectory('test-template');
-      expect(workDir).toContain('templates/test-template/work');
+    it('should return correct test directory path', () => {
+      const testDir = getWorkDirectory(templateDir);
+      expect(testDir).toBe(join(templateDir, 'test'));
     });
   });
 
   describe('hasTestInstance', () => {
     it('should return false when no test instance exists', () => {
-      const hasInstance = hasTestInstance('test-template', templateDir);
+      const hasInstance = hasTestInstance(templateDir);
       expect(hasInstance).toBe(false);
     });
 
@@ -177,15 +176,15 @@ let bundleId = "{{bundleId}}"
         templateDirectory: templateDir,
       });
 
-      const hasInstance = hasTestInstance('test-template', templateDir);
+      const hasInstance = hasTestInstance(templateDir);
       expect(hasInstance).toBe(true);
     });
 
-    it('should return false when work directory is empty', () => {
-      // Create empty work directory
-      mkdirSync(join(templateDir, 'work'), { recursive: true });
+    it('should return false when test directory is empty', () => {
+      // Create empty test directory
+      mkdirSync(join(templateDir, 'test'), { recursive: true });
 
-      const hasInstance = hasTestInstance('test-template', templateDir);
+      const hasInstance = hasTestInstance(templateDir);
       expect(hasInstance).toBe(false);
     });
   });

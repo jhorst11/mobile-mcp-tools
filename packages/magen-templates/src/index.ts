@@ -12,7 +12,8 @@
  */
 
 export * from './core/types.js';
-export * from './core/git.js';
+export { checkGitAvailability, ensureGitAvailable, createPatch, applyPatch } from './core/git.js';
+export type { GitAvailabilityResult } from './core/git.js';
 export * from './core/schema.js';
 export {
   listTemplates,
@@ -23,5 +24,12 @@ export {
 } from './core/discovery.js';
 export type { TemplateInfo, TemplateRoot } from './core/discovery.js';
 export { generateApp } from './core/generator.js';
-export { testTemplate, getWorkDirectory, hasTestInstance } from './core/testing.js';
+export {
+  testTemplate,
+  getTestDirectory,
+  getWorkDirectory, // deprecated, use getTestDirectory
+  hasTestInstance,
+} from './core/testing.js';
 export type { TestTemplateOptions, TestTemplateResult } from './core/testing.js';
+export { createLayer, materializeTemplate, detectCycle } from './core/layering.js';
+export type { CreateLayerOptions, CreateLayerResult, MaterializeOptions } from './core/layering.js';

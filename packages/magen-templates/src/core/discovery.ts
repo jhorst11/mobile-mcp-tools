@@ -9,7 +9,12 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
-import { safeValidateTemplateDescriptor, type TemplateDescriptor } from './schema.js';
+import {
+  safeValidateTemplateDescriptor,
+  safeValidateTemplateVariables,
+  type TemplateDescriptor,
+  type TemplateVariable,
+} from './schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -108,6 +113,7 @@ export function discoverTemplates(options?: { platform?: string }): TemplateInfo
         }
 
         try {
+          // Load template.json (metadata)
           const rawData = readFileSync(templateJsonPath, 'utf-8');
           const jsonData = JSON.parse(rawData);
           const validationResult = safeValidateTemplateDescriptor(jsonData);
@@ -120,7 +126,34 @@ export function discoverTemplates(options?: { platform?: string }): TemplateInfo
             continue;
           }
 
-          const descriptor = validationResult.data;
+          // Load variables.json (if present)
+          const variablesPath = join(templatePath, 'variables.json');
+          let variables: TemplateVariable[] = [];
+
+          if (existsSync(variablesPath)) {
+            try {
+              const variablesRaw = readFileSync(variablesPath, 'utf-8');
+              const variablesData = JSON.parse(variablesRaw);
+              const variablesResult = safeValidateTemplateVariables(variablesData);
+
+              if (!variablesResult.success) {
+                console.warn(
+                  `Warning: Invalid variables.json at ${templatePath}:\n  ${variablesResult.errors.join('\n  ')}`
+                );
+              } else {
+                variables = variablesResult.data.variables;
+              }
+            } catch (error) {
+              console.warn(
+                `Warning: Could not read variables.json at ${templatePath}: ${error instanceof Error ? error.message : String(error)}`
+              );
+            }
+          }
+
+          const descriptor: TemplateDescriptor = {
+            ...validationResult.data,
+            variables,
+          };
 
           // Apply platform filter if specified
           if (options?.platform && descriptor.platform !== options.platform) {

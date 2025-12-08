@@ -5,10 +5,20 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
 
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, existsSync } from 'fs';
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  existsSync,
+  rmSync,
+} from 'fs';
 import { join } from 'path';
+import { tmpdir } from 'os';
 import Handlebars from 'handlebars';
 import { findTemplate } from './discovery.js';
+import { materializeTemplate, detectCycle } from './layering.js';
 import type { TemplateVariable, TemplateDescriptor } from './schema.js';
 import type { GenerateOptions } from './types.js';
 
@@ -169,7 +179,30 @@ export function generateApp(options: GenerateOptions): void {
     if (!existsSync(templateJsonPath)) {
       throw new Error(`Template not found at ${templateDirectory}`);
     }
-    const descriptor = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
+    const metadataDescriptor = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
+
+    // Also load variables.json if it exists
+    const variablesPath = join(templateDirectory, 'variables.json');
+    let variables: Array<{
+      name: string;
+      type: 'string' | 'number' | 'boolean';
+      required: boolean;
+      description?: string;
+      default?: string | number | boolean;
+      regex?: string;
+      enum?: string[];
+    }> = [];
+
+    if (existsSync(variablesPath)) {
+      const variablesData = JSON.parse(readFileSync(variablesPath, 'utf-8'));
+      variables = variablesData.variables || [];
+    }
+
+    const descriptor = {
+      ...metadataDescriptor,
+      variables,
+    };
+
     templateInfo = {
       templatePath: templateDirectory,
       descriptor,
@@ -184,6 +217,11 @@ export function generateApp(options: GenerateOptions): void {
   }
 
   const template = templateInfo.descriptor;
+
+  // Check for cycles in template chain
+  if (template.basedOn && detectCycle(templateName)) {
+    throw new Error(`Cycle detected in template chain for '${templateName}'`);
+  }
 
   // Merge variables with defaults
   const allVariables = mergeVariables(template.variables, providedVars);
@@ -207,15 +245,40 @@ export function generateApp(options: GenerateOptions): void {
   // Create output directory
   mkdirSync(outputDirectory, { recursive: true });
 
-  // Get template directory
-  const templateDir = join(templateInfo.templatePath, 'template');
+  // Handle layered templates
+  if (template.basedOn) {
+    // Materialize template with all layers to a temp directory
+    const tempDir = join(tmpdir(), `magen-gen-${Date.now()}`);
 
-  if (!existsSync(templateDir)) {
-    throw new Error(`Template directory not found: ${templateDir}`);
+    try {
+      mkdirSync(tempDir, { recursive: true });
+
+      // Materialize the full template chain
+      materializeTemplate({
+        template,
+        targetDirectory: tempDir,
+        templateDirectory: templateInfo.templatePath,
+      });
+
+      // Process the materialized template
+      processTemplateDirectory(tempDir, outputDirectory, allVariables, overwrite);
+    } finally {
+      // Clean up temp directory
+      if (existsSync(tempDir)) {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    }
+  } else {
+    // Flat template - process directly
+    const templateDir = join(templateInfo.templatePath, 'template');
+
+    if (!existsSync(templateDir)) {
+      throw new Error(`Template directory not found: ${templateDir}`);
+    }
+
+    // Process template directory
+    processTemplateDirectory(templateDir, outputDirectory, allVariables, overwrite);
   }
-
-  // Process template directory
-  processTemplateDirectory(templateDir, outputDirectory, allVariables, overwrite);
 }
 
 /**

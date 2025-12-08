@@ -12,7 +12,7 @@ This document outlines the phased implementation of the Magen Template System as
 | **1** | Template Discovery & Metadata Schema | `COMPLETE` |
 | **2** | Core Generation Engine (Flat Templates) | `COMPLETE` |
 | **3** | Work Directory Management (Test Mode) | `COMPLETE` |
-| **4** | Git-Based Layering (Single-Layer) | `PENDING` |
+| **4** | Git-Based Layering (Single-Layer) | `COMPLETE` |
 | **5** | Multi-Layer Materialization | `PENDING` |
 | **6** | Xcode Project File Integration | `PENDING` |
 
@@ -254,52 +254,74 @@ This document outlines the phased implementation of the Magen Template System as
 
 ## Phase 4 – Git-Based Layering (Single-Layer)
 
-**Status**: `PENDING` ⏳
+**Status**: `COMPLETE` ✅
 
-**Goal**: Implement git-based layer creation and application for single-layer templates (one parent, one child).
+**Goal**: Implement git-based layer creation and application for single-layer templates (one parent, one child) using a **diff-only approach**.
+
+### Key Design Principle: Diff-Only Layering
+
+**Layered templates do NOT duplicate parent files**. Instead:
+- Only `template.json`, `layer.patch`, and `README.md` are checked into version control
+- The `work/` directory is used during development to make changes and generate patches
+- `work/` is gitignored and not checked in
 
 ### Deliverables
 
-1. **Layer Creation** (`src/core/layering.ts`)
-   - `createLayer(options: CreateLayerOptions)`:
-     - Materialize parent template to temp directory (parent/)
-     - Copy child template files to another temp directory (child/)
-     - Initialize git repository in temp directory
-     - Commit parent as base
-     - Apply child changes on top
-     - Generate patch using `git diff --cached > layer.patch`
-     - Move `layer.patch` to child template directory
-   - **Critical Requirement**: Use native git commands (`git diff`, `git format-patch`) for all patch creation
+1. **Template Creation** (`src/cli/index.ts`)
+   - `template create <name> --based-on <parent>`:
+     - Creates `template.json` with inherited variables and `basedOn` reference
+     - Copies parent template files to `work/` (not `template/`) for development
+     - Creates initial `README.md`
+     - Does NOT create `template/` directory for layered templates
 
-2. **Patch Application** (`src/core/generator.ts`)
+2. **Layer Creation** (`src/core/layering.ts`)
+   - `createLayer(options: CreateLayerOptions)`:
+     - Compares `work/` directory against materialized parent template
+     - Uses git to create patch: initialize repo, commit parent, copy work files, generate diff
+     - Outputs `layer.patch` to child template directory
+   - **Critical Requirement**: Uses native git commands (`git diff`) for all patch creation
+
+3. **Patch Application** (`src/core/generator.ts`)
    - Modify `generateApp` to support layered templates:
      - If `basedOn` is specified:
-       - Materialize parent template to target directory
-       - Apply `layer.patch` using `git apply --directory=<target>`
+       - Materialize parent template chain to temp directory
+       - Apply `layer.patch` using `git apply`
        - Render Handlebars templates on final materialized content
-   - **Critical Requirement**: Use `git apply` for all patch operations
+   - **Critical Requirement**: Uses `git apply` for all patch operations
 
-3. **Git Utilities** (`src/utils/git.ts`)
+4. **Git Utilities** (`src/core/git.ts`)
    - `createPatch(parentDir: string, childDir: string, outputPath: string)` – Wrapper around git diff
    - `applyPatch(targetDir: string, patchPath: string)` – Wrapper around git apply
    - Error handling for patch application failures
 
-4. **CLI Integration**
-   - Implement `template layer` command (creates layer patch from child template):
-     ```
-     magen-template template layer <name> [--based-on <parent>] [--out <templateDir>]
-     ```
+5. **CLI Integration**
+   - `template create <name> --based-on <parent>` – Scaffold new layered template
+   - `template layer <name>` – Generate layer.patch from work directory
 
 ### Success Criteria
-- Layer created from work directory using git diff
-- Patch applied successfully during generation using git apply
-- Single-layer templates (e.g., `ios-salesforce` based on `ios-base`) work end-to-end
+- ✅ Layered templates created with `template create --based-on` populate `work/` directory
+- ✅ Layer patch created from `work/` directory using git diff
+- ✅ Patch applied successfully during generation using git apply
+- ✅ Single-layer templates work end-to-end with diff-only approach
+- ✅ Only `template.json`, `layer.patch`, and `README.md` exist for layered templates (no `template/` directory)
 
 ### Testing
-- Layer creation from child template
-- Patch application during generation
-- End-to-end single-layer template generation
-- Error handling for patch conflicts
+- ✅ Layer creation from child template (13 tests)
+- ✅ Patch application during generation
+- ✅ End-to-end single-layer template generation
+- ✅ Error handling for patch conflicts
+- ✅ Cycle detection
+- ✅ Integration with generateApp
+- ✅ Support for adding new files in child templates
+- ✅ Support for modifying existing files in child templates
+- ✅ Template creation with `--based-on` flag
+
+### Implementation Notes
+- Added `.gitignore` to ignore `*/work/` directories in templates
+- Updated documentation to clarify diff-only approach
+- Layered templates are truly minimal (metadata + diff only)
+- Variables split into separate `variables.json` file
+- Variables inherited through git patch mechanism (copied to `work/variables.json` during template creation)
 
 ---
 
@@ -418,8 +440,11 @@ This document outlines the phased implementation of the Magen Template System as
 
 ## Success Metrics
 
-- ✅ All phases complete with tests passing
+- ✅ Phases 0-4 complete with tests passing (95 tests total)
 - ✅ End-to-end iOS app generation works
-- Multi-layer templates functional
+- ✅ Single-layer templates functional
+- ✅ Git-based patch creation and application working
+- Multi-layer templates functional (Phase 5)
+- Xcode project integration (Phase 6)
 - Documentation complete
 - CLI and TypeScript API usable by humans and AI agents
