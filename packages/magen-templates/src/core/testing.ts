@@ -16,6 +16,7 @@ import { join } from 'path';
 import { watch } from 'chokidar';
 import { getTemplate } from './discovery.js';
 import { generateApp } from './generator.js';
+import { createLayer } from './layering.js';
 import {
   validateTemplateDescriptor,
   safeValidateTemplateVariables,
@@ -304,6 +305,25 @@ export function watchTemplate(options: WatchTemplateOptions): () => void {
     debounceTimer = setTimeout(() => {
       const relativePath = path.replace(watchDir, '').replace(/^\//, '');
       console.log(`\n📝 Change detected: ${relativePath}`);
+
+      // For layered templates, regenerate layer.patch from work/ directory
+      if (template.basedOn) {
+        console.log('🔄 Updating layer.patch...');
+        try {
+          createLayer({
+            templateName,
+            templateDirectory:
+              options.templateDirectory || join(process.cwd(), 'templates', templateName),
+            parentTemplateName: template.basedOn,
+          });
+          console.log('✓ layer.patch updated');
+        } catch (error) {
+          console.warn(
+            `⚠ Warning: Could not update layer.patch: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+
       console.log('🔄 Regenerating test instance...');
 
       try {

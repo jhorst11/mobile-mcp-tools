@@ -444,6 +444,14 @@ The \`work/\` directory is for development only (add to .gitignore).
 
     writeFileSync(join(templateDirectory, 'README.md'), readmeContent, 'utf-8');
 
+    // For layered templates, create an empty layer.patch file
+    if (basedOn) {
+      writeFileSync(join(templateDirectory, 'layer.patch'), '', 'utf-8');
+      console.log(
+        `  layer.patch: Created (empty - will be generated when you run 'template layer')`
+      );
+    }
+
     console.log('✓ Template created successfully!');
     console.log(`\n  Template directory: ${templateDirectory}`);
     console.log(`  template.json: Created`);
@@ -528,6 +536,27 @@ function commandTemplateTest(args: string[]): void {
     console.log(`Template directory: ${templateDirectory}`);
     if (regenerate) {
       console.log('Regenerating test directory...');
+    }
+
+    // Check if this is a layered template and auto-generate layer.patch
+    const templateJsonPath = join(templateDirectory, 'template.json');
+    if (existsSync(templateJsonPath)) {
+      const templateJson = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
+      if (templateJson.basedOn) {
+        console.log('🔄 Generating layer.patch from work/ directory...');
+        try {
+          createLayer({
+            templateName,
+            templateDirectory,
+            parentTemplateName: templateJson.basedOn,
+          });
+          console.log('✓ layer.patch updated\n');
+        } catch (error) {
+          console.warn(
+            `⚠ Warning: Could not generate layer.patch: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
     }
 
     const result = testTemplate({

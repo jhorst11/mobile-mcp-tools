@@ -266,8 +266,28 @@ export function generateApp(options: GenerateOptions): void {
         templateDirectory: templateInfo.templatePath,
       });
 
-      // Process the materialized template
-      processTemplateDirectory(tempDir, outputDirectory, allVariables, overwrite);
+      // Reload variables from materialized template
+      // The patch may have updated variables.json, so we need to re-read it
+      const materializedVariablesPath = join(tempDir, 'variables.json');
+      if (existsSync(materializedVariablesPath)) {
+        const variablesData = JSON.parse(readFileSync(materializedVariablesPath, 'utf-8'));
+        template.variables = variablesData.variables || [];
+
+        // Re-merge and re-validate with updated variables
+        const updatedAllVariables = mergeVariables(template.variables, providedVars);
+        const updatedValidation = validateVariables(template.variables, updatedAllVariables);
+        if (!updatedValidation.valid) {
+          throw new Error(
+            `Variable validation failed:\n  ${updatedValidation.errors.join('\n  ')}`
+          );
+        }
+
+        // Use updated variables for rendering
+        processTemplateDirectory(tempDir, outputDirectory, updatedAllVariables, overwrite);
+      } else {
+        // No variables.json in materialized template, use original variables
+        processTemplateDirectory(tempDir, outputDirectory, allVariables, overwrite);
+      }
     } finally {
       // Clean up temp directory
       if (existsSync(tempDir)) {

@@ -676,5 +676,54 @@ let newFeature = "{{childFeature}}"
       const content = readFileSync(join(outputDir, 'Order.txt'), 'utf-8');
       expect(content).toBe('base\nlayer1\nlayer2');
     });
+
+    it('should handle empty patch files gracefully', () => {
+      // Create base template
+      const base = join(testDir, 'templates', 'empty-base');
+      mkdirSync(join(base, 'template'), { recursive: true });
+
+      writeFileSync(
+        join(base, 'template.json'),
+        JSON.stringify({ name: 'empty-base', platform: 'ios', version: '1.0.0' })
+      );
+      writeFileSync(join(base, 'variables.json'), JSON.stringify({ variables: [] }));
+      writeFileSync(join(base, 'template', 'test.txt'), 'base content');
+
+      // Create layered template with empty patch
+      const layered = join(testDir, 'templates', 'empty-layer');
+      mkdirSync(join(layered, 'work'), { recursive: true });
+
+      writeFileSync(
+        join(layered, 'template.json'),
+        JSON.stringify({
+          name: 'empty-layer',
+          platform: 'ios',
+          version: '1.0.0',
+          basedOn: 'empty-base',
+          layer: { patchFile: 'layer.patch' },
+        })
+      );
+
+      // Create empty patch file (simulating template create before any changes)
+      writeFileSync(join(layered, 'layer.patch'), '');
+
+      process.env.MAGEN_TEMPLATES_PATH = join(testDir, 'templates');
+
+      // Should not throw error when applying empty patch
+      const outputDir = join(testDir, 'output-empty');
+      expect(() => {
+        generateApp({
+          templateName: 'empty-layer',
+          outputDirectory: outputDir,
+          variables: {},
+          overwrite: false,
+        });
+      }).not.toThrow();
+
+      // Should have base content (empty patch changes nothing)
+      expect(existsSync(join(outputDir, 'test.txt'))).toBe(true);
+      const content = readFileSync(join(outputDir, 'test.txt'), 'utf-8');
+      expect(content).toBe('base content');
+    });
   });
 });

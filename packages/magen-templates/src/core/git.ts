@@ -105,7 +105,8 @@ export function applyPatch(targetDir: string, patchPath: string): void {
 
   try {
     // Apply patch from target directory (git apply expects to run from the target)
-    execSync(`git apply "${patchPath}"`, {
+    // Use --allow-empty to handle empty patches gracefully
+    execSync(`git apply --allow-empty "${patchPath}"`, {
       cwd: targetDir,
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
