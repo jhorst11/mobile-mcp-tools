@@ -6,13 +6,21 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
 
-import { readFileSync, existsSync, mkdirSync, writeFileSync, readdirSync, cpSync } from 'fs';
+import {
+  readFileSync,
+  existsSync,
+  mkdirSync,
+  writeFileSync,
+  readdirSync,
+  cpSync,
+  rmSync,
+} from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { listTemplates, getTemplate, findTemplate } from '../core/discovery.js';
 import { generateApp } from '../core/generator.js';
 import { testTemplate, watchTemplate } from '../core/testing.js';
-import { createLayer } from '../core/layering.js';
+import { createLayer, materializeTemplate } from '../core/layering.js';
 import type { TemplateVariable } from '../core/schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -314,18 +322,45 @@ function commandTemplateCreate(args: string[]): void {
         // For layered templates, copy parent to work/ directory for editing
         // (template/ directory is NOT used for layered templates - only the patch)
         const workDir = join(templateDirectory, 'work');
+
+        // If parent is a base template, copy from template/
+        // If parent is a layered template, we need to materialize it first
         const parentTemplateDir = join(parentTemplateInfo.templatePath, 'template');
 
         if (existsSync(parentTemplateDir)) {
+          // Parent is a base template - copy directly from template/
           cpSync(parentTemplateDir, workDir, { recursive: true });
           console.log(`✓ Copied parent template files to work/ directory for editing`);
-        }
 
-        // Also copy parent's variables.json to work/ so it can be modified via git diff
-        const parentVariablesPath = join(parentTemplateInfo.templatePath, 'variables.json');
-        if (existsSync(parentVariablesPath)) {
-          cpSync(parentVariablesPath, join(workDir, 'variables.json'));
-          console.log(`✓ Copied parent variables.json to work/ directory`);
+          // Also copy parent's variables.json to work/
+          const parentVariablesPath = join(parentTemplateInfo.templatePath, 'variables.json');
+          if (existsSync(parentVariablesPath)) {
+            cpSync(parentVariablesPath, join(workDir, 'variables.json'));
+            console.log(`✓ Copied parent variables.json to work/ directory`);
+          }
+        } else {
+          // Parent is a layered template - need to materialize it first
+          console.log(`Parent is a layered template - materializing...`);
+          const tempDir = join(dirname(templateDirectory), `.temp-${Date.now()}`);
+
+          try {
+            materializeTemplate({
+              template: parentTemplateInfo.descriptor,
+              targetDirectory: tempDir,
+              templateDirectory: parentTemplateInfo.templatePath,
+            });
+
+            // Copy materialized files to work/
+            cpSync(tempDir, workDir, { recursive: true });
+            console.log(
+              `✓ Copied materialized parent template files to work/ directory for editing`
+            );
+          } finally {
+            // Clean up temp directory
+            if (existsSync(tempDir)) {
+              rmSync(tempDir, { recursive: true, force: true });
+            }
+          }
         }
       } catch (_error) {
         console.warn(`⚠ Warning: Could not load parent template ${basedOn}`);
