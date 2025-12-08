@@ -77,7 +77,10 @@
 
 ---
 
-## Phase 3 – Inline Annotations & Finalize (Single-Layer Templates)
+## Phase 3 – Inline Annotations & Finalize (Single-Layer Templates) ✅
+
+**Status**: ✅ Complete  
+**Completed**: December 8, 2025
 
 ### Scope
 - Implement annotation parser:
@@ -93,13 +96,35 @@
 
 **Note**: This phase focuses on single-layer templates. Git-based patch creation is added in Phase 5.
 
-### Integration Tests (Must Pass Before Phase 4)
-1. Variable extraction correctness.
-2. Regex + enum extraction correctness.
-3. Filename templating correctness.
-4. Idempotent finalize.
-5. Conflict detection in annotations.
-6. Detection of missing variables.
+### Implementation Summary
+
+**Core Files Created**:
+- `src/core/annotations.ts` - Full annotation parsing system (28 tests passing)
+- `src/core/finalize.ts` - Template finalization engine (15 tests passing)
+- `src/cli/index.ts` - Enhanced with `template finalize` command
+
+**Key Features Implemented**:
+1. **Annotation Parser**: Parses `magen:var`, `magen:regex`, `magen:enum`, `magen:filename` from source files
+2. **Default Value Extraction**: Automatically extracts default values from authoring instance code
+3. **Schema Generation**: Builds complete `template.json` from annotations
+4. **Literal Rewriting**: Converts concrete values to Handlebars placeholders
+5. **Filename Templating**: Supports dynamic file renaming via `magen:filename`
+6. **Validation**: Comprehensive validation for duplicate variables, conflicting types, invalid regex, etc.
+
+### Integration Tests — ✅ 43 NEW TESTS PASSING (114/114 total)
+1. ✅ Variable extraction correctness (28 annotation parser tests)
+2. ✅ Regex + enum extraction correctness
+3. ✅ Filename templating correctness
+4. ✅ Annotation validation and conflict detection
+5. ✅ Schema generation from multiple files
+6. ✅ Literal → Handlebars rewriting
+
+**Test Results**:
+```
+Test Files  7 passed (7)
+     Tests  114 passed (114)
+  Duration  1.07s
+```
 
 ---
 

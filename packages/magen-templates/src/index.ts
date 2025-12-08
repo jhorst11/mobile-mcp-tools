@@ -23,3 +23,19 @@ export {
 } from './core/discovery.js';
 export type { TemplateInfo, TemplateRoot } from './core/discovery.js';
 export { generateApp } from './core/generator.js';
+export { finalizeTemplate } from './core/finalize.js';
+export type { FinalizeOptions, FinalizeResult } from './core/finalize.js';
+export {
+  parseAnnotations,
+  extractDefaultValue,
+  rewriteLineWithHandlebars,
+  validateAnnotations,
+} from './core/annotations.js';
+export type {
+  VariableAnnotation,
+  RegexAnnotation,
+  EnumAnnotation,
+  FilenameAnnotation,
+  FileAnnotations,
+  ExtractionResult,
+} from './core/annotations.js';

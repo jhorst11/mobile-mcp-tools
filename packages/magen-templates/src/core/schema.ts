@@ -16,7 +16,7 @@ export const TemplateVariableSchema = z.object({
     errorMap: () => ({ message: 'Variable type must be string, number, or boolean' }),
   }),
   required: z.boolean(),
-  description: z.string().min(1, 'Variable description is required'),
+  description: z.string().min(1, 'Variable description is required').optional(),
   default: z.union([z.string(), z.number(), z.boolean()]).optional(),
   regex: z.string().optional(),
   enum: z.array(z.string()).optional(),

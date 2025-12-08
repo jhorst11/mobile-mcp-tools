@@ -18,7 +18,7 @@ import {
 import type { TemplateVariable } from '../src/core/schema.js';
 
 describe('Template Generator', () => {
-  const testOutputDir = join(process.cwd(), 'test-output');
+  const testOutputDir = join(process.cwd(), 'test-output/generator');
 
   beforeEach(() => {
     // Clean up before each test
