@@ -9,6 +9,7 @@
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { listTemplates, getTemplate } from '../core/discovery.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -52,6 +53,85 @@ function showVersion(): void {
   console.log(`magen-template v${getVersion()}`);
 }
 
+function commandList(args: string[]): void {
+  const platform = args.includes('--platform') ? args[args.indexOf('--platform') + 1] : undefined;
+
+  const templates = listTemplates({ platform });
+
+  if (templates.length === 0) {
+    console.log('No templates found.');
+    return;
+  }
+
+  console.log('\nAvailable Templates:\n');
+
+  for (const template of templates) {
+    const tags = template.tags?.length ? ` [${template.tags.join(', ')}]` : '';
+    console.log(`  ${template.name} (${template.platform})${tags}`);
+    if (template.description) {
+      console.log(`    ${template.description}`);
+    }
+    if (template.basedOn) {
+      console.log(`    Based on: ${template.basedOn}`);
+    }
+    console.log('');
+  }
+}
+
+function commandShow(args: string[]): void {
+  const templateName = args[0];
+
+  if (!templateName) {
+    console.error('Error: Template name is required.');
+    console.error('Usage: magen-template show <name>');
+    process.exit(1);
+  }
+
+  try {
+    const template = getTemplate(templateName);
+
+    console.log(`\nTemplate: ${template.name}`);
+    console.log(`Platform: ${template.platform}`);
+    console.log(`Version: ${template.version}`);
+
+    if (template.description) {
+      console.log(`Description: ${template.description}`);
+    }
+
+    if (template.basedOn) {
+      console.log(`Based on: ${template.basedOn}`);
+    }
+
+    if (template.tags?.length) {
+      console.log(`Tags: ${template.tags.join(', ')}`);
+    }
+
+    if (template.variables.length > 0) {
+      console.log('\nVariables:');
+      for (const variable of template.variables) {
+        const required = variable.required ? ' (required)' : ' (optional)';
+        const defaultValue =
+          variable.default !== undefined ? ` [default: ${variable.default}]` : '';
+        console.log(`  ${variable.name}: ${variable.type}${required}${defaultValue}`);
+        console.log(`    ${variable.description}`);
+
+        if (variable.regex) {
+          console.log(`    Pattern: ${variable.regex}`);
+        }
+
+        if (variable.enum) {
+          console.log(`    Allowed values: ${variable.enum.join(', ')}`);
+        }
+      }
+    }
+
+    console.log('');
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
@@ -65,10 +145,30 @@ async function main() {
     process.exit(0);
   }
 
-  // Future: Implement command routing here
-  console.error(`Command not yet implemented: ${args[0]}`);
-  console.error('Run "magen-template --help" for usage information.');
-  process.exit(1);
+  const command = args[0];
+  const commandArgs = args.slice(1);
+
+  switch (command) {
+    case 'list':
+      commandList(commandArgs);
+      break;
+
+    case 'show':
+      commandShow(commandArgs);
+      break;
+
+    case 'generate':
+    case 'template':
+      console.error(`Command not yet implemented: ${command}`);
+      console.error('Run "magen-template --help" for usage information.');
+      process.exit(1);
+      break;
+
+    default:
+      console.error(`Unknown command: ${command}`);
+      console.error('Run "magen-template --help" for usage information.');
+      process.exit(1);
+  }
 }
 
 main().catch(error => {

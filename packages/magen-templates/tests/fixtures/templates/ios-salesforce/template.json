@@ -1,0 +1,43 @@
+{
+    "name": "ios-salesforce",
+    "platform": "ios",
+    "basedOn": "ios-base",
+    "version": "0.2.0",
+    "layer": {
+        "patchFile": "layer.patch"
+    },
+    "variables": [
+        {
+            "name": "appName",
+            "type": "string",
+            "required": true,
+            "description": "The display name of the application",
+            "default": "Salesforce App"
+        },
+        {
+            "name": "orgId",
+            "type": "string",
+            "required": true,
+            "description": "Salesforce organization ID",
+            "regex": "^[0-9A-Za-z]{15,18}$"
+        },
+        {
+            "name": "environment",
+            "type": "string",
+            "required": false,
+            "description": "Deployment environment",
+            "default": "production",
+            "enum": [
+                "development",
+                "staging",
+                "production"
+            ]
+        }
+    ],
+    "tags": [
+        "ios",
+        "salesforce",
+        "mobile-sdk"
+    ],
+    "description": "iOS template with Salesforce Mobile SDK integration"
+}

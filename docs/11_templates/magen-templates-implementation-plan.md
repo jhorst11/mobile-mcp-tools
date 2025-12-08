@@ -24,19 +24,27 @@
 
 ---
 
-## Phase 1 – Template Discovery & Metadata Schema
+## Phase 1 – Template Discovery & Metadata Schema ✅
 
 ### Scope
-- Implement template roots: project-local, user-level, env-based.
-- Implement `template.json` schema + validation.
-- Add `listTemplates()` + `getTemplate(name)`.
-- Add CLI commands: `magen-template list`, `magen-template show <name>`.
+- ✅ Implement template roots: project-local, user-level, env-based.
+- ✅ Implement `template.json` schema + validation.
+- ✅ Add `listTemplates()` + `getTemplate(name)`.
+- ✅ Add CLI commands: `magen-template list`, `magen-template show <name>`.
 
-### Integration Tests (Must Pass Before Phase 2)
-1. Template discovery across multiple roots.
-2. `template.json` schema validation with clear errors.
-3. Platform filtering support.
-4. Corrupt template isolation resilience.
+### Integration Tests (Must Pass Before Phase 2) ✅
+1. ✅ Template discovery across multiple roots (17 tests)
+2. ✅ `template.json` schema validation with clear errors (18 tests)
+3. ✅ Platform filtering support
+4. ✅ Corrupt template isolation resilience
+
+### Status: COMPLETE
+- Template discovery system with 4 priority levels (package, env, user, project)
+- Zod-based schema validation with comprehensive error messages
+- CLI commands functional: `list` and `show`
+- 35 new tests passing (47 total)
+- Graceful handling of corrupt templates
+- Platform filtering working correctly
 
 ---
 

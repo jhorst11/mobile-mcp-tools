@@ -13,3 +13,12 @@
 
 export * from './core/types.js';
 export * from './core/git.js';
+export * from './core/schema.js';
+export {
+  listTemplates,
+  getTemplate,
+  findTemplate,
+  discoverTemplates,
+  getTemplateRoots,
+} from './core/discovery.js';
+export type { TemplateInfo, TemplateRoot } from './core/discovery.js';
