@@ -725,5 +725,105 @@ let newFeature = "{{childFeature}}"
       const content = readFileSync(join(outputDir, 'test.txt'), 'utf-8');
       expect(content).toBe('base content');
     });
+
+    it('should reload variables after materialization for layered templates', () => {
+      // Create base template
+      const base = join(testDir, 'templates', 'reload-base');
+      mkdirSync(join(base, 'template'), { recursive: true });
+
+      writeFileSync(
+        join(base, 'template.json'),
+        JSON.stringify({ name: 'reload-base', platform: 'ios', version: '1.0.0' })
+      );
+
+      const baseVariables = {
+        variables: [
+          {
+            name: 'appName',
+            type: 'string',
+            required: true,
+            default: 'BaseApp',
+          },
+        ],
+      };
+
+      writeFileSync(join(base, 'variables.json'), JSON.stringify(baseVariables, null, 2));
+      writeFileSync(join(base, 'template', 'App.txt'), 'App: {{appName}}');
+
+      // Create layered template with NEW variable in patch
+      const layered = join(testDir, 'templates', 'reload-layer');
+      mkdirSync(join(layered, 'work'), { recursive: true });
+
+      writeFileSync(
+        join(layered, 'template.json'),
+        JSON.stringify({
+          name: 'reload-layer',
+          platform: 'ios',
+          version: '1.0.0',
+          basedOn: 'reload-base',
+          layer: { patchFile: 'layer.patch' },
+        })
+      );
+
+      // Work directory has base content + new variable
+      writeFileSync(
+        join(layered, 'work', 'App.txt'),
+        'App: {{appName}}\nNew Feature: {{newFeature}}'
+      );
+
+      const layeredVariables = {
+        variables: [
+          ...baseVariables.variables,
+          {
+            name: 'newFeature',
+            type: 'string',
+            required: true,
+            default: 'AwesomeFeature',
+          },
+        ],
+      };
+
+      writeFileSync(
+        join(layered, 'work', 'variables.json'),
+        JSON.stringify(layeredVariables, null, 2)
+      );
+
+      process.env.MAGEN_TEMPLATES_PATH = join(testDir, 'templates');
+
+      // Create the layer patch
+      createLayer({
+        templateName: 'reload-layer',
+        templateDirectory: layered,
+        parentTemplateName: 'reload-base',
+      });
+
+      // Generate app - should use the NEW variable from the patch
+      const outputDir = join(testDir, 'output-reload');
+      generateApp({
+        templateName: 'reload-layer',
+        outputDirectory: outputDir,
+        variables: {}, // Don't provide variables - should use defaults from materialized template
+        overwrite: false,
+      });
+
+      // Verify both base and new variables are rendered with defaults
+      const content = readFileSync(join(outputDir, 'App.txt'), 'utf-8');
+      expect(content).toBe('App: BaseApp\nNew Feature: AwesomeFeature');
+
+      // Also test with explicit variable override
+      const outputDir2 = join(testDir, 'output-reload-2');
+      generateApp({
+        templateName: 'reload-layer',
+        outputDirectory: outputDir2,
+        variables: {
+          appName: 'CustomApp',
+          newFeature: 'CustomFeature',
+        },
+        overwrite: false,
+      });
+
+      const content2 = readFileSync(join(outputDir2, 'App.txt'), 'utf-8');
+      expect(content2).toBe('App: CustomApp\nNew Feature: CustomFeature');
+    });
   });
 });

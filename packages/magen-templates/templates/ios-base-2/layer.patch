@@ -1,0 +1,41 @@
+diff --git a/variables.json b/variables.json
+index 338c02a..f2a6e29 100644
+--- a/variables.json
++++ b/variables.json
+@@ -28,8 +28,19 @@
+       "required": false,
+       "description": "Minimum iOS deployment target",
+       "default": "17.0",
+-      "enum": ["15.0", "16.0", "17.0", "18.0"]
++      "enum": [
++        "15.0",
++        "16.0",
++        "17.0",
++        "18.0"
++      ]
++    },
++    {
++      "name": "customTitle",
++      "type": "string",
++      "required": true,
++      "description": "Custom title for the iOS application",
++      "default": "Welcome to Thunderdome"
+     }
+   ]
+-}
+-
++}
+\ No newline at end of file
+diff --git a/{{appName}}/ContentView.swift b/{{appName}}/ContentView.swift
+index 4fb3560..4ca25ee 100644
+--- a/{{appName}}/ContentView.swift
++++ b/{{appName}}/ContentView.swift
+@@ -15,7 +15,7 @@ struct ContentView: View {
+                 .imageScale(.large)
+                 .foregroundStyle(.tint)
+             
+-            Text("Welcome to {{appName}}")
++            Text("{{customTitle}}")
+                 .font(.title)
+                 .fontWeight(.bold)
+             
