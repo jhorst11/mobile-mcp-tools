@@ -1,0 +1,42 @@
+{
+  "name": "@salesforce/magen-templates",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/magen-templates/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run build",
+        "cwd": "packages/magen-templates"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run test",
+        "cwd": "packages/magen-templates"
+      }
+    },
+    "test:coverage": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run test:coverage",
+        "cwd": "packages/magen-templates"
+      }
+    },
+    "test:watch": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npm run test:watch",
+        "cwd": "packages/magen-templates"
+      }
+    },
+    "typecheck": {
+      "executor": "@nx/js:tsc",
+      "options": {
+        "tsConfig": "packages/magen-templates/tsconfig.json"
+      }
+    }
+  }
+}
