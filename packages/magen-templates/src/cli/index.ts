@@ -11,7 +11,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { listTemplates, getTemplate } from '../core/discovery.js';
 import { generateApp } from '../core/generator.js';
-import { finalizeTemplate } from '../core/finalize.js';
+import { testTemplate } from '../core/testing.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -33,9 +33,7 @@ Commands:
   list                                List available templates
   show <name>                         Show template metadata and schema
   generate <template>                 Generate a concrete app from template
-  template create <name> --from <base>  Create authoring instance
-  template dev <name>                 Re-enter authoring mode
-  template finalize <name>            Extract schema, rewrite, compute patch
+  template test <name>                Generate/validate test instance
   template validate <name>            Validate template structure
 
 Options:
@@ -219,7 +217,7 @@ function commandTemplate(args: string[]): void {
   if (args.length === 0) {
     console.error('Error: Subcommand is required.');
     console.error('Usage: magen-template template <subcommand> [options]');
-    console.error('Subcommands: create, dev, finalize, validate');
+    console.error('Subcommands: test, validate');
     process.exit(1);
   }
 
@@ -227,115 +225,80 @@ function commandTemplate(args: string[]): void {
   const subcommandArgs = args.slice(1);
 
   switch (subcommand) {
-    case 'finalize':
-      commandTemplateFinalize(subcommandArgs);
+    case 'test':
+      commandTemplateTest(subcommandArgs);
       break;
 
-    case 'create':
-    case 'dev':
     case 'validate':
       console.error(`Subcommand not yet implemented: ${subcommand}`);
-      console.error('Currently available: finalize');
+      console.error('Currently available: test');
       process.exit(1);
       break;
 
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Available subcommands: create, dev, finalize, validate');
+      console.error('Available subcommands: test, validate');
       process.exit(1);
   }
 }
 
-function commandTemplateFinalize(args: string[]): void {
+function commandTemplateTest(args: string[]): void {
   const templateName = args[0];
 
   if (!templateName) {
     console.error('Error: Template name is required.');
-    console.error('Usage: magen-template template finalize <name> [options]');
+    console.error('Usage: magen-template template test <name> [options]');
+    console.error('Options:');
+    console.error('  --regenerate          Force regeneration even if work directory exists');
+    console.error('  --out <path>          Template directory (default: ./templates/<name>)');
+    console.error('  --var <name>=<value>  Override template variable');
     process.exit(1);
   }
 
   // Parse options
-  const workIndex = args.indexOf('--work');
+  const regenerate = args.includes('--regenerate');
   const outIndex = args.indexOf('--out');
-  const platformIndex = args.indexOf('--platform');
-  const versionIndex = args.indexOf('--version');
-  const descriptionIndex = args.indexOf('--description');
-  const basedOnIndex = args.indexOf('--based-on');
-
-  const workDirectory =
-    workIndex !== -1 && workIndex + 1 < args.length
-      ? args[workIndex + 1]
-      : join(process.cwd(), 'templates', templateName, 'work');
-
   const templateDirectory =
     outIndex !== -1 && outIndex + 1 < args.length
       ? args[outIndex + 1]
       : join(process.cwd(), 'templates', templateName);
 
-  const platform =
-    platformIndex !== -1 && platformIndex + 1 < args.length ? args[platformIndex + 1] : 'ios';
-
-  const version =
-    versionIndex !== -1 && versionIndex + 1 < args.length ? args[versionIndex + 1] : '0.1.0';
-
-  const description =
-    descriptionIndex !== -1 && descriptionIndex + 1 < args.length
-      ? args[descriptionIndex + 1]
-      : undefined;
-
-  const basedOn =
-    basedOnIndex !== -1 && basedOnIndex + 1 < args.length ? args[basedOnIndex + 1] : undefined;
+  const variables = parseVariables(args);
 
   try {
-    console.log(`\nFinalizing template: ${templateName}`);
-    console.log(`Work directory: ${workDirectory}`);
-    console.log(`Template output: ${templateDirectory}\n`);
+    console.log(`\nTesting template: ${templateName}`);
+    console.log(`Template directory: ${templateDirectory}`);
+    if (regenerate) {
+      console.log('Regenerating work directory...');
+    }
 
-    const result = finalizeTemplate({
-      workDirectory,
-      templateDirectory,
+    const result = testTemplate({
       templateName,
-      platform,
-      version,
-      description,
-      basedOn,
+      templateDirectory,
+      variables,
+      regenerate,
     });
 
-    console.log('✓ Template finalized successfully!');
-    console.log(`\n  Variables extracted: ${result.variables.length}`);
+    if (result.created) {
+      console.log('✓ Test instance created successfully!');
+    } else {
+      console.log('✓ Using existing test instance');
+    }
+    console.log(`\n  Work directory: ${result.workDirectory}`);
 
-    if (result.variables.length > 0) {
-      console.log('\n  Variables:');
-      for (const variable of result.variables) {
-        const required = variable.required ? '(required)' : '(optional)';
-        const defaultValue = variable.default !== undefined ? ` = ${variable.default}` : '';
-        console.log(`    - ${variable.name}: ${variable.type} ${required}${defaultValue}`);
-        if (variable.regex) {
-          console.log(`      Pattern: ${variable.regex}`);
-        }
-        if (variable.enum) {
-          console.log(`      Values: ${variable.enum.join(', ')}`);
-        }
+    if (Object.keys(result.variables).length > 0) {
+      console.log('\n  Variables used:');
+      for (const [name, value] of Object.entries(result.variables)) {
+        console.log(`    ${name}: ${value}`);
       }
     }
 
-    if (result.renamedFiles.size > 0) {
-      console.log(`\n  Renamed files: ${result.renamedFiles.size}`);
-      for (const [original, templated] of result.renamedFiles.entries()) {
-        console.log(`    ${original} -> ${templated}`);
-      }
-    }
-
-    if (result.warnings.length > 0) {
-      console.log('\n  Warnings:');
-      for (const warning of result.warnings) {
-        console.log(`    ⚠ ${warning}`);
-      }
-    }
-
-    console.log(`\n  template.json written to: ${join(templateDirectory, 'template.json')}`);
-    console.log(`  Template files written to: ${join(templateDirectory, 'template')}\n`);
+    console.log('\nNext steps:');
+    console.log(`  1. Open ${result.workDirectory} in Xcode`);
+    console.log(`  2. Build and test your app`);
+    console.log(`  3. Edit template files in: ${templateDirectory}/template/`);
+    console.log(`  4. Regenerate: magen-template template test ${templateName} --regenerate`);
+    console.log('');
   } catch (error) {
     console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);

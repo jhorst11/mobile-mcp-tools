@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync, existsSy
 import { join } from 'path';
 import Handlebars from 'handlebars';
 import { findTemplate } from './discovery.js';
-import type { TemplateVariable } from './schema.js';
+import type { TemplateVariable, TemplateDescriptor } from './schema.js';
 import type { GenerateOptions } from './types.js';
 
 /**
@@ -152,12 +152,35 @@ function processTemplateDirectory(
  * @throws Error if template not found, variables invalid, or generation fails
  */
 export function generateApp(options: GenerateOptions): void {
-  const { templateName, outputDirectory, variables: providedVars, overwrite = false } = options;
+  const {
+    templateName,
+    outputDirectory,
+    variables: providedVars,
+    overwrite = false,
+    templateDirectory,
+  } = options;
 
-  // Find template
-  const templateInfo = findTemplate(templateName);
-  if (!templateInfo) {
-    throw new Error(`Template not found: ${templateName}`);
+  // Find the template - use provided directory or global discovery
+  let templateInfo: { templatePath: string; descriptor: TemplateDescriptor };
+
+  if (templateDirectory) {
+    // Load from custom directory
+    const templateJsonPath = join(templateDirectory, 'template.json');
+    if (!existsSync(templateJsonPath)) {
+      throw new Error(`Template not found at ${templateDirectory}`);
+    }
+    const descriptor = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
+    templateInfo = {
+      templatePath: templateDirectory,
+      descriptor,
+    };
+  } else {
+    // Use global discovery
+    const found = findTemplate(templateName);
+    if (!found) {
+      throw new Error(`Template not found: ${templateName}`);
+    }
+    templateInfo = found;
   }
 
   const template = templateInfo.descriptor;

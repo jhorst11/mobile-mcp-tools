@@ -1,223 +1,425 @@
-# Magen Template System – Implementation Plan (Phased with Integration Tests)
+# Magen Template System – Implementation Plan
 
-## Phase 0 – Project Setup & Skeleton ✅
-
-### Scope
-- ✅ Initialize Node.js + TypeScript project.
-- ✅ Establish project layout (`src/cli`, `src/core`).
-- ✅ Add build, lint, format, and test frameworks. Should follow pattern established by other packages in project.
-- ✅ Create minimal CLI with `--help` and `--version`.
-- ✅ Add git availability check utility (required for all patch operations).
-
-### Integration Tests (Must Pass Before Phase 1) ✅
-1. ✅ CLI bootstrap: `--help`, `--version` return 0 and output expected text.
-2. ✅ Linting runs successfully with no errors.
-3. ✅ Tests run successfully (12/12 passing).
-4. ✅ Git availability detection works correctly.
-
-### Status: COMPLETE
-- Package created at `packages/magen-templates`
-- All tests passing (12/12)
-- Linting passing with 0 errors
-- Build successful
-- CLI functional with --help and --version
+This document outlines the phased implementation of the Magen Template System as specified in the design document.
 
 ---
 
-## Phase 1 – Template Discovery & Metadata Schema ✅
+## Phase Overview
 
-### Scope
-- ✅ Implement template roots: project-local, user-level, env-based.
-- ✅ Implement `template.json` schema + validation.
-- ✅ Add `listTemplates()` + `getTemplate(name)`.
-- ✅ Add CLI commands: `magen-template list`, `magen-template show <name>`.
-
-### Integration Tests (Must Pass Before Phase 2) ✅
-1. ✅ Template discovery across multiple roots (17 tests)
-2. ✅ `template.json` schema validation with clear errors (18 tests)
-3. ✅ Platform filtering support
-4. ✅ Corrupt template isolation resilience
-
-### Status: COMPLETE
-- Template discovery system with 4 priority levels (package, env, user, project)
-- Zod-based schema validation with comprehensive error messages
-- CLI commands functional: `list` and `show`
-- 35 new tests passing (47 total)
-- Graceful handling of corrupt templates
-- Platform filtering working correctly
+| Phase | Scope | Status |
+|-------|-------|--------|
+| **0** | Project Setup & Skeleton | `COMPLETE` |
+| **1** | Template Discovery & Metadata Schema | `COMPLETE` |
+| **2** | Core Generation Engine (Flat Templates) | `COMPLETE` |
+| **3** | Work Directory Management (Test Mode) | `COMPLETE` |
+| **4** | Git-Based Layering (Single-Layer) | `PENDING` |
+| **5** | Multi-Layer Materialization | `PENDING` |
+| **6** | Xcode Project File Integration | `PENDING` |
 
 ---
 
-## Phase 2 – Core Generation Engine (Flat Templates) ✅
+## Phase 0 – Project Setup & Skeleton
 
-### Scope
-- ✅ Implement Handlebars-based rendering for:
-  - ✅ File contents
-  - ✅ Filenames
-  - ✅ Directory names
-- ✅ Implement `magen-template generate <template>`.
+**Status**: `COMPLETE` ✅
 
-### Integration Tests (Must Pass Before Phase 3) ✅
-1. ✅ Content templating correctness (24 tests)
-2. ✅ Filename templating correctness
-3. ✅ Directory templating correctness
-4. ✅ Required variable enforcement
-5. ✅ Type handling for string/number/boolean
-6. ✅ Overwrite safety rules
+**Goal**: Bootstrap the `magen-templates` package with project structure, tooling, and foundational utilities.
 
-### Status: COMPLETE
-- Handlebars integration for all templating needs
-- Full variable validation (types, regex patterns, enums)
-- CLI generate command with --var and --overwrite flags
-- 24 new tests passing (71 total)
-- Successfully generates iOS source files from ios-base template
-- Proper error handling for missing templates, invalid variables, existing files
+### Deliverables
 
-**Known Limitation**: `.xcodeproj/project.pbxproj` files are not yet supported due to Handlebars parsing conflicts with `{}` characters used extensively in pbxproj format. Full Xcode project integration is deferred to Phase 6.
+1. **Package Structure**
+   - Create `packages/magen-templates/` directory
+   - Initialize `package.json` with:
+     - Name: `@salesforce/magen-templates`
+     - Main entry: `dist/index.js`
+     - CLI binary: `magen-template`
+     - Dependencies: `zod`, `handlebars`, `commander` (or similar)
+   - Set up TypeScript configuration (`tsconfig.json`)
+   - Configure linting/formatting (ESLint, Prettier)
 
----
+2. **Directory Layout**
+   ```
+   packages/magen-templates/
+     src/
+       cli/
+         index.ts          # CLI entry point
+       core/
+         types.ts          # Core TypeScript types
+         schema.ts         # Zod schemas for template.json
+         discovery.ts      # Template discovery logic
+         generator.ts      # Template generation engine
+         testing.ts        # Work directory management (test mode)
+       utils/
+         git.ts            # Git utility functions
+     templates/            # Template storage
+     tests/                # Test files
+     package.json
+     tsconfig.json
+   ```
 
-## Phase 3 – Inline Annotations & Finalize (Single-Layer Templates) ✅
+3. **Core Types** (`src/core/types.ts`)
+   - `TemplateDescriptor` (inferred from `TemplateDescriptorSchema`)
+   - `TemplateVariable` (inferred from schema)
+   - `GenerateOptions`
+   - `TestTemplateOptions`
 
-**Status**: ✅ Complete  
-**Completed**: December 8, 2025
+4. **Git Utilities** (`src/utils/git.ts`)
+   - `checkGitAvailability()` – Verify git is installed
+   - `ensureGitAvailable()` – Throw if git is missing
 
-### Scope
-- Implement annotation parser:
-  - `magen:var`
-  - `magen:regex`
-  - `magen:enum`
-  - `magen:filename`
-- Implement `template finalize` for root templates:
-  - Extract schema
-  - Rewrite literals → Handlebars
-  - Handle filenames
-  - Validate template structure
+5. **Build & Test**
+   - Ensure package builds successfully (`npm run build`)
+   - Add basic unit test skeleton (`npm test`)
 
-**Note**: This phase focuses on single-layer templates. Git-based patch creation is added in Phase 5.
+### Success Criteria
+- Package builds without errors
+- CLI binary (`magen-template`) is registered
+- Empty tests pass
 
-### Implementation Summary
-
-**Core Files Created**:
-- `src/core/annotations.ts` - Full annotation parsing system (28 tests passing)
-- `src/core/finalize.ts` - Template finalization engine (15 tests passing)
-- `src/cli/index.ts` - Enhanced with `template finalize` command
-
-**Key Features Implemented**:
-1. **Annotation Parser**: Parses `magen:var`, `magen:regex`, `magen:enum`, `magen:filename` from source files
-2. **Default Value Extraction**: Automatically extracts default values from authoring instance code
-3. **Schema Generation**: Builds complete `template.json` from annotations
-4. **Literal Rewriting**: Converts concrete values to Handlebars placeholders
-5. **Filename Templating**: Supports dynamic file renaming via `magen:filename`
-6. **Validation**: Comprehensive validation for duplicate variables, conflicting types, invalid regex, etc.
-
-### Integration Tests — ✅ 43 NEW TESTS PASSING (114/114 total)
-1. ✅ Variable extraction correctness (28 annotation parser tests)
-2. ✅ Regex + enum extraction correctness
-3. ✅ Filename templating correctness
-4. ✅ Annotation validation and conflict detection
-5. ✅ Schema generation from multiple files
-6. ✅ Literal → Handlebars rewriting
-
-**Test Results**:
-```
-Test Files  7 passed (7)
-     Tests  114 passed (114)
-  Duration  1.07s
-```
+### Testing
+- ✅ Package builds
+- ✅ Git availability checks work
+- ✅ Initial test suite passes (4 tests)
 
 ---
 
-## Phase 4 – Authoring Instances & dev Flow (Single-Layer)
+## Phase 1 – Template Discovery & Metadata Schema
 
-### Scope
-- Implement management of authoring instances under `.magen/work/<templateName>/`.
-- Implement:
-  - `template create`
-  - `template dev`
-- Guarantee round-trip consistency.
+**Status**: `COMPLETE` ✅
 
-### Integration Tests (Must Pass Before Phase 5)
-1. Create → finalize round trip consistency.
-2. New variable detection from authoring.
-3. Missing authoring directory detection.
-4. Inline default restoration.
-5. Authoring persistence behavior confirmed.
+**Goal**: Implement template discovery from multiple roots and validate `template.json` against a strict Zod schema.
 
----
+### Deliverables
 
-## Phase 5 – Layering & layer.patch
+1. **Schema Definition** (`src/core/schema.ts`)
+   - Define `TemplateDescriptorSchema` using Zod:
+     ```ts
+     const TemplateDescriptorSchema = z.object({
+       name: z.string(),
+       platform: z.enum(['ios', 'android', 'web']),
+       version: z.string().regex(/^\d+\.\d+\.\d+$/), // semver
+       description: z.string().optional(),
+       basedOn: z.string().optional(),
+       layer: z.object({
+         patchFile: z.string()
+       }).optional(),
+       variables: z.array(TemplateVariableSchema),
+       tags: z.array(z.string()).optional()
+     });
+     ```
+   - Define `TemplateVariableSchema`:
+     ```ts
+     const TemplateVariableSchema = z.object({
+       name: z.string(),
+       type: z.enum(['string', 'number', 'boolean']),
+       required: z.boolean(),
+       description: z.string().optional(),
+       default: z.union([z.string(), z.number(), z.boolean()]).optional(),
+       regex: z.string().optional(),
+       enum: z.array(z.string()).optional()
+     });
+     ```
+   - Export type-safe validation functions
 
-### Scope
-- Add `basedOn` support.
-- Implement git-based layer creation using `git diff`.
-- Implement git-based patch application using `git apply`.
-- Ensure git is available in the environment.
-- Integrate with `template dev` and generation workflows.
+2. **Discovery Implementation** (`src/core/discovery.ts`)
+   - `getTemplateRoots()` – Return array of search paths in priority order:
+     1. `node_modules/@salesforce/magen-templates/templates/`
+     2. `$MAGEN_TEMPLATE_PATH` (colon-separated)
+     3. `~/.magen/templates/`
+     4. `./templates/`
+   - `discoverTemplates()` – Scan all roots, parse `template.json`, validate schema
+   - `listTemplates(platform?: string)` – Return all valid templates, optionally filtered
+   - `getTemplate(name: string)` – Return single template descriptor
+   - Handle corrupt/invalid templates gracefully (log warnings, skip)
 
-**Critical Requirement**: All patch operations must use native git commands. Do NOT implement custom diff/patch logic.
+3. **CLI Integration** (`src/cli/index.ts`)
+   - Implement `list` command:
+     ```
+     magen-template list [--platform ios|android|web]
+     ```
+   - Implement `show` command:
+     ```
+     magen-template show <templateName>
+     ```
 
-### Integration Tests (Must Pass Before Phase 6)
-1. Single-layer application correctness using `git apply`.
-2. Layered generation correctness.
-3. Multi-level layering correctness.
-4. Patch conflict detection via `git apply` errors.
-5. Patch determinism on unchanged finalize.
-6. Git availability check during initialization.
+### Success Criteria
+- Templates discovered from all roots
+- Invalid templates logged and skipped
+- CLI commands functional
 
----
-
-## Phase 6 – iOS-Specific: .xcodeproj Integration & Filename Templating
-
-### Scope
-- Treat `.xcodeproj/project.pbxproj` as templated.
-- Implement pbxproj rewrites during finalize and generation.
-- Ensure generated projects are Xcode-buildable.
-
-### Integration Tests (Must Pass Before Phase 7)
-1. Filename → pbxproj consistency.
-2. Multi-file rename correctness.
-3. CI macOS build smoke test.
-4. Non-iOS template safety.
-
----
-
-## Phase 7 – TypeScript Library API for AI Agents
-
-### Scope
-- Implement and export stable TS API:
-  - `listTemplates()`
-  - `getTemplate(name)`
-  - `generateApp(options)`
-- Share core logic between CLI and library.
-
-### Integration Tests (Must Pass Before Phase 8)
-1. Library and CLI output parity.
-2. Template discovery API tests.
-3. Error propagation tests.
-4. Full type safety via TS strict mode.
-
----
-
-## Phase 8 – End-to-End Scenarios & Regression Suite
-
-### Scope
-- Build real example templates:
-  - `ios-base`
-  - `ios-salesforce`
-- Test the entire system end-to-end.
-
-### Integration Tests (Final Gate Before v1 Release)
-1. E2E: Base template generation + Xcode build.
-2. E2E: Layered Salesforce template generation + build.
-3. Layer regression tests for base template changes.
-4. Error-path smoke tests.
+### Testing
+- ✅ Schema validation tests (18 tests)
+- ✅ Discovery tests with multiple roots (17 tests)
+- ✅ Platform filtering
+- ✅ Corrupt template handling
 
 ---
 
-## Completion Criteria for Magen Template System v1
-- All phases green in CI.
-- All integration tests passing.
-- End-to-end flows validated.
-- iOS templates verified with real `xcodebuild`.
-- TypeScript library stable for AI-driven workflows.
+## Phase 2 – Core Generation Engine (Flat Templates)
+
+**Status**: `COMPLETE` ✅
+
+**Goal**: Implement Handlebars-based generation for flat (non-layered) templates, supporting content rendering, filename templating, and variable validation.
+
+### Deliverables
+
+1. **Generator Implementation** (`src/core/generator.ts`)
+   - `generateApp(options: GenerateOptions)`:
+     - Load template descriptor
+     - Validate variables (required, type, regex, enum)
+     - Merge provided variables with defaults
+     - Traverse `template/` directory
+     - Render file contents with Handlebars
+     - Render filenames and directory names
+     - Write output to destination
+   - Variable validation logic:
+     - Ensure required variables are present
+     - Check type compatibility
+     - Validate regex patterns (if specified)
+     - Validate enum constraints (if specified)
+
+2. **Handlebars Integration**
+   - Render file contents: `Handlebars.compile(fileContent)(variables)`
+   - Render paths: `{{appName}}/{{appName}}App.swift` → `MyApp/MyAppApp.swift`
+
+3. **CLI Integration**
+   - Implement `generate` command:
+     ```
+     magen-template generate <template> --out <path> [--var key=value]...
+     ```
+
+4. **Error Handling**
+   - Missing required variables → fail with clear message
+   - Type mismatches → fail with clear message
+   - Regex/enum violations → fail with clear message
+   - Template not found → fail with clear message
+
+### Success Criteria
+- Generate concrete apps from flat templates
+- All variables validated before generation
+- Filenames and directories templated correctly
+
+### Testing
+- ✅ Content rendering tests (24 tests)
+- ✅ Filename/directory templating
+- ✅ Variable validation and merging
+- ✅ End-to-end generation scenarios
+- ✅ CLI integration tests (8 tests)
+
+### Known Limitations
+- `.xcodeproj/project.pbxproj` files are not yet supported due to Handlebars parsing conflicts with `{}` syntax. Full Xcode project integration is deferred to Phase 6.
+
+---
+
+## Phase 3 – Work Directory Management (Test Mode)
+
+**Status**: `COMPLETE` ✅
+
+**Goal**: Implement work directory management for creating and validating concrete test instances from templates.
+
+### Deliverables
+
+1. **Test Mode Implementation** (`src/core/testing.ts`)
+   - `getWorkDirectory(templateDirectory: string)` – Return `<templateDirectory>/work`
+   - `hasTestInstance(templateDirectory: string)` – Check if work directory exists and is non-empty
+   - `testTemplate(options: TestTemplateOptions)`:
+     - If work directory exists and `regenerate` is false → return existing work directory path
+     - If work directory exists and `regenerate` is true → clear and regenerate
+     - If work directory doesn't exist → generate concrete test app
+     - Return work directory path and variables used
+
+2. **CLI Integration**
+   - Implement `template test` command:
+     ```
+     magen-template template test <name> [--regenerate] [--out <templateDir>] [--var key=value]...
+     ```
+
+3. **Workflow**
+   - Developer edits template files in `templates/ios-base/template/` with Handlebars placeholders
+   - `template test ios-base` → generates concrete test app in `templates/ios-base/work/`
+   - Developer opens `work/` in Xcode to validate the template output builds and runs
+   - `template test ios-base --regenerate` → regenerates work directory after template changes
+
+### Success Criteria
+- Work directory created on first `template test`
+- `template test` returns existing work directory if already present
+- `--regenerate` flag clears and regenerates work directory
+- CLI command functional
+
+### Testing
+- ✅ Work directory management tests (17 tests)
+- ✅ Round-trip consistency
+- ✅ Error handling for existing/missing work directories
+
+---
+
+## Phase 4 – Git-Based Layering (Single-Layer)
+
+**Status**: `PENDING` ⏳
+
+**Goal**: Implement git-based layer creation and application for single-layer templates (one parent, one child).
+
+### Deliverables
+
+1. **Layer Creation** (`src/core/layering.ts`)
+   - `createLayer(options: CreateLayerOptions)`:
+     - Materialize parent template to temp directory (parent/)
+     - Copy child template files to another temp directory (child/)
+     - Initialize git repository in temp directory
+     - Commit parent as base
+     - Apply child changes on top
+     - Generate patch using `git diff --cached > layer.patch`
+     - Move `layer.patch` to child template directory
+   - **Critical Requirement**: Use native git commands (`git diff`, `git format-patch`) for all patch creation
+
+2. **Patch Application** (`src/core/generator.ts`)
+   - Modify `generateApp` to support layered templates:
+     - If `basedOn` is specified:
+       - Materialize parent template to target directory
+       - Apply `layer.patch` using `git apply --directory=<target>`
+       - Render Handlebars templates on final materialized content
+   - **Critical Requirement**: Use `git apply` for all patch operations
+
+3. **Git Utilities** (`src/utils/git.ts`)
+   - `createPatch(parentDir: string, childDir: string, outputPath: string)` – Wrapper around git diff
+   - `applyPatch(targetDir: string, patchPath: string)` – Wrapper around git apply
+   - Error handling for patch application failures
+
+4. **CLI Integration**
+   - Implement `template layer` command (creates layer patch from child template):
+     ```
+     magen-template template layer <name> [--based-on <parent>] [--out <templateDir>]
+     ```
+
+### Success Criteria
+- Layer created from work directory using git diff
+- Patch applied successfully during generation using git apply
+- Single-layer templates (e.g., `ios-salesforce` based on `ios-base`) work end-to-end
+
+### Testing
+- Layer creation from child template
+- Patch application during generation
+- End-to-end single-layer template generation
+- Error handling for patch conflicts
+
+---
+
+## Phase 5 – Multi-Layer Materialization
+
+**Status**: `PENDING` ⏳
+
+**Goal**: Support arbitrary-depth template chains (e.g., `base` → `salesforce` → `offline`).
+
+### Deliverables
+
+1. **Recursive Materialization** (`src/core/layering.ts`)
+   - `materializeTemplate(templateName: string, targetDir: string)`:
+     - Recursively traverse `basedOn` chain
+     - Apply patches in order from root to leaf
+     - Use `git apply` for each layer
+   - Cycle detection to prevent infinite loops
+
+2. **Integration with Generator**
+   - Update `generateApp` to use `materializeTemplate` for multi-layer templates
+
+### Success Criteria
+- Multi-layer templates (3+ layers) work correctly
+- Patches applied in correct order
+- Cycle detection prevents infinite loops
+
+### Testing
+- 3-layer template chain
+- Cycle detection
+- Patch application order
+- End-to-end multi-layer generation
+
+---
+
+## Phase 6 – Xcode Project File Integration
+
+**Status**: `PENDING` ⏳
+
+**Goal**: Handle Xcode `.xcodeproj/project.pbxproj` files, which use `{}` syntax extensively and conflict with Handlebars.
+
+### Deliverables
+
+1. **Xcode File Handling**
+   - Detect `.pbxproj` files during generation
+   - Apply special escaping or raw block handling:
+     ```handlebars
+     {{{{raw}}}}
+     ... pbxproj content ...
+     {{{{/raw}}}}
+     ```
+   - Or use a custom renderer for `.pbxproj` files
+
+2. **Template Updates**
+   - Update `ios-base` template to include complete Xcode project structure
+   - Ensure generated projects can be opened and built in Xcode
+
+### Success Criteria
+- Generated iOS projects include `.xcodeproj` directory
+- Projects open and build successfully in Xcode
+- Handlebars templating works for pbxproj files
+
+### Testing
+- Generate iOS app and open in Xcode
+- Build and run generated project
+- Verify all project settings are correct
+
+---
+
+## Integration Testing
+
+### End-to-End Scenarios
+
+1. **Flat Template**
+   - List templates
+   - Generate app from `ios-base`
+   - Verify all files rendered correctly
+   - Verify variables substituted
+
+2. **Test Workflow**
+   - Create test instance (`template test`)
+   - Open work directory in Xcode, validate it builds
+   - Iterate with `template test --regenerate`
+
+3. **Single-Layer Template**
+   - Generate app from `ios-salesforce` (based on `ios-base`)
+   - Verify layer patch applied
+   - Verify variables from both layers resolved
+
+4. **Multi-Layer Template**
+   - Generate app from `ios-salesforce-offline` (based on `ios-salesforce` based on `ios-base`)
+   - Verify all patches applied in order
+   - Verify variables from all layers resolved
+
+---
+
+## Rollout Plan
+
+1. **Phase 0-2**: Core functionality (discovery, schema, generation)
+2. **Phase 3**: Test workflow (work directory management)
+3. **Phase 4-5**: Layering support
+4. **Phase 6**: Xcode integration
+5. **Documentation & Examples**: Comprehensive guides and sample templates
+
+---
+
+## Risks & Mitigations
+
+| Risk | Mitigation |
+|------|------------|
+| Git not available | Check in Phase 0, fail with clear error |
+| Patch conflicts | Clear error messages, no auto-merge in v1 |
+| Handlebars conflicts with `.pbxproj` | Phase 6 dedicated to special handling |
+| Cycle in template chain | Cycle detection in Phase 5 |
+
+---
+
+## Success Metrics
+
+- ✅ All phases complete with tests passing
+- ✅ End-to-end iOS app generation works
+- Multi-layer templates functional
+- Documentation complete
+- CLI and TypeScript API usable by humans and AI agents

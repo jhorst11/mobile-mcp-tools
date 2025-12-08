@@ -17,4 +17,6 @@ export interface GenerateOptions {
   outputDirectory: string;
   variables: Record<string, string | number | boolean>;
   overwrite?: boolean;
+  /** Optional path to template directory (for custom template locations) */
+  templateDirectory?: string;
 }
