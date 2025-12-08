@@ -22,3 +22,4 @@ export {
   getTemplateRoots,
 } from './core/discovery.js';
 export type { TemplateInfo, TemplateRoot } from './core/discovery.js';
+export { generateApp } from './core/generator.js';

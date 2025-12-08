@@ -10,6 +10,7 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { listTemplates, getTemplate } from '../core/discovery.js';
+import { generateApp } from '../core/generator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -132,6 +133,87 @@ function commandShow(args: string[]): void {
   }
 }
 
+function parseVariables(args: string[]): Record<string, string | number | boolean> {
+  const variables: Record<string, string | number | boolean> = {};
+  let i = 0;
+
+  while (i < args.length) {
+    if (args[i] === '--var' && i + 1 < args.length) {
+      const varArg = args[i + 1];
+      const [name, value] = varArg.split('=');
+
+      if (!name || value === undefined) {
+        console.error(`Error: Invalid variable format: ${varArg}`);
+        console.error('Expected format: --var name=value');
+        process.exit(1);
+      }
+
+      // Try to parse as number or boolean
+      if (value === 'true') {
+        variables[name] = true;
+      } else if (value === 'false') {
+        variables[name] = false;
+      } else if (/^\d+$/.test(value)) {
+        variables[name] = parseInt(value, 10);
+      } else if (/^\d+\.\d+$/.test(value)) {
+        variables[name] = parseFloat(value);
+      } else {
+        variables[name] = value;
+      }
+
+      i += 2;
+    } else {
+      i++;
+    }
+  }
+
+  return variables;
+}
+
+function commandGenerate(args: string[]): void {
+  if (args.length === 0) {
+    console.error('Error: Template name is required.');
+    console.error('Usage: magen-template generate <template> --out <directory> [--var name=value]');
+    process.exit(1);
+  }
+
+  const templateName = args[0];
+  const outIndex = args.indexOf('--out');
+  const overwrite = args.includes('--overwrite');
+
+  if (outIndex === -1 || outIndex + 1 >= args.length) {
+    console.error('Error: Output directory is required.');
+    console.error('Usage: magen-template generate <template> --out <directory> [--var name=value]');
+    process.exit(1);
+  }
+
+  const outputDirectory = args[outIndex + 1];
+  const variables = parseVariables(args);
+
+  try {
+    console.log(`Generating ${templateName} to ${outputDirectory}...`);
+
+    generateApp({
+      templateName,
+      outputDirectory,
+      variables,
+      overwrite,
+    });
+
+    console.log('✓ App generated successfully!');
+
+    if (Object.keys(variables).length > 0) {
+      console.log('\nVariables used:');
+      for (const [name, value] of Object.entries(variables)) {
+        console.log(`  ${name}: ${value}`);
+      }
+    }
+  } catch (error) {
+    console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
@@ -158,6 +240,9 @@ async function main() {
       break;
 
     case 'generate':
+      commandGenerate(commandArgs);
+      break;
+
     case 'template':
       console.error(`Command not yet implemented: ${command}`);
       console.error('Run "magen-template --help" for usage information.');

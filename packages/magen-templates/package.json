@@ -29,6 +29,7 @@
     "format": "prettier --write \"{src,tests}/**/*.ts\" \"*.{json,md}\""
   },
   "dependencies": {
+    "handlebars": "^4.7.8",
     "zod": "^3.25.67"
   },
   "devDependencies": {

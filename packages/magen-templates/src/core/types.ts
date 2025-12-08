@@ -16,4 +16,5 @@ export interface GenerateOptions {
   templateName: string;
   outputDirectory: string;
   variables: Record<string, string | number | boolean>;
+  overwrite?: boolean;
 }
