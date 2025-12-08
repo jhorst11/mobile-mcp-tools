@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, writeFileSync, rmSync, existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { testTemplate, getWorkDirectory, hasTestInstance } from '../src/core/testing.js';
+import { createLayer } from '../src/core/layering.js';
 
 describe('Template Testing', () => {
   let testDir: string;
@@ -212,6 +213,107 @@ let bundleId = "{{bundleId}}"
       const content2 = readFileSync(file2, 'utf-8');
 
       expect(content1).toBe(content2);
+    });
+
+    it('should use default values for required variables in layered templates', () => {
+      // Create base template with variables
+      const baseDir = join(testDir, 'base-with-defaults');
+      mkdirSync(join(baseDir, 'template'), { recursive: true });
+
+      writeFileSync(
+        join(baseDir, 'template.json'),
+        JSON.stringify({
+          name: 'base-with-defaults',
+          platform: 'ios',
+          version: '1.0.0',
+        })
+      );
+
+      const baseVariables = {
+        variables: [
+          {
+            name: 'appName',
+            type: 'string',
+            required: true,
+            default: 'DefaultApp',
+          },
+          {
+            name: 'baseFeature',
+            type: 'string',
+            required: true,
+            default: 'BaseFeature',
+          },
+        ],
+      };
+
+      writeFileSync(join(baseDir, 'variables.json'), JSON.stringify(baseVariables, null, 2));
+      writeFileSync(
+        join(baseDir, 'template', 'App.txt'),
+        'App: {{appName}}\nFeature: {{baseFeature}}'
+      );
+
+      // Create layered template
+      const layeredDir = join(testDir, 'layered-with-defaults');
+      mkdirSync(join(layeredDir, 'work'), { recursive: true });
+
+      writeFileSync(
+        join(layeredDir, 'template.json'),
+        JSON.stringify({
+          name: 'layered-with-defaults',
+          platform: 'ios',
+          version: '1.0.0',
+          basedOn: 'base-with-defaults',
+          layer: { patchFile: 'layer.patch' },
+        })
+      );
+
+      const layeredVariables = {
+        variables: [
+          ...baseVariables.variables,
+          {
+            name: 'customTitle',
+            type: 'string',
+            required: true,
+            default: 'Welcome to',
+          },
+        ],
+      };
+
+      writeFileSync(
+        join(layeredDir, 'work', 'variables.json'),
+        JSON.stringify(layeredVariables, null, 2)
+      );
+      writeFileSync(
+        join(layeredDir, 'work', 'App.txt'),
+        'App: {{appName}}\nFeature: {{baseFeature}}\nTitle: {{customTitle}}'
+      );
+
+      // Set up discovery
+      process.env.MAGEN_TEMPLATES_PATH = testDir;
+
+      // Create layer
+      createLayer({
+        templateName: 'layered-with-defaults',
+        templateDirectory: layeredDir,
+        parentTemplateName: 'base-with-defaults',
+      });
+
+      // Test the layered template without providing variables
+      const result = testTemplate({
+        templateName: 'layered-with-defaults',
+        templateDirectory: layeredDir,
+        variables: {}, // No variables provided - should use defaults
+        regenerate: false,
+      });
+
+      // Verify defaults were used
+      expect(result.variables.appName).toBe('DefaultApp');
+      expect(result.variables.baseFeature).toBe('BaseFeature');
+      expect(result.variables.customTitle).toBe('Welcome to');
+
+      // Verify output file uses defaults
+      const appContent = readFileSync(join(result.workDirectory, 'App.txt'), 'utf-8');
+      expect(appContent).toBe('App: DefaultApp\nFeature: BaseFeature\nTitle: Welcome to');
     });
   });
 });

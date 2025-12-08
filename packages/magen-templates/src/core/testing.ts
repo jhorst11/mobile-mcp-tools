@@ -67,7 +67,13 @@ function loadTemplateDescriptor(templateDirectory: string): TemplateDescriptor {
   validateTemplateDescriptor(metadataDescriptor);
 
   // Load variables.json (if present)
-  const variablesPath = join(templateDirectory, 'variables.json');
+  // For layered templates, check work/ directory first
+  // For base templates, check root directory
+  let variablesPath = join(templateDirectory, 'work', 'variables.json');
+  if (!existsSync(variablesPath)) {
+    variablesPath = join(templateDirectory, 'variables.json');
+  }
+
   let variables: TemplateVariable[] = [];
 
   if (existsSync(variablesPath)) {

@@ -127,7 +127,13 @@ export function discoverTemplates(options?: { platform?: string }): TemplateInfo
           }
 
           // Load variables.json (if present)
-          const variablesPath = join(templatePath, 'variables.json');
+          // For layered templates, check work/ directory first
+          // For base templates, check root directory
+          let variablesPath = join(templatePath, 'work', 'variables.json');
+          if (!existsSync(variablesPath)) {
+            variablesPath = join(templatePath, 'variables.json');
+          }
+
           let variables: TemplateVariable[] = [];
 
           if (existsSync(variablesPath)) {
@@ -138,14 +144,14 @@ export function discoverTemplates(options?: { platform?: string }): TemplateInfo
 
               if (!variablesResult.success) {
                 console.warn(
-                  `Warning: Invalid variables.json at ${templatePath}:\n  ${variablesResult.errors.join('\n  ')}`
+                  `Warning: Invalid variables.json at ${variablesPath}:\n  ${variablesResult.errors.join('\n  ')}`
                 );
               } else {
                 variables = variablesResult.data.variables;
               }
             } catch (error) {
               console.warn(
-                `Warning: Could not read variables.json at ${templatePath}: ${error instanceof Error ? error.message : String(error)}`
+                `Warning: Could not read variables.json at ${variablesPath}: ${error instanceof Error ? error.message : String(error)}`
               );
             }
           }

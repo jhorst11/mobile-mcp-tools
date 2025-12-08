@@ -95,10 +95,29 @@ export function createLayer(options: CreateLayerOptions): CreateLayerResult {
     execSync('git config user.name "Magen Template System"', { cwd: gitRepoDir, stdio: 'pipe' });
 
     // Copy parent template files to repo
-    const parentSourceDir = join(parentTemplateInfo.templatePath, 'template');
+    // For base templates, use template/ directory
+    // For layered templates, we need to materialize them first
+    let parentSourceDir = join(parentTemplateInfo.templatePath, 'template');
+
     if (!existsSync(parentSourceDir)) {
-      throw new Error(`Parent template files not found at ${parentSourceDir}`);
+      // Parent is a layered template - materialize it
+      const tempParentDir = join(tmpdir(), `magen-parent-${Date.now()}`);
+      try {
+        materializeTemplate({
+          template: parentTemplateInfo.descriptor,
+          targetDirectory: tempParentDir,
+          templateDirectory: parentTemplateInfo.templatePath,
+        });
+        parentSourceDir = tempParentDir;
+      } catch (error) {
+        // Clean up temp directory
+        if (existsSync(tempParentDir)) {
+          rmSync(tempParentDir, { recursive: true, force: true });
+        }
+        throw error;
+      }
     }
+
     cpSync(parentSourceDir, gitRepoDir, { recursive: true });
 
     // Also copy parent's variables.json if it exists (for base templates)

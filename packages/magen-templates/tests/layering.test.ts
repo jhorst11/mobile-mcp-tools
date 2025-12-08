@@ -404,4 +404,277 @@ let newFeature = "{{childFeature}}"
       }).toThrow('Cycle detected');
     });
   });
+
+  describe('Multi-Layer Materialization', () => {
+    it('should materialize 3-layer template chain', () => {
+      // Create base template
+      const base = join(testDir, 'templates', 'layer-base');
+      mkdirSync(join(base, 'template'), { recursive: true });
+
+      const baseTemplate = {
+        name: 'layer-base',
+        platform: 'ios',
+        version: '1.0.0',
+      };
+
+      const baseVariables = {
+        variables: [
+          {
+            name: 'appName',
+            type: 'string',
+            required: true,
+            default: 'BaseApp',
+          },
+        ],
+      };
+
+      writeFileSync(join(base, 'template.json'), JSON.stringify(baseTemplate, null, 2));
+      writeFileSync(join(base, 'variables.json'), JSON.stringify(baseVariables, null, 2));
+      writeFileSync(
+        join(base, 'template', 'App.swift'),
+        'let level = "base"\nlet appName = "{{appName}}"'
+      );
+
+      // Create layer 1 (middle)
+      const layer1 = join(testDir, 'templates', 'layer-1');
+      mkdirSync(join(layer1, 'work'), { recursive: true });
+
+      const layer1Template = {
+        name: 'layer-1',
+        platform: 'ios',
+        version: '1.0.0',
+        basedOn: 'layer-base',
+        layer: { patchFile: 'layer.patch' },
+      };
+
+      writeFileSync(join(layer1, 'template.json'), JSON.stringify(layer1Template, null, 2));
+
+      // Create work directory with base files + modifications
+      writeFileSync(
+        join(layer1, 'work', 'App.swift'),
+        'let level = "layer1"\nlet appName = "{{appName}}"\nlet layer1Feature = "{{layer1Feature}}"'
+      );
+
+      const layer1Variables = {
+        variables: [
+          ...baseVariables.variables,
+          {
+            name: 'layer1Feature',
+            type: 'string',
+            required: false,
+            default: 'Feature1',
+          },
+        ],
+      };
+      writeFileSync(
+        join(layer1, 'work', 'variables.json'),
+        JSON.stringify(layer1Variables, null, 2)
+      );
+
+      // Set up template discovery for createLayer
+      process.env.MAGEN_TEMPLATES_PATH = join(testDir, 'templates');
+
+      // Generate layer 1 patch
+      createLayer({
+        templateName: 'layer-1',
+        templateDirectory: layer1,
+        parentTemplateName: 'layer-base',
+      });
+
+      // Create layer 2 (top)
+      const layer2 = join(testDir, 'templates', 'layer-2');
+      mkdirSync(join(layer2, 'work'), { recursive: true });
+
+      const layer2Template = {
+        name: 'layer-2',
+        platform: 'ios',
+        version: '1.0.0',
+        basedOn: 'layer-1',
+        layer: { patchFile: 'layer.patch' },
+      };
+
+      writeFileSync(join(layer2, 'template.json'), JSON.stringify(layer2Template, null, 2));
+
+      // Create work directory with layer1 files + modifications
+      writeFileSync(
+        join(layer2, 'work', 'App.swift'),
+        'let level = "layer2"\nlet appName = "{{appName}}"\nlet layer1Feature = "{{layer1Feature}}"\nlet layer2Feature = "{{layer2Feature}}"'
+      );
+
+      const layer2Variables = {
+        variables: [
+          ...layer1Variables.variables,
+          {
+            name: 'layer2Feature',
+            type: 'string',
+            required: false,
+            default: 'Feature2',
+          },
+        ],
+      };
+      writeFileSync(
+        join(layer2, 'work', 'variables.json'),
+        JSON.stringify(layer2Variables, null, 2)
+      );
+
+      // Generate layer 2 patch
+      createLayer({
+        templateName: 'layer-2',
+        templateDirectory: layer2,
+        parentTemplateName: 'layer-1',
+      });
+
+      // Set up template discovery
+      process.env.MAGEN_TEMPLATES_PATH = join(testDir, 'templates');
+
+      // Generate from layer-2 (should apply both patches)
+      const outputDir = join(testDir, 'output');
+      generateApp({
+        templateName: 'layer-2',
+        outputDirectory: outputDir,
+        variables: {
+          appName: 'MultiLayerApp',
+          layer1Feature: 'Advanced1',
+          layer2Feature: 'Advanced2',
+        },
+        overwrite: false,
+      });
+
+      // Verify the final output has all layers applied
+      const appContent = readFileSync(join(outputDir, 'App.swift'), 'utf-8');
+      expect(appContent).toContain('let level = "layer2"');
+      expect(appContent).toContain('let appName = "MultiLayerApp"');
+      expect(appContent).toContain('let layer1Feature = "Advanced1"');
+      expect(appContent).toContain('let layer2Feature = "Advanced2"');
+    });
+
+    it('should detect cycles in multi-layer chains', () => {
+      // Create A -> B -> C -> A cycle
+      const templateA = join(testDir, 'templates', 'cycle-a');
+      const templateB = join(testDir, 'templates', 'cycle-b');
+      const templateC = join(testDir, 'templates', 'cycle-c');
+
+      mkdirSync(join(templateA, 'template'), { recursive: true });
+      mkdirSync(join(templateB, 'template'), { recursive: true });
+      mkdirSync(join(templateC, 'template'), { recursive: true });
+
+      writeFileSync(
+        join(templateA, 'template.json'),
+        JSON.stringify({
+          name: 'cycle-a',
+          platform: 'ios',
+          version: '1.0.0',
+          basedOn: 'cycle-c',
+        })
+      );
+
+      writeFileSync(
+        join(templateB, 'template.json'),
+        JSON.stringify({
+          name: 'cycle-b',
+          platform: 'ios',
+          version: '1.0.0',
+          basedOn: 'cycle-a',
+        })
+      );
+
+      writeFileSync(
+        join(templateC, 'template.json'),
+        JSON.stringify({
+          name: 'cycle-c',
+          platform: 'ios',
+          version: '1.0.0',
+          basedOn: 'cycle-b',
+        })
+      );
+
+      writeFileSync(join(templateA, 'variables.json'), JSON.stringify({ variables: [] }));
+      writeFileSync(join(templateB, 'variables.json'), JSON.stringify({ variables: [] }));
+      writeFileSync(join(templateC, 'variables.json'), JSON.stringify({ variables: [] }));
+
+      process.env.MAGEN_TEMPLATES_PATH = join(testDir, 'templates');
+
+      // Should detect cycle
+      expect(detectCycle('cycle-a')).toBe(true);
+      expect(detectCycle('cycle-b')).toBe(true);
+      expect(detectCycle('cycle-c')).toBe(true);
+    });
+
+    it('should apply patches in correct order for 3-layer chain', () => {
+      // Create base
+      const base = join(testDir, 'templates', 'order-base');
+      mkdirSync(join(base, 'template'), { recursive: true });
+
+      writeFileSync(
+        join(base, 'template.json'),
+        JSON.stringify({ name: 'order-base', platform: 'ios', version: '1.0.0' })
+      );
+      writeFileSync(join(base, 'variables.json'), JSON.stringify({ variables: [] }));
+      writeFileSync(join(base, 'template', 'Order.txt'), 'base');
+
+      // Create layer 1
+      const layer1 = join(testDir, 'templates', 'order-1');
+      mkdirSync(join(layer1, 'work'), { recursive: true });
+
+      writeFileSync(
+        join(layer1, 'template.json'),
+        JSON.stringify({
+          name: 'order-1',
+          platform: 'ios',
+          version: '1.0.0',
+          basedOn: 'order-base',
+          layer: { patchFile: 'layer.patch' },
+        })
+      );
+      writeFileSync(join(layer1, 'work', 'variables.json'), JSON.stringify({ variables: [] }));
+      writeFileSync(join(layer1, 'work', 'Order.txt'), 'base\nlayer1');
+
+      // Set up template discovery
+      process.env.MAGEN_TEMPLATES_PATH = join(testDir, 'templates');
+
+      createLayer({
+        templateName: 'order-1',
+        templateDirectory: layer1,
+        parentTemplateName: 'order-base',
+      });
+
+      // Create layer 2
+      const layer2 = join(testDir, 'templates', 'order-2');
+      mkdirSync(join(layer2, 'work'), { recursive: true });
+
+      writeFileSync(
+        join(layer2, 'template.json'),
+        JSON.stringify({
+          name: 'order-2',
+          platform: 'ios',
+          version: '1.0.0',
+          basedOn: 'order-1',
+          layer: { patchFile: 'layer.patch' },
+        })
+      );
+      writeFileSync(join(layer2, 'work', 'variables.json'), JSON.stringify({ variables: [] }));
+      writeFileSync(join(layer2, 'work', 'Order.txt'), 'base\nlayer1\nlayer2');
+
+      createLayer({
+        templateName: 'order-2',
+        templateDirectory: layer2,
+        parentTemplateName: 'order-1',
+      });
+
+      // Materialize layer 2
+      const outputDir = join(testDir, 'materialized');
+      process.env.MAGEN_TEMPLATES_PATH = join(testDir, 'templates');
+
+      generateApp({
+        templateName: 'order-2',
+        outputDirectory: outputDir,
+        variables: {},
+        overwrite: false,
+      });
+
+      // Verify patches were applied in correct order
+      const content = readFileSync(join(outputDir, 'Order.txt'), 'utf-8');
+      expect(content).toBe('base\nlayer1\nlayer2');
+    });
+  });
 });

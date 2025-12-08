@@ -182,7 +182,13 @@ export function generateApp(options: GenerateOptions): void {
     const metadataDescriptor = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
 
     // Also load variables.json if it exists
-    const variablesPath = join(templateDirectory, 'variables.json');
+    // For layered templates, check work/ directory first
+    // For base templates, check root directory
+    let variablesPath = join(templateDirectory, 'work', 'variables.json');
+    if (!existsSync(variablesPath)) {
+      variablesPath = join(templateDirectory, 'variables.json');
+    }
+
     let variables: Array<{
       name: string;
       type: 'string' | 'number' | 'boolean';
