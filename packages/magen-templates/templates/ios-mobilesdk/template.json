@@ -1,0 +1,17 @@
+{
+  "name": "ios-mobilesdk",
+  "platform": "ios",
+  "version": "1.0.0",
+  "description": "Functional iOS application with Salesforce Mobile SDK integration. Includes OAuth authentication",
+  "tags": [
+    "ios",
+    "swift",
+    "salesforce",
+    "mobile-sdk",
+    "oauth",
+  ],
+  "basedOn": "ios-base",
+  "layer": {
+    "patchFile": "layer.patch"
+  }
+}
