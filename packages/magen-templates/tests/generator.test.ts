@@ -61,17 +61,17 @@ describe('Template Generator', () => {
 
   describe('renderPath', () => {
     it('should render filename with variables', () => {
-      const result = renderPath('{{appName}}App.swift', { appName: 'MyApp' });
+      const result = renderPath('{{projectName}}App.swift', { projectName: 'MyApp' });
       expect(result).toBe('MyAppApp.swift');
     });
 
     it('should handle directory names', () => {
-      const result = renderPath('{{appName}}.xcodeproj', { appName: 'MyApp' });
+      const result = renderPath('{{projectName}}.xcodeproj', { projectName: 'MyApp' });
       expect(result).toBe('MyApp.xcodeproj');
     });
 
     it('should return unchanged path if no variables', () => {
-      const result = renderPath('ContentView.swift', { appName: 'MyApp' });
+      const result = renderPath('ContentView.swift', { projectName: 'MyApp' });
       expect(result).toBe('ContentView.swift');
     });
   });
@@ -110,13 +110,13 @@ describe('Template Generator', () => {
 
   describe('validateVariables', () => {
     const templateVars: TemplateVariable[] = [
-      { name: 'appName', type: 'string', required: true, description: 'App name' },
+      { name: 'projectName', type: 'string', required: true, description: 'Project name' },
       { name: 'count', type: 'number', required: false, description: 'Count' },
       {
-        name: 'bundleId',
+        name: 'bundleIdentifier',
         type: 'string',
         required: true,
-        description: 'Bundle ID',
+        description: 'Bundle Identifier',
         regex: '^[a-z]+(\\.[a-z]+)+$',
       },
       {
@@ -130,24 +130,24 @@ describe('Template Generator', () => {
 
     it('should pass validation for correct variables', () => {
       const result = validateVariables(templateVars, {
-        appName: 'MyApp',
-        bundleId: 'com.example.app',
+        projectName: 'MyApp',
+        bundleIdentifier: 'com.example.app',
       });
       expect(result.valid).toBe(true);
     });
 
     it('should fail if required variable is missing', () => {
-      const result = validateVariables(templateVars, { bundleId: 'com.example.app' });
+      const result = validateVariables(templateVars, { bundleIdentifier: 'com.example.app' });
       expect(result.valid).toBe(false);
       if (!result.valid) {
-        expect(result.errors).toContain("Required variable 'appName' is missing");
+        expect(result.errors).toContain("Required variable 'projectName' is missing");
       }
     });
 
     it('should fail if variable has wrong type', () => {
       const result = validateVariables(templateVars, {
-        appName: 'MyApp',
-        bundleId: 'com.example.app',
+        projectName: 'MyApp',
+        bundleIdentifier: 'com.example.app',
         count: 'not-a-number' as unknown as number,
       });
       expect(result.valid).toBe(false);
@@ -158,8 +158,8 @@ describe('Template Generator', () => {
 
     it('should fail if regex validation fails', () => {
       const result = validateVariables(templateVars, {
-        appName: 'MyApp',
-        bundleId: 'InvalidBundleId',
+        projectName: 'MyApp',
+        bundleIdentifier: 'InvalidBundleId',
       });
       expect(result.valid).toBe(false);
       if (!result.valid) {
@@ -169,8 +169,8 @@ describe('Template Generator', () => {
 
     it('should fail if enum validation fails', () => {
       const result = validateVariables(templateVars, {
-        appName: 'MyApp',
-        bundleId: 'com.example.app',
+        projectName: 'MyApp',
+        bundleIdentifier: 'com.example.app',
         env: 'invalid',
       });
       expect(result.valid).toBe(false);
@@ -181,8 +181,8 @@ describe('Template Generator', () => {
 
     it('should pass if enum value is valid', () => {
       const result = validateVariables(templateVars, {
-        appName: 'MyApp',
-        bundleId: 'com.example.app',
+        projectName: 'MyApp',
+        bundleIdentifier: 'com.example.app',
         env: 'staging',
       });
       expect(result.valid).toBe(true);
@@ -197,12 +197,13 @@ describe('Template Generator', () => {
         templateName: 'ios-base',
         outputDirectory: outputDir,
         variables: {
-          appName: 'MyTestApp',
-          bundleId: 'com.test.myapp',
+          projectName: 'MyTestApp',
+          bundleIdentifier: 'com.test.myapp',
+          organization: 'Test Inc.',
         },
       });
 
-      // Check files were created (in the {{appName}} subdirectory)
+      // Check files were created (in the {{projectName}} subdirectory)
       expect(existsSync(join(outputDir, 'MyTestApp', 'MyTestAppApp.swift'))).toBe(true);
       expect(existsSync(join(outputDir, 'MyTestApp', 'ContentView.swift'))).toBe(true);
       expect(existsSync(join(outputDir, 'MyTestApp', 'Info.plist'))).toBe(true);
@@ -215,7 +216,7 @@ describe('Template Generator', () => {
 
       const contentView = readFileSync(join(outputDir, 'MyTestApp', 'ContentView.swift'), 'utf-8');
       expect(contentView).toContain('Welcome to MyTestApp');
-      expect(contentView).toContain('Bundle ID: com.test.myapp');
+      expect(contentView).toContain('Built by Test Inc.');
 
       const infoPlist = readFileSync(join(outputDir, 'MyTestApp', 'Info.plist'), 'utf-8');
       expect(infoPlist).toContain('<string>MyTestApp</string>');
@@ -231,7 +232,7 @@ describe('Template Generator', () => {
         variables: {},
       });
 
-      // Should use default appName "MyApp"
+      // Should use default projectName "MyApp"
       expect(existsSync(join(outputDir, 'MyApp', 'MyAppApp.swift'))).toBe(true);
 
       const appFile = readFileSync(join(outputDir, 'MyApp', 'MyAppApp.swift'), 'utf-8');
@@ -254,8 +255,8 @@ describe('Template Generator', () => {
           templateName: 'ios-base',
           outputDirectory: testOutputDir,
           variables: {
-            appName: 'Test',
-            bundleId: 'InvalidBundleId', // Doesn't match regex pattern
+            projectName: 'Test',
+            bundleIdentifier: 'InvalidBundleId', // Doesn't match regex pattern
           },
         });
       }).toThrow('Variable validation failed');
@@ -273,8 +274,9 @@ describe('Template Generator', () => {
           templateName: 'ios-base',
           outputDirectory: outputDir,
           variables: {
-            appName: 'Test',
-            bundleId: 'com.test.app',
+            projectName: 'Test',
+            bundleIdentifier: 'com.test.app',
+            organization: 'Test Inc.',
           },
         });
       }).toThrow('Output directory is not empty');
@@ -288,8 +290,9 @@ describe('Template Generator', () => {
         templateName: 'ios-base',
         outputDirectory: outputDir,
         variables: {
-          appName: 'FirstApp',
-          bundleId: 'com.test.first',
+          projectName: 'FirstApp',
+          bundleIdentifier: 'com.test.first',
+          organization: 'First Inc.',
         },
       });
 
@@ -298,8 +301,9 @@ describe('Template Generator', () => {
         templateName: 'ios-base',
         outputDirectory: outputDir,
         variables: {
-          appName: 'SecondApp',
-          bundleId: 'com.test.second',
+          projectName: 'SecondApp',
+          bundleIdentifier: 'com.test.second',
+          organization: 'Second Inc.',
         },
         overwrite: true,
       });
@@ -316,8 +320,9 @@ describe('Template Generator', () => {
         templateName: 'ios-base',
         outputDirectory: outputDir,
         variables: {
-          appName: 'NestedApp',
-          bundleId: 'com.test.nested',
+          projectName: 'NestedApp',
+          bundleIdentifier: 'com.test.nested',
+          organization: 'Test Inc.',
         },
       });
 
@@ -337,9 +342,9 @@ describe('Template Generator', () => {
         templateName: 'ios-base',
         outputDirectory: outputDir,
         variables: {
-          appName: 'TypeTest',
-          bundleId: 'com.test.types',
-          deploymentTarget: '16.0', // Should be string enum
+          projectName: 'TypeTest',
+          bundleIdentifier: 'com.test.types',
+          organization: 'Test Inc.',
         },
       });
 

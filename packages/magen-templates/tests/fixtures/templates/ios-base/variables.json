@@ -1,19 +1,26 @@
 {
     "variables": [
         {
-            "name": "appName",
+            "name": "projectName",
             "type": "string",
             "required": true,
             "description": "The display name of the application",
             "default": "MyApp"
         },
         {
-            "name": "bundleId",
+            "name": "bundleIdentifier",
             "type": "string",
             "required": true,
             "description": "Bundle identifier for the iOS app",
             "default": "com.example.myapp",
             "regex": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+$"
+        },
+        {
+            "name": "organization",
+            "type": "string",
+            "required": true,
+            "description": "The organization name of the iOS application",
+            "default": "Example Inc."
         }
     ]
 }

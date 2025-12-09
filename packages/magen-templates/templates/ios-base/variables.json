@@ -1,35 +1,26 @@
 {
   "variables": [
     {
-      "name": "appName",
+      "name": "projectName",
       "type": "string",
       "required": true,
       "description": "The display name of the iOS application",
       "default": "MyApp"
     },
     {
-      "name": "bundleId",
+      "name": "bundleIdentifier",
       "type": "string",
       "required": true,
-      "description": "Bundle identifier for the iOS application",
+      "description": "The bundle identifier of the iOS application",
       "default": "com.example.myapp",
-      "regex": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+      "regex": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+$"
     },
     {
-      "name": "organizationName",
+      "name": "organization",
       "type": "string",
-      "required": false,
-      "description": "Organization name for copyright headers",
-      "default": "My Company"
-    },
-    {
-      "name": "deploymentTarget",
-      "type": "string",
-      "required": false,
-      "description": "Minimum iOS deployment target",
-      "default": "17.0",
-      "enum": ["15.0", "16.0", "17.0", "18.0"]
+      "required": true,
+      "description": "The organization name of the iOS application",
+      "default": "Example Inc."
     }
   ]
 }
-
