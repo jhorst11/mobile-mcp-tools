@@ -1,0 +1,515 @@
+diff --git a/Podfile b/Podfile
+new file mode 100644
+index 0000000..91178dc
+--- /dev/null
++++ b/Podfile
+@@ -0,0 +1,26 @@
++# Podfile for {{projectName}}
++# Salesforce Mobile SDK for iOS
++
++platform :ios, '17.0'
++
++project '{{projectName}}.xcodeproj'
++
++source 'https://github.com/forcedotcom/SalesforceMobileSDK-iOS-Specs.git'
++source 'https://cdn.cocoapods.org/'
++
++target '{{projectName}}' do
++  use_frameworks!
++
++  # Salesforce Mobile SDK
++  pod 'SalesforceSDKCore', '~> {{salesforceMobileSDKVersion}}'
++  
++  post_install do |installer|
++    installer.pods_project.targets.each do |target|
++      target.build_configurations.each do |config|
++        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0'
++        config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
++      end
++    end
++  end
++end
++
+diff --git a/variables.json b/variables.json
+index 182bde3..8d6503a 100644
+--- a/variables.json
++++ b/variables.json
+@@ -21,6 +21,34 @@
+       "required": true,
+       "description": "The organization name of the iOS application",
+       "default": "Example Inc."
++    },
++    {
++      "name": "salesforceMobileSDKVersion",
++      "type": "string",
++      "required": true,
++      "description": "Salesforce Mobile SDK version to use",
++      "default": "13.1"
++    },
++    {
++      "name": "salesforceConsumerKey",
++      "type": "string",
++      "required": true,
++      "description": "Salesforce Connected App Consumer Key (Client ID)",
++      "default": ""
++    },
++    {
++      "name": "salesforceLoginHost",
++      "type": "string",
++      "required": true,
++      "description": "Salesforce login host (e.g. login.salesforce.com)",
++      "default": "login.salesforce.com"
++    },
++    {
++      "name": "salesforceCallbackUrl",
++      "type": "string",
++      "required": true,
++      "description": "OAuth callback URL configured in Connected App",
++      "default": "myapp://auth/callback"
+     }
+   ]
+ }
+\ No newline at end of file
+diff --git a/{{projectName}}.xcodeproj/project.pbxproj b/{{projectName}}.xcodeproj/project.pbxproj
+index 9138834..22e5d3b 100644
+--- a/{{projectName}}.xcodeproj/project.pbxproj
++++ b/{{projectName}}.xcodeproj/project.pbxproj
+@@ -7,17 +7,26 @@
+ 	objects = {
+ 
+ /* Begin PBXBuildFile section */
+-		APP001 /* {{projectName}}App.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC001 /* {{projectName}}App.swift */; };
+-		APP002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* ContentView.swift */; };
++		APP001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC001 /* AppDelegate.swift */; };
++		APP002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* SceneDelegate.swift */; };
++		APP003 /* InitialViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* InitialViewController.swift */; };
+ 		RES001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = RES001REF /* Assets.xcassets */; };
++		RES002 /* bootconfig.plist in Resources */ = {isa = PBXBuildFile; fileRef = RES002REF /* bootconfig.plist */; };
++		RES003 /* userstore.json in Resources */ = {isa = PBXBuildFile; fileRef = RES003REF /* userstore.json */; };
++		RES004 /* usersyncs.json in Resources */ = {isa = PBXBuildFile; fileRef = RES004REF /* usersyncs.json */; };
+ /* End PBXBuildFile section */
+ 
+ /* Begin PBXFileReference section */
+ 		PRODUCT /* {{projectName}}.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "{{projectName}}.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+-		SRC001 /* {{projectName}}App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "{{projectName}}App.swift"; sourceTree = "<group>"; };
+-		SRC002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
++		SRC001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
++		SRC002 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
++		SRC003 /* InitialViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialViewController.swift; sourceTree = "<group>"; };
+ 		INFO /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
++		BRIDGE /* Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
+ 		RES001REF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
++		RES002REF /* bootconfig.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = bootconfig.plist; sourceTree = "<group>"; };
++		RES003REF /* userstore.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = userstore.json; sourceTree = "<group>"; };
++		RES004REF /* usersyncs.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = usersyncs.json; sourceTree = "<group>"; };
+ /* End PBXFileReference section */
+ 
+ /* Begin PBXFrameworksBuildPhase section */
+@@ -50,9 +59,14 @@
+ 		SOURCEGROUP /* {{projectName}} */ = {
+ 			isa = PBXGroup;
+ 			children = (
+-				SRC001 /* {{projectName}}App.swift */,
+-				SRC002 /* ContentView.swift */,
++				SRC001 /* AppDelegate.swift */,
++				SRC002 /* SceneDelegate.swift */,
++				SRC003 /* InitialViewController.swift */,
++				BRIDGE /* Bridging-Header.h */,
+ 				RES001REF /* Assets.xcassets */,
++				RES002REF /* bootconfig.plist */,
++				RES003REF /* userstore.json */,
++				RES004REF /* usersyncs.json */,
+ 				INFO /* Info.plist */,
+ 			);
+ 			path = "{{projectName}}";
+@@ -83,7 +97,7 @@
+ /* Begin PBXProject section */
+ 		PROJECT = {
+ 			isa = PBXProject;
+-			attributes = {
++			Attributes = {
+ 				BuildIndependentTargetsInParallel = 1;
+ 				LastSwiftUpdateCheck = 1500;
+ 				LastUpgradeCheck = 1500;
+@@ -117,6 +131,9 @@
+ 			buildActionMask = 2147483647;
+ 			files = (
+ 				RES001 /* Assets.xcassets in Resources */,
++				RES002 /* bootconfig.plist in Resources */,
++				RES003 /* userstore.json in Resources */,
++				RES004 /* usersyncs.json in Resources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+ 		};
+@@ -127,8 +144,9 @@
+ 			isa = PBXSourcesBuildPhase;
+ 			buildActionMask = 2147483647;
+ 			files = (
+-				APP002 /* ContentView.swift in Sources */,
+-				APP001 /* {{projectName}}App.swift in Sources */,
++				APP001 /* AppDelegate.swift in Sources */,
++				APP002 /* SceneDelegate.swift in Sources */,
++				APP003 /* InitialViewController.swift in Sources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+ 		};
+@@ -239,7 +257,7 @@
+ 				GCC_C_LANGUAGE_STANDARD = gnu17;
+ 				GCC_NO_COMMON_BLOCKS = YES;
+ 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
++				CLANG_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+ 				GCC_WARN_UNDECLARED_SELECTOR = YES;
+ 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+ 				GCC_WARN_UNUSED_FUNCTION = YES;
+@@ -270,7 +288,7 @@
+ 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+ 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+ 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
++				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+ 				LD_RUNPATH_SEARCH_PATHS = (
+ 					"$(inherited)",
+ 					"@executable_path/Frameworks",
+@@ -279,6 +297,7 @@
+ 				PRODUCT_BUNDLE_IDENTIFIER = "{{bundleIdentifier}}";
+ 				PRODUCT_NAME = "$(TARGET_NAME)";
+ 				SWIFT_EMIT_LOC_STRINGS = YES;
++				SWIFT_OBJC_BRIDGING_HEADER = "{{projectName}}/Bridging-Header.h";
+ 				SWIFT_VERSION = 5.0;
+ 				TARGETED_DEVICE_FAMILY = "1,2";
+ 			};
+@@ -300,7 +319,7 @@
+ 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+ 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+ 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
++				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+ 				LD_RUNPATH_SEARCH_PATHS = (
+ 					"$(inherited)",
+ 					"@executable_path/Frameworks",
+@@ -309,6 +328,7 @@
+ 				PRODUCT_BUNDLE_IDENTIFIER = "{{bundleIdentifier}}";
+ 				PRODUCT_NAME = "$(TARGET_NAME)";
+ 				SWIFT_EMIT_LOC_STRINGS = YES;
++				SWIFT_OBJC_BRIDGING_HEADER = "{{projectName}}/Bridging-Header.h";
+ 				SWIFT_VERSION = 5.0;
+ 				TARGETED_DEVICE_FAMILY = "1,2";
+ 			};
+@@ -339,3 +359,4 @@
+ 	};
+ 	rootObject = PROJECT /* Project object */;
+ }
++
+diff --git a/{{projectName}}.xcodeproj/xcshareddata/xcschemes/{{projectName}}.xcscheme b/{{projectName}}.xcodeproj/xcshareddata/xcschemes/{{projectName}}.xcscheme
+index 2ebc366..83f863e 100644
+--- a/{{projectName}}.xcodeproj/xcshareddata/xcschemes/{{projectName}}.xcscheme
++++ b/{{projectName}}.xcodeproj/xcshareddata/xcschemes/{{projectName}}.xcscheme
+@@ -75,3 +75,4 @@
+       revealArchiveInOrganizer = "YES">
+    </ArchiveAction>
+ </Scheme>
++
+diff --git a/{{projectName}}/AppDelegate.swift b/{{projectName}}/AppDelegate.swift
+new file mode 100644
+index 0000000..a2f06ae
+--- /dev/null
++++ b/{{projectName}}/AppDelegate.swift
+@@ -0,0 +1,40 @@
++//
++//  AppDelegate.swift
++//  {{projectName}}
++//
++//  Created by {{organization}}
++//  Salesforce Mobile SDK App
++//
++
++import Foundation
++import UIKit
++import SalesforceSDKCore
++
++@UIApplicationMain
++class AppDelegate: UIResponder, UIApplicationDelegate {
++    var window: UIWindow?
++
++    override init() {
++        super.init()
++        SalesforceManager.initializeSDK()
++    }
++
++    // MARK: UISceneSession Lifecycle
++    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
++        return UISceneConfiguration(name: "Default Configuration", sessionRole: connectingSceneSession.role)
++    }
++    
++    func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {
++    }
++
++    // MARK: - App delegate lifecycle
++    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
++        return true
++    }
++    
++    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
++        return UserAccountManager.shared.handleIdentityProviderResponse(from: url, with: options)
++    }
++}
++
++
+diff --git a/{{projectName}}/Bridging-Header.h b/{{projectName}}/Bridging-Header.h
+new file mode 100644
+index 0000000..c20bb1c
+--- /dev/null
++++ b/{{projectName}}/Bridging-Header.h
+@@ -0,0 +1,15 @@
++//
++//  Bridging-Header.h
++//  {{projectName}}
++//
++//  Use this file to import Objective-C headers for Swift access
++//
++
++#ifndef Bridging_Header_h
++#define Bridging_Header_h
++
++// Import any Objective-C headers here if needed
++
++#endif /* Bridging_Header_h */
++
++
+diff --git a/{{projectName}}/ContentView.swift b/{{projectName}}/ContentView.swift
+deleted file mode 100644
+index a7c3096..0000000
+--- a/{{projectName}}/ContentView.swift
++++ /dev/null
+@@ -1,28 +0,0 @@
+-//
+-//  ContentView.swift
+-//  {{projectName}}
+-//
+-//  Created by {{organization}}
+-//
+-
+-import SwiftUI
+-
+-struct ContentView: View {
+-    var body: some View {
+-        VStack(spacing: 20) {
+-            Image(systemName: "globe")
+-                .imageScale(.large)
+-                .foregroundStyle(.tint)
+-            Text("Welcome to {{projectName}}")
+-                .font(.title)
+-            Text("Built by {{organization}}")
+-                .font(.subheadline)
+-                .foregroundColor(.secondary)
+-        }
+-        .padding()
+-    }
+-}
+-
+-#Preview {
+-    ContentView()
+-}
+diff --git a/{{projectName}}/Info.plist b/{{projectName}}/Info.plist
+index 88ee3e7..37fa32b 100644
+--- a/{{projectName}}/Info.plist
++++ b/{{projectName}}/Info.plist
+@@ -25,7 +25,19 @@
+ 	<key>UIApplicationSceneManifest</key>
+ 	<dict>
+ 		<key>UIApplicationSupportsMultipleScenes</key>
+-		<true/>
++		<false/>
++		<key>UISceneConfigurations</key>
++		<dict>
++			<key>UIWindowSceneSessionRoleApplication</key>
++			<array>
++				<dict>
++					<key>UISceneConfigurationName</key>
++					<string>Default Configuration</string>
++					<key>UISceneDelegateClassName</key>
++					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
++				</dict>
++			</array>
++		</dict>
+ 	</dict>
+ 	<key>UIApplicationSupportsIndirectInputEvents</key>
+ 	<true/>
+diff --git a/{{projectName}}/InitialViewController.swift b/{{projectName}}/InitialViewController.swift
+new file mode 100644
+index 0000000..be2c607
+--- /dev/null
++++ b/{{projectName}}/InitialViewController.swift
+@@ -0,0 +1,51 @@
++//
++//  InitialViewController.swift
++//  {{projectName}}
++//
++//  Created by {{organization}}
++//
++
++import UIKit
++import SalesforceSDKCore
++import Combine
++
++class InitialViewController: UIViewController {
++    
++    var cancellables = Set<AnyCancellable>()
++    
++    override func viewDidLoad() {
++        super.viewDidLoad()
++        self.view.backgroundColor = .systemBackground
++        
++        // Setup basic UI
++        let label = UILabel()
++        label.text = "{{projectName}}\nSalesforce Mobile SDK"
++        label.numberOfLines = 0
++        label.textAlignment = .center
++        label.font = .systemFont(ofSize: 24, weight: .medium)
++        label.translatesAutoresizingMaskIntoConstraints = false
++        
++        view.addSubview(label)
++        
++        NSLayoutConstraint.activate([
++            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
++            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
++        ])
++        
++        // Observe authentication
++        UserAccountManager.shared.publisher(for: \.currentUserAccount)
++            .receive(on: DispatchQueue.main)
++            .sink { [weak self] account in
++                if let account = account {
++                    self?.handleAuthentication(account: account)
++                }
++            }
++            .store(in: &cancellables)
++    }
++    
++    func handleAuthentication(account: UserAccount) {
++        // User is authenticated
++        print("Authenticated as: \(account.accountIdentity.userId)")
++    }
++}
++
+diff --git a/{{projectName}}/SceneDelegate.swift b/{{projectName}}/SceneDelegate.swift
+new file mode 100644
+index 0000000..157ca45
+--- /dev/null
++++ b/{{projectName}}/SceneDelegate.swift
+@@ -0,0 +1,40 @@
++//
++//  SceneDelegate.swift
++//  {{projectName}}
++//
++//  Created by {{organization}}
++//
++
++import UIKit
++import SwiftUI
++import SalesforceSDKCore
++
++class SceneDelegate: UIResponder, UIWindowSceneDelegate {
++    var window: UIWindow?
++
++    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
++        guard let windowScene = (scene as? UIWindowScene) else { return }
++        
++        self.window = UIWindow(frame: windowScene.coordinateSpace.bounds)
++        self.window?.windowScene = windowScene
++        self.window?.rootViewController = InitialViewController(nibName: nil, bundle: nil)
++        self.window?.makeKeyAndVisible()
++    }
++
++    func sceneDidDisconnect(_ scene: UIScene) {
++    }
++
++    func sceneDidBecomeActive(_ scene: UIScene) {
++    }
++
++    func sceneWillResignActive(_ scene: UIScene) {
++    }
++
++    func sceneWillEnterForeground(_ scene: UIScene) {
++    }
++
++    func sceneDidEnterBackground(_ scene: UIScene) {
++    }
++}
++
++
+diff --git a/{{projectName}}/bootconfig.plist b/{{projectName}}/bootconfig.plist
+new file mode 100644
+index 0000000..645ee3f
+--- /dev/null
++++ b/{{projectName}}/bootconfig.plist
+@@ -0,0 +1,20 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>remoteAccessConsumerKey</key>
++	<string>{{salesforceConsumerKey}}</string>
++	<key>oauthRedirectURI</key>
++	<string>{{salesforceCallbackUrl}}</string>
++	<key>oauthScopes</key>
++	<array>
++		<string>api</string>
++		<string>web</string>
++		<string>refresh_token</string>
++	</array>
++	<key>shouldAuthenticate</key>
++	<true/>
++	<key>attemptOfflineLogin</key>
++	<false/>
++</dict>
++</plist>
+diff --git a/{{projectName}}/userstore.json b/{{projectName}}/userstore.json
+new file mode 100644
+index 0000000..852fbb2
+--- /dev/null
++++ b/{{projectName}}/userstore.json
+@@ -0,0 +1,5 @@
++{
++  "soups": []
++}
++
++
+diff --git a/{{projectName}}/usersyncs.json b/{{projectName}}/usersyncs.json
+new file mode 100644
+index 0000000..ea2a1cf
+--- /dev/null
++++ b/{{projectName}}/usersyncs.json
+@@ -0,0 +1,5 @@
++{
++  "syncs": []
++}
++
++
+diff --git a/{{projectName}}/{{projectName}}App.swift b/{{projectName}}/{{projectName}}App.swift
+deleted file mode 100644
+index 42843d8..0000000
+--- a/{{projectName}}/{{projectName}}App.swift
++++ /dev/null
+@@ -1,20 +0,0 @@
+-//
+-//  {{projectName}}App.swift
+-//  {{projectName}}
+-//
+-//  Created by {{organization}}
+-//
+-
+-import SwiftUI
+-
+-@main
+-struct {{projectName}}App: App {
+-    var body: some Scene {
+-        WindowGroup {
+-            ContentView()
+-        }
+-    }
+-}
+-
+-
+-

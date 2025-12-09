@@ -1,0 +1,18 @@
+{
+  "name": "ios-salesforce-base",
+  "platform": "ios",
+  "version": "1.0.0",
+  "description": "Functional iOS application with Salesforce Mobile SDK integration. Includes OAuth authentication, SmartStore support, and ready-to-use UIKit setup.",
+  "tags": [
+    "ios",
+    "swift",
+    "salesforce",
+    "mobile-sdk",
+    "oauth",
+    "smartstore"
+  ],
+  "basedOn": "ios-base",
+  "layer": {
+    "patchFile": "layer.patch"
+  }
+}

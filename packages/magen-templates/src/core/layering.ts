@@ -139,6 +139,16 @@ export function createLayer(options: CreateLayerOptions): CreateLayerResult {
           `For layered templates, edit files in work/ directory, not template/.`
       );
     }
+
+    // Remove all files from git repo first (except .git)
+    // This ensures deletions are properly detected
+    execSync('find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +', {
+      cwd: gitRepoDir,
+      stdio: 'pipe',
+      shell: '/bin/bash',
+    });
+
+    // Now copy child work directory
     cpSync(childSourceDir, gitRepoDir, { recursive: true });
 
     // Stage all changes (including new files)
