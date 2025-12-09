@@ -31,10 +31,10 @@ index 0000000..91178dc
 +end
 +
 diff --git a/variables.json b/variables.json
-index 182bde3..8d6503a 100644
+index 182bde3..2197c1e 100644
 --- a/variables.json
 +++ b/variables.json
-@@ -21,6 +21,34 @@
+@@ -21,6 +21,32 @@
        "required": true,
        "description": "The organization name of the iOS application",
        "default": "Example Inc."
@@ -47,13 +47,6 @@ index 182bde3..8d6503a 100644
 +      "default": "13.1"
 +    },
 +    {
-+      "name": "salesforceConsumerKey",
-+      "type": "string",
-+      "required": true,
-+      "description": "Salesforce Connected App Consumer Key (Client ID)",
-+      "default": ""
-+    },
-+    {
 +      "name": "salesforceLoginHost",
 +      "type": "string",
 +      "required": true,
@@ -61,108 +54,261 @@ index 182bde3..8d6503a 100644
 +      "default": "login.salesforce.com"
 +    },
 +    {
++      "name": "salesforceConsumerKey",
++      "type": "string",
++      "required": true,
++      "description": "Salesforce Connected App Consumer Key (Client ID)"
++    },
++    {
 +      "name": "salesforceCallbackUrl",
 +      "type": "string",
 +      "required": true,
-+      "description": "OAuth callback URL configured in Connected App",
-+      "default": "myapp://auth/callback"
++      "description": "OAuth callback URL configured in Connected App"
      }
    ]
  }
 \ No newline at end of file
 diff --git a/{{projectName}}.xcodeproj/project.pbxproj b/{{projectName}}.xcodeproj/project.pbxproj
-index 9138834..22e5d3b 100644
+index 9138834..d96407e 100644
 --- a/{{projectName}}.xcodeproj/project.pbxproj
 +++ b/{{projectName}}.xcodeproj/project.pbxproj
-@@ -7,17 +7,26 @@
+@@ -7,35 +7,68 @@
  	objects = {
  
  /* Begin PBXBuildFile section */
 -		APP001 /* {{projectName}}App.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC001 /* {{projectName}}App.swift */; };
 -		APP002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* ContentView.swift */; };
++		1B9011566E163E10A8763DB5 /* Pods_{{projectName}}.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D0E489F4E5B84E4DB7E12D0 /* Pods_{{projectName}}.framework */; };
 +		APP001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC001 /* AppDelegate.swift */; };
 +		APP002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* SceneDelegate.swift */; };
 +		APP003 /* InitialViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* InitialViewController.swift */; };
++		APP004 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC004 /* main.swift */; };
++		C255FEB02EE8B1E8001E31A8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C255FEAF2EE8B1E4001E31A8 /* ContentView.swift */; };
  		RES001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = RES001REF /* Assets.xcassets */; };
 +		RES002 /* bootconfig.plist in Resources */ = {isa = PBXBuildFile; fileRef = RES002REF /* bootconfig.plist */; };
-+		RES003 /* userstore.json in Resources */ = {isa = PBXBuildFile; fileRef = RES003REF /* userstore.json */; };
-+		RES004 /* usersyncs.json in Resources */ = {isa = PBXBuildFile; fileRef = RES004REF /* usersyncs.json */; };
  /* End PBXBuildFile section */
  
  /* Begin PBXFileReference section */
- 		PRODUCT /* {{projectName}}.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "{{projectName}}.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+-		PRODUCT /* {{projectName}}.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "{{projectName}}.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 -		SRC001 /* {{projectName}}App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "{{projectName}}App.swift"; sourceTree = "<group>"; };
 -		SRC002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
++		0C6248D8FB6C45FC1ABF9D4D /* Pods-{{projectName}}.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-{{projectName}}.release.xcconfig"; path = "Target Support Files/Pods-{{projectName}}/Pods-{{projectName}}.release.xcconfig"; sourceTree = "<group>"; };
++		3D0E489F4E5B84E4DB7E12D0 /* Pods_{{projectName}}.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_{{projectName}}.framework; sourceTree = BUILT_PRODUCTS_DIR; };
++		BRIDGE /* Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
++		C255FEAF2EE8B1E4001E31A8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
++		E11BE6109AF362E0088DDF5B /* Pods-{{projectName}}.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-{{projectName}}.debug.xcconfig"; path = "Target Support Files/Pods-{{projectName}}/Pods-{{projectName}}.debug.xcconfig"; sourceTree = "<group>"; };
+ 		INFO /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
++		PRODUCT /* {{projectName}}.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = {{projectName}}.app; sourceTree = BUILT_PRODUCTS_DIR; };
+ 		RES001REF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
++		RES002REF /* bootconfig.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = bootconfig.plist; sourceTree = "<group>"; };
 +		SRC001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 +		SRC002 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 +		SRC003 /* InitialViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialViewController.swift; sourceTree = "<group>"; };
- 		INFO /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-+		BRIDGE /* Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Bridging-Header.h"; sourceTree = "<group>"; };
- 		RES001REF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-+		RES002REF /* bootconfig.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = bootconfig.plist; sourceTree = "<group>"; };
-+		RES003REF /* userstore.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = userstore.json; sourceTree = "<group>"; };
-+		RES004REF /* usersyncs.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = usersyncs.json; sourceTree = "<group>"; };
++		SRC004 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
  /* End PBXFileReference section */
  
  /* Begin PBXFrameworksBuildPhase section */
-@@ -50,9 +59,14 @@
+-		FRAMEWORKS = {
++		FRAMEWORKS /* Frameworks */ = {
+ 			isa = PBXFrameworksBuildPhase;
+ 			buildActionMask = 2147483647;
+ 			files = (
++				1B9011566E163E10A8763DB5 /* Pods_{{projectName}}.framework in Frameworks */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+ 		};
+ /* End PBXFrameworksBuildPhase section */
+ 
+ /* Begin PBXGroup section */
++		653C6B3D24D7C214BDAC5184 /* Frameworks */ = {
++			isa = PBXGroup;
++			children = (
++				3D0E489F4E5B84E4DB7E12D0 /* Pods_{{projectName}}.framework */,
++			);
++			name = Frameworks;
++			sourceTree = "<group>";
++		};
++		F2CA2C08601AB86650C8CC7D /* Pods */ = {
++			isa = PBXGroup;
++			children = (
++				E11BE6109AF362E0088DDF5B /* Pods-{{projectName}}.debug.xcconfig */,
++				0C6248D8FB6C45FC1ABF9D4D /* Pods-{{projectName}}.release.xcconfig */,
++			);
++			path = Pods;
++			sourceTree = "<group>";
++		};
+ 		MAINGROUP = {
+ 			isa = PBXGroup;
+ 			children = (
+ 				SOURCEGROUP /* {{projectName}} */,
+ 				PRODUCTS /* Products */,
++				F2CA2C08601AB86650C8CC7D /* Pods */,
++				653C6B3D24D7C214BDAC5184 /* Frameworks */,
+ 			);
+ 			sourceTree = "<group>";
+ 		};
+@@ -50,48 +83,47 @@
  		SOURCEGROUP /* {{projectName}} */ = {
  			isa = PBXGroup;
  			children = (
 -				SRC001 /* {{projectName}}App.swift */,
 -				SRC002 /* ContentView.swift */,
++				C255FEAF2EE8B1E4001E31A8 /* ContentView.swift */,
 +				SRC001 /* AppDelegate.swift */,
 +				SRC002 /* SceneDelegate.swift */,
 +				SRC003 /* InitialViewController.swift */,
++				SRC004 /* main.swift */,
 +				BRIDGE /* Bridging-Header.h */,
  				RES001REF /* Assets.xcassets */,
 +				RES002REF /* bootconfig.plist */,
-+				RES003REF /* userstore.json */,
-+				RES004REF /* usersyncs.json */,
  				INFO /* Info.plist */,
  			);
- 			path = "{{projectName}}";
-@@ -83,7 +97,7 @@
+-			path = "{{projectName}}";
++			path = {{projectName}};
+ 			sourceTree = "<group>";
+ 		};
+ /* End PBXGroup section */
+ 
+ /* Begin PBXNativeTarget section */
+-		TARGET = {
++		TARGET /* {{projectName}} */ = {
+ 			isa = PBXNativeTarget;
+ 			buildConfigurationList = CONFIGLIST /* Build configuration list for PBXNativeTarget "{{projectName}}" */;
+ 			buildPhases = (
++				625D61CFB62965A1BC8EB613 /* [CP] Check Pods Manifest.lock */,
+ 				SOURCES /* Sources */,
+ 				FRAMEWORKS /* Frameworks */,
+ 				RESOURCES /* Resources */,
++				5C2B62CCB86A36F17205679C /* [CP] Embed Pods Frameworks */,
+ 			);
+ 			buildRules = (
+ 			);
+ 			dependencies = (
+ 			);
+-			name = "{{projectName}}";
+-			productName = "{{projectName}}";
++			name = {{projectName}};
++			productName = {{projectName}};
+ 			productReference = PRODUCT /* {{projectName}}.app */;
+ 			productType = "com.apple.product-type.application";
+ 		};
+ /* End PBXNativeTarget section */
+ 
  /* Begin PBXProject section */
- 		PROJECT = {
+-		PROJECT = {
++		PROJECT /* Project object */ = {
  			isa = PBXProject;
--			attributes = {
-+			Attributes = {
- 				BuildIndependentTargetsInParallel = 1;
- 				LastSwiftUpdateCheck = 1500;
- 				LastUpgradeCheck = 1500;
-@@ -117,6 +131,9 @@
+ 			attributes = {
+-				BuildIndependentTargetsInParallel = 1;
+-				LastSwiftUpdateCheck = 1500;
+-				LastUpgradeCheck = 1500;
+-				TargetAttributes = {
+-					TARGET = {
+-						CreatedOnToolsVersion = 15.0;
+-					};
+-				};
+ 			};
+ 			buildConfigurationList = PROJECTCONFIGLIST /* Build configuration list for PBXProject "{{projectName}}" */;
+ 			compatibilityVersion = "Xcode 14.0";
+@@ -117,18 +149,64 @@
  			buildActionMask = 2147483647;
  			files = (
  				RES001 /* Assets.xcassets in Resources */,
 +				RES002 /* bootconfig.plist in Resources */,
-+				RES003 /* userstore.json in Resources */,
-+				RES004 /* usersyncs.json in Resources */,
  			);
  			runOnlyForDeploymentPostprocessing = 0;
  		};
-@@ -127,8 +144,9 @@
+ /* End PBXResourcesBuildPhase section */
+ 
++/* Begin PBXShellScriptBuildPhase section */
++		5C2B62CCB86A36F17205679C /* [CP] Embed Pods Frameworks */ = {
++			isa = PBXShellScriptBuildPhase;
++			buildActionMask = 2147483647;
++			files = (
++			);
++			inputFileListPaths = (
++				"${PODS_ROOT}/Target Support Files/Pods-{{projectName}}/Pods-{{projectName}}-frameworks-${CONFIGURATION}-input-files.xcfilelist",
++			);
++			name = "[CP] Embed Pods Frameworks";
++			outputFileListPaths = (
++				"${PODS_ROOT}/Target Support Files/Pods-{{projectName}}/Pods-{{projectName}}-frameworks-${CONFIGURATION}-output-files.xcfilelist",
++			);
++			runOnlyForDeploymentPostprocessing = 0;
++			shellPath = /bin/sh;
++			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-{{projectName}}/Pods-{{projectName}}-frameworks.sh\"\n";
++			showEnvVarsInLog = 0;
++		};
++		625D61CFB62965A1BC8EB613 /* [CP] Check Pods Manifest.lock */ = {
++			isa = PBXShellScriptBuildPhase;
++			buildActionMask = 2147483647;
++			files = (
++			);
++			inputFileListPaths = (
++			);
++			inputPaths = (
++				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
++				"${PODS_ROOT}/Manifest.lock",
++			);
++			name = "[CP] Check Pods Manifest.lock";
++			outputFileListPaths = (
++			);
++			outputPaths = (
++				"$(DERIVED_FILE_DIR)/Pods-{{projectName}}-checkManifestLockResult.txt",
++			);
++			runOnlyForDeploymentPostprocessing = 0;
++			shellPath = /bin/sh;
++			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
++			showEnvVarsInLog = 0;
++		};
++/* End PBXShellScriptBuildPhase section */
++
+ /* Begin PBXSourcesBuildPhase section */
+ 		SOURCES /* Sources */ = {
  			isa = PBXSourcesBuildPhase;
  			buildActionMask = 2147483647;
  			files = (
 -				APP002 /* ContentView.swift in Sources */,
 -				APP001 /* {{projectName}}App.swift in Sources */,
++				APP004 /* main.swift in Sources */,
 +				APP001 /* AppDelegate.swift in Sources */,
 +				APP002 /* SceneDelegate.swift in Sources */,
++				C255FEB02EE8B1E8001E31A8 /* ContentView.swift in Sources */,
 +				APP003 /* InitialViewController.swift in Sources */,
  			);
  			runOnlyForDeploymentPostprocessing = 0;
  		};
-@@ -239,7 +257,7 @@
+@@ -209,6 +287,7 @@
+ 				CLANG_ENABLE_MODULES = YES;
+ 				CLANG_ENABLE_OBJC_ARC = YES;
+ 				CLANG_ENABLE_OBJC_WEAK = YES;
++				CLANG_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+ 				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+ 				CLANG_WARN_BOOL_CONVERSION = YES;
+ 				CLANG_WARN_COMMA = YES;
+@@ -239,7 +318,6 @@
  				GCC_C_LANGUAGE_STANDARD = gnu17;
  				GCC_NO_COMMON_BLOCKS = YES;
  				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 -				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-+				CLANG_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
  				GCC_WARN_UNDECLARED_SELECTOR = YES;
  				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
  				GCC_WARN_UNUSED_FUNCTION = YES;
-@@ -270,7 +288,7 @@
+@@ -256,6 +334,7 @@
+ 		};
+ 		TARGETDEBUG /* Debug */ = {
+ 			isa = XCBuildConfiguration;
++			baseConfigurationReference = E11BE6109AF362E0088DDF5B /* Pods-{{projectName}}.debug.xcconfig */;
+ 			buildSettings = {
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+@@ -264,21 +343,22 @@
+ 				DEVELOPMENT_TEAM = "";
+ 				ENABLE_PREVIEWS = YES;
+ 				GENERATE_INFOPLIST_FILE = NO;
+-				INFOPLIST_FILE = "{{projectName}}/Info.plist";
++				INFOPLIST_FILE = {{projectName}}/Info.plist;
+ 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+ 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
  				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
  				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
  				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -171,15 +317,32 @@ index 9138834..22e5d3b 100644
  				LD_RUNPATH_SEARCH_PATHS = (
  					"$(inherited)",
  					"@executable_path/Frameworks",
-@@ -279,6 +297,7 @@
- 				PRODUCT_BUNDLE_IDENTIFIER = "{{bundleIdentifier}}";
+ 				);
+ 				MARKETING_VERSION = 1.0;
+-				PRODUCT_BUNDLE_IDENTIFIER = "{{bundleIdentifier}}";
++				PRODUCT_BUNDLE_IDENTIFIER = com.example.{{projectName}};
  				PRODUCT_NAME = "$(TARGET_NAME)";
  				SWIFT_EMIT_LOC_STRINGS = YES;
 +				SWIFT_OBJC_BRIDGING_HEADER = "{{projectName}}/Bridging-Header.h";
  				SWIFT_VERSION = 5.0;
  				TARGETED_DEVICE_FAMILY = "1,2";
  			};
-@@ -300,7 +319,7 @@
+@@ -286,6 +366,7 @@
+ 		};
+ 		TARGETRELEASE /* Release */ = {
+ 			isa = XCBuildConfiguration;
++			baseConfigurationReference = 0C6248D8FB6C45FC1ABF9D4D /* Pods-{{projectName}}.release.xcconfig */;
+ 			buildSettings = {
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+@@ -294,21 +375,22 @@
+ 				DEVELOPMENT_TEAM = "";
+ 				ENABLE_PREVIEWS = YES;
+ 				GENERATE_INFOPLIST_FILE = NO;
+-				INFOPLIST_FILE = "{{projectName}}/Info.plist";
++				INFOPLIST_FILE = {{projectName}}/Info.plist;
+ 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+ 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
  				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
  				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
  				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -188,19 +351,16 @@ index 9138834..22e5d3b 100644
  				LD_RUNPATH_SEARCH_PATHS = (
  					"$(inherited)",
  					"@executable_path/Frameworks",
-@@ -309,6 +328,7 @@
- 				PRODUCT_BUNDLE_IDENTIFIER = "{{bundleIdentifier}}";
+ 				);
+ 				MARKETING_VERSION = 1.0;
+-				PRODUCT_BUNDLE_IDENTIFIER = "{{bundleIdentifier}}";
++				PRODUCT_BUNDLE_IDENTIFIER = com.example.{{projectName}};
  				PRODUCT_NAME = "$(TARGET_NAME)";
  				SWIFT_EMIT_LOC_STRINGS = YES;
 +				SWIFT_OBJC_BRIDGING_HEADER = "{{projectName}}/Bridging-Header.h";
  				SWIFT_VERSION = 5.0;
  				TARGETED_DEVICE_FAMILY = "1,2";
  			};
-@@ -339,3 +359,4 @@
- 	};
- 	rootObject = PROJECT /* Project object */;
- }
-+
 diff --git a/{{projectName}}.xcodeproj/xcshareddata/xcschemes/{{projectName}}.xcscheme b/{{projectName}}.xcodeproj/xcshareddata/xcschemes/{{projectName}}.xcscheme
 index 2ebc366..83f863e 100644
 --- a/{{projectName}}.xcodeproj/xcshareddata/xcschemes/{{projectName}}.xcscheme
@@ -212,15 +372,15 @@ index 2ebc366..83f863e 100644
 +
 diff --git a/{{projectName}}/AppDelegate.swift b/{{projectName}}/AppDelegate.swift
 new file mode 100644
-index 0000000..a2f06ae
+index 0000000..ab89201
 --- /dev/null
 +++ b/{{projectName}}/AppDelegate.swift
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,39 @@
 +//
 +//  AppDelegate.swift
-+//  {{projectName}}
++//  MyApp
 +//
-+//  Created by {{organization}}
++//  Created by Example Inc.
 +//  Salesforce Mobile SDK App
 +//
 +
@@ -228,7 +388,6 @@ index 0000000..a2f06ae
 +import UIKit
 +import SalesforceSDKCore
 +
-+@UIApplicationMain
 +class AppDelegate: UIResponder, UIApplicationDelegate {
 +    var window: UIWindow?
 +
@@ -278,39 +437,40 @@ index 0000000..c20bb1c
 +
 +
 diff --git a/{{projectName}}/ContentView.swift b/{{projectName}}/ContentView.swift
-deleted file mode 100644
-index a7c3096..0000000
+index a7c3096..a3392b5 100644
 --- a/{{projectName}}/ContentView.swift
-+++ /dev/null
-@@ -1,28 +0,0 @@
--//
--//  ContentView.swift
--//  {{projectName}}
--//
--//  Created by {{organization}}
--//
--
--import SwiftUI
--
--struct ContentView: View {
--    var body: some View {
--        VStack(spacing: 20) {
++++ b/{{projectName}}/ContentView.swift
+@@ -1,3 +1,4 @@
++
+ //
+ //  ContentView.swift
+ //  {{projectName}}
+@@ -10,14 +11,23 @@ import SwiftUI
+ struct ContentView: View {
+     var body: some View {
+         VStack(spacing: 20) {
 -            Image(systemName: "globe")
--                .imageScale(.large)
++            Image(systemName: "cloud.fill")
+                 .imageScale(.large)
 -                .foregroundStyle(.tint)
--            Text("Welcome to {{projectName}}")
--                .font(.title)
--            Text("Built by {{organization}}")
--                .font(.subheadline)
--                .foregroundColor(.secondary)
--        }
--        .padding()
--    }
--}
--
--#Preview {
--    ContentView()
--}
++                .foregroundStyle(.blue)
++                .font(.system(size: 60))
+             Text("Welcome to {{projectName}}")
+                 .font(.title)
+             Text("Built by {{organization}}")
+                 .font(.subheadline)
+                 .foregroundColor(.secondary)
++            
++            Spacer()
++                .frame(height: 20)
++            
++            Text("You're now connected to Salesforce!")
++                .font(.body)
++                .multilineTextAlignment(.center)
++                .padding()
+         }
+         .padding()
+     }
 diff --git a/{{projectName}}/Info.plist b/{{projectName}}/Info.plist
 index 88ee3e7..37fa32b 100644
 --- a/{{projectName}}/Info.plist
@@ -395,56 +555,118 @@ index 0000000..be2c607
 +
 diff --git a/{{projectName}}/SceneDelegate.swift b/{{projectName}}/SceneDelegate.swift
 new file mode 100644
-index 0000000..157ca45
+index 0000000..1bbbe3c
 --- /dev/null
 +++ b/{{projectName}}/SceneDelegate.swift
-@@ -0,0 +1,40 @@
-+//
-+//  SceneDelegate.swift
-+//  {{projectName}}
-+//
-+//  Created by {{organization}}
-+//
-+
+@@ -0,0 +1,102 @@
 +import UIKit
 +import SwiftUI
 +import SalesforceSDKCore
 +
 +class SceneDelegate: UIResponder, UIWindowSceneDelegate {
++
 +    var window: UIWindow?
 +
-+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-+        guard let windowScene = (scene as? UIWindowScene) else { return }
++    func scene(_ scene: UIScene, willConnectTo session: UISceneSession,
++        options connectionOptions: UIScene.ConnectionOptions) {
++        guard let windowScene = scene as? UIWindowScene else { return }
 +        
-+        self.window = UIWindow(frame: windowScene.coordinateSpace.bounds)
-+        self.window?.windowScene = windowScene
-+        self.window?.rootViewController = InitialViewController(nibName: nil, bundle: nil)
++        self.window = UIWindow(windowScene: windowScene)
 +        self.window?.makeKeyAndVisible()
++        
++        // Register for user change notifications
++        AuthHelper.registerBlock(forCurrentUserChangeNotifications: { [weak self] in
++            self?.resetViewState {
++                self?.setupRootViewController()
++            }
++        })
 +    }
 +
 +    func sceneDidDisconnect(_ scene: UIScene) {
++        // Called as the scene is being released by the system.
++        // This occurs shortly after the scene enters the background,
++        // or when its session is discarded.
++        // Release any resources associated with this scene that can be re-created
++        // the next time the scene connects.
++        // The scene may re-connect later, as its session was not necessarily
++        // discarded (see `application:didDiscardSceneSessions` instead).
 +    }
 +
 +    func sceneDidBecomeActive(_ scene: UIScene) {
++        // Called when the scene has moved from an inactive state to an active state.
++        // Use this method to restart any tasks that were paused (or not yet started)
++        // when the scene was inactive.
 +    }
 +
 +    func sceneWillResignActive(_ scene: UIScene) {
++        // Called when the scene will move from an active state to an inactive state.
++        // This may occur due to temporary interruptions (ex. an incoming phone call).
 +    }
 +
 +    func sceneWillEnterForeground(_ scene: UIScene) {
++        // Called as the scene transitions from the background to the foreground.
++        // Use this method to undo the changes made on entering the background.
++        
++        // Initialize the view state with InitialViewController
++        initializeAppViewState()
++        
++        // Check if login is required and handle authentication
++        AuthHelper.loginIfRequired { [weak self] in
++            self?.setupRootViewController()
++        }
 +    }
 +
 +    func sceneDidEnterBackground(_ scene: UIScene) {
++        // Called as the scene transitions from the foreground to the background.
++        // Use this method to save data, release shared resources, and store enough
++        // scene-specific state information
++        // to restore the scene back to its current state.
++    }
++    
++    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
++        // Handle OAuth callback URL
++        guard let url = URLContexts.first?.url else { return }
++        UserAccountManager.shared.handleIdentityProviderResponse(from: url, with: [:])
++    }
++    
++    // MARK: - Private Methods
++    
++    private func initializeAppViewState() {
++        if Thread.isMainThread {
++            self.window?.rootViewController = InitialViewController()
++        } else {
++            DispatchQueue.main.async {
++                self.initializeAppViewState()
++            }
++        }
++    }
++    
++    private func setupRootViewController() {
++        let contentView = ContentView()
++        let hostingController = UIHostingController(rootView: contentView)
++        self.window?.rootViewController = hostingController
++    }
++    
++    private func resetViewState(_ postResetBlock: @escaping () -> Void) {
++        if let rootViewController = self.window?.rootViewController {
++            if let presentedViewController = rootViewController.presentedViewController {
++                presentedViewController.dismiss(animated: false) {
++                    postResetBlock()
++                }
++            } else {
++                postResetBlock()
++            }
++        } else {
++            postResetBlock()
++        }
 +    }
 +}
-+
-+
 diff --git a/{{projectName}}/bootconfig.plist b/{{projectName}}/bootconfig.plist
 new file mode 100644
-index 0000000..645ee3f
+index 0000000..080cbdd
 --- /dev/null
 +++ b/{{projectName}}/bootconfig.plist
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,14 @@
 +<?xml version="1.0" encoding="UTF-8"?>
 +<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 +<plist version="1.0">
@@ -453,39 +675,33 @@ index 0000000..645ee3f
 +	<string>{{salesforceConsumerKey}}</string>
 +	<key>oauthRedirectURI</key>
 +	<string>{{salesforceCallbackUrl}}</string>
-+	<key>oauthScopes</key>
-+	<array>
-+		<string>api</string>
-+		<string>web</string>
-+		<string>refresh_token</string>
-+	</array>
 +	<key>shouldAuthenticate</key>
 +	<true/>
 +	<key>attemptOfflineLogin</key>
 +	<false/>
 +</dict>
 +</plist>
-diff --git a/{{projectName}}/userstore.json b/{{projectName}}/userstore.json
+diff --git a/{{projectName}}/main.swift b/{{projectName}}/main.swift
 new file mode 100644
-index 0000000..852fbb2
+index 0000000..7925a25
 --- /dev/null
-+++ b/{{projectName}}/userstore.json
-@@ -0,0 +1,5 @@
-+{
-+  "soups": []
-+}
++++ b/{{projectName}}/main.swift
+@@ -0,0 +1,16 @@
++//
++//  main.swift
++//  MyApp
++//
++//  Created for Salesforce Mobile SDK integration
++//
 +
++import UIKit
 +
-diff --git a/{{projectName}}/usersyncs.json b/{{projectName}}/usersyncs.json
-new file mode 100644
-index 0000000..ea2a1cf
---- /dev/null
-+++ b/{{projectName}}/usersyncs.json
-@@ -0,0 +1,5 @@
-+{
-+  "syncs": []
-+}
-+
++UIApplicationMain(
++    CommandLine.argc,
++    CommandLine.unsafeArgv,
++    nil,
++    NSStringFromClass(AppDelegate.self)
++)
 +
 diff --git a/{{projectName}}/{{projectName}}App.swift b/{{projectName}}/{{projectName}}App.swift
 deleted file mode 100644
