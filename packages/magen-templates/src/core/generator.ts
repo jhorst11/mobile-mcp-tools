@@ -14,12 +14,13 @@ import {
   existsSync,
   rmSync,
 } from 'fs';
-import { join } from 'path';
+import { join, relative } from 'path';
 import { tmpdir } from 'os';
 import Handlebars from 'handlebars';
+import { minimatch } from 'minimatch';
 import { findTemplate } from './discovery.js';
 import { materializeTemplate, detectCycle } from './layering.js';
-import type { TemplateVariable, TemplateDescriptor } from './schema.js';
+import type { TemplateVariable, TemplateDescriptor, GenerationConfig } from './schema.js';
 import type { GenerateOptions } from './types.js';
 
 /**
@@ -99,8 +100,21 @@ function renderTemplate(
   templateString: string,
   variables: Record<string, string | number | boolean>
 ): string {
-  const template = Handlebars.compile(templateString);
-  return template(variables);
+  try {
+    // Compile with strict mode disabled to handle files with {} syntax
+    const template = Handlebars.compile(templateString, {
+      strict: false,
+      noEscape: false,
+    });
+    return template(variables);
+  } catch (error) {
+    // If Handlebars fails to compile, return original string
+    // This handles files like .pbxproj that have {} but no Handlebars variables
+    console.warn(
+      `Warning: Failed to compile template, using original content: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return templateString;
+  }
 }
 
 /**
@@ -114,14 +128,52 @@ function renderPath(
 }
 
 /**
+ * Determines the processor to use for a file based on generation configuration
+ */
+function getFileProcessor(
+  filePath: string,
+  sourceRoot: string,
+  config?: GenerationConfig
+): 'handlebars' | 'copy' | 'skip' {
+  const filename = filePath.split('/').pop() || '';
+  const relativePath = relative(sourceRoot, filePath);
+
+  // Check file operations (deletions) first
+  if (config?.fileOperations) {
+    for (const operation of config.fileOperations) {
+      if (operation.action === 'delete') {
+        if (minimatch(filename, operation.from) || minimatch(relativePath, operation.from)) {
+          return 'skip';
+        }
+      }
+    }
+  }
+
+  // Check file transforms
+  if (config?.fileTransforms) {
+    for (const transform of config.fileTransforms) {
+      if (minimatch(relativePath, transform.pattern) || minimatch(filename, transform.pattern)) {
+        return transform.processor;
+      }
+    }
+  }
+
+  // Default: if no config or no matching transforms, process with handlebars
+  return config?.fileTransforms ? 'copy' : 'handlebars';
+}
+
+/**
  * Recursively copies and renders template files
  */
 function processTemplateDirectory(
   sourcePath: string,
   targetPath: string,
   variables: Record<string, string | number | boolean>,
-  overwrite: boolean
+  overwrite: boolean,
+  generationConfig?: GenerationConfig,
+  sourceRoot?: string
 ): void {
+  const root = sourceRoot || sourcePath;
   const entries = readdirSync(sourcePath);
 
   for (const entry of entries) {
@@ -134,8 +186,23 @@ function processTemplateDirectory(
     if (stats.isDirectory()) {
       // Create directory (with rendered name) and recurse
       mkdirSync(targetEntryPath, { recursive: true });
-      processTemplateDirectory(sourceEntryPath, targetEntryPath, variables, overwrite);
+      processTemplateDirectory(
+        sourceEntryPath,
+        targetEntryPath,
+        variables,
+        overwrite,
+        generationConfig,
+        root
+      );
     } else if (stats.isFile()) {
+      // Determine processor for this file
+      const processor = getFileProcessor(sourceEntryPath, root, generationConfig);
+
+      // Skip files marked for deletion
+      if (processor === 'skip') {
+        continue;
+      }
+
       // Check if file exists and overwrite is false
       if (existsSync(targetEntryPath) && !overwrite) {
         throw new Error(
@@ -146,8 +213,14 @@ function processTemplateDirectory(
       // Read file content
       const content = readFileSync(sourceEntryPath, 'utf-8');
 
-      // Render content with Handlebars
-      const renderedContent = renderTemplate(content, variables);
+      // Process based on processor type
+      let renderedContent: string;
+      if (processor === 'handlebars') {
+        renderedContent = renderTemplate(content, variables);
+      } else {
+        // processor === 'copy'
+        renderedContent = content;
+      }
 
       // Write rendered content
       writeFileSync(targetEntryPath, renderedContent, 'utf-8');
@@ -283,10 +356,22 @@ export function generateApp(options: GenerateOptions): void {
         }
 
         // Use updated variables for rendering
-        processTemplateDirectory(tempDir, outputDirectory, updatedAllVariables, overwrite);
+        processTemplateDirectory(
+          tempDir,
+          outputDirectory,
+          updatedAllVariables,
+          overwrite,
+          template.generation
+        );
       } else {
         // No variables.json in materialized template, use original variables
-        processTemplateDirectory(tempDir, outputDirectory, allVariables, overwrite);
+        processTemplateDirectory(
+          tempDir,
+          outputDirectory,
+          allVariables,
+          overwrite,
+          template.generation
+        );
       }
     } finally {
       // Clean up temp directory
@@ -303,7 +388,13 @@ export function generateApp(options: GenerateOptions): void {
     }
 
     // Process template directory
-    processTemplateDirectory(templateDir, outputDirectory, allVariables, overwrite);
+    processTemplateDirectory(
+      templateDir,
+      outputDirectory,
+      allVariables,
+      overwrite,
+      template.generation
+    );
   }
 }
 

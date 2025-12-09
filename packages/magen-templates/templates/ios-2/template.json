@@ -1,0 +1,41 @@
+{
+    "name": "ios-2",
+    "platform": "ios",
+    "version": "1.0.0",
+    "tags": [
+        "ios",
+        "swift",
+        "base"
+    ],
+    "description": "Base iOS application template using SwiftUI",
+    "generation": {
+        "fileTransforms": [
+            {
+                "pattern": "**/*.swift",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/*.plist",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/project.pbxproj",
+                "processor": "copy"
+            },
+            {
+                "pattern": "**/*.xcscheme",
+                "processor": "handlebars"
+            },
+            {
+                "pattern": "**/*.json",
+                "processor": "handlebars"
+            }
+        ],
+        "fileOperations": [
+            {
+                "action": "delete",
+                "from": ".DS_Store"
+            }
+        ]
+    }
+}

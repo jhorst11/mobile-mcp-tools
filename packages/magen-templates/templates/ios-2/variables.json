@@ -1,0 +1,11 @@
+{
+  "variables": [
+    {
+      "name": "projectName",
+      "type": "string",
+      "required": true,
+      "description": "The display name of the iOS application",
+      "default": "MyApp"
+    }
+  ]
+}

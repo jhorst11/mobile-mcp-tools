@@ -30,6 +30,34 @@ export const LayerConfigSchema = z.object({
 });
 
 /**
+ * Zod schema for file transform configuration
+ */
+export const FileTransformSchema = z.object({
+  pattern: z.string().min(1, 'Pattern is required'),
+  processor: z.enum(['handlebars', 'copy'], {
+    errorMap: () => ({ message: 'Processor must be handlebars or copy' }),
+  }),
+});
+
+/**
+ * Zod schema for file operation configuration
+ */
+export const FileOperationSchema = z.object({
+  action: z.enum(['delete'], {
+    errorMap: () => ({ message: 'Action must be delete' }),
+  }),
+  from: z.string().min(1, 'From pattern is required'),
+});
+
+/**
+ * Zod schema for generation configuration
+ */
+export const GenerationConfigSchema = z.object({
+  fileTransforms: z.array(FileTransformSchema).optional(),
+  fileOperations: z.array(FileOperationSchema).optional(),
+});
+
+/**
  * Zod schema for template.json (metadata only, no variables)
  */
 export const TemplateDescriptorSchema = z.object({
@@ -40,6 +68,7 @@ export const TemplateDescriptorSchema = z.object({
   layer: LayerConfigSchema.optional(),
   tags: z.array(z.string()).optional(),
   description: z.string().optional(),
+  generation: GenerationConfigSchema.optional(),
 });
 
 /**
@@ -54,6 +83,9 @@ export const TemplateVariablesSchema = z.object({
  */
 export type TemplateVariable = z.infer<typeof TemplateVariableSchema>;
 export type LayerConfig = z.infer<typeof LayerConfigSchema>;
+export type FileTransform = z.infer<typeof FileTransformSchema>;
+export type FileOperation = z.infer<typeof FileOperationSchema>;
+export type GenerationConfig = z.infer<typeof GenerationConfigSchema>;
 export type TemplateDescriptor = z.infer<typeof TemplateDescriptorSchema> & {
   variables: TemplateVariable[]; // Added at runtime from variables.json
 };
