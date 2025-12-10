@@ -68,6 +68,244 @@ describe('CLI Bootstrap', () => {
   });
 });
 
+describe('List Command', () => {
+  it('should list all templates', () => {
+    const output = execSync(`node ${CLI_PATH} list`, { encoding: 'utf-8' });
+    expect(output).toContain('Available Templates:');
+    expect(output).toContain('ios-base');
+  });
+
+  it('should show template names in color (ANSI codes)', () => {
+    const output = execSync(`node ${CLI_PATH} list`, { encoding: 'utf-8' });
+    // Check for cyan color code (36m) around template names
+    expect(output).toMatch(/\[36m.*\[0m/);
+  });
+
+  it('should show inheritance tree with connectors', () => {
+    const output = execSync(`node ${CLI_PATH} list`, { encoding: 'utf-8' });
+    expect(output).toContain('Based on:');
+    expect(output).toContain('└─');
+  });
+
+  it('should filter by platform', () => {
+    const output = execSync(`node ${CLI_PATH} list --platform ios`, { encoding: 'utf-8' });
+    expect(output).toContain('ios-base');
+  });
+
+  it('should filter by single tag', () => {
+    const output = execSync(`node ${CLI_PATH} list --tag salesforce`, { encoding: 'utf-8' });
+    expect(output).toContain('ios-mobilesdk');
+    // Count how many times ios-base appears as a top-level template heading
+    // It should appear in tree but not as "  ios-base (ios)"
+    const lines = output.split('\n');
+    const baseAsMainTemplate = lines.some(line => line.match(/^\s{2}.*ios-base.*\(ios\)/));
+    expect(baseAsMainTemplate).toBe(false);
+  });
+
+  it('should filter by multiple tags using comma-separated values', () => {
+    const output = execSync(`node ${CLI_PATH} list --tag ios,mobile-sdk`, { encoding: 'utf-8' });
+    expect(output).toContain('ios-mobilesdk');
+    expect(output).toContain('ios-mobilesdk-login');
+    // Verify ios-base is NOT shown as a main template (only in tree)
+    const lines = output.split('\n');
+    const baseAsMainTemplate = lines.some(line => line.match(/^\s{2}.*ios-base.*\(ios\)/));
+    expect(baseAsMainTemplate).toBe(false);
+  });
+
+  it('should filter by multiple tags using multiple --tag flags', () => {
+    const output = execSync(`node ${CLI_PATH} list --tag ios --tag swift --tag salesforce`, {
+      encoding: 'utf-8',
+    });
+    expect(output).toContain('ios-mobilesdk');
+    // Verify ios-base is NOT shown as a main template
+    const lines = output.split('\n');
+    const baseAsMainTemplate = lines.some(line => line.match(/^\s{2}.*ios-base.*\(ios\)/));
+    expect(baseAsMainTemplate).toBe(false);
+  });
+
+  it('should handle whitespace in comma-separated tags', () => {
+    const output = execSync(`node ${CLI_PATH} list --tag "ios, mobile-sdk"`, { encoding: 'utf-8' });
+    expect(output).toContain('ios-mobilesdk');
+  });
+
+  it('should show full inheritance tree even when parent does not match filter', () => {
+    const output = execSync(`node ${CLI_PATH} list --tag login-customization`, {
+      encoding: 'utf-8',
+    });
+    expect(output).toContain('ios-mobilesdk-login');
+    // Should show full tree including ios-mobilesdk and ios-base
+    expect(output).toContain('└─');
+    expect(output).toContain('ios-mobilesdk');
+    expect(output).toContain('ios-base');
+  });
+
+  it('should combine platform and tag filters', () => {
+    const output = execSync(`node ${CLI_PATH} list --platform ios --tag salesforce`, {
+      encoding: 'utf-8',
+    });
+    expect(output).toContain('ios-mobilesdk');
+  });
+
+  it('should show "No templates found" when filters match nothing', () => {
+    const output = execSync(`node ${CLI_PATH} list --tag nonexistent-tag`, { encoding: 'utf-8' });
+    expect(output).toContain('No templates found');
+  });
+
+  it('should show help for list command', () => {
+    const output = execSync(`node ${CLI_PATH} list --help`, { encoding: 'utf-8' });
+    expect(output).toContain('List available templates');
+    expect(output).toContain('--platform');
+    expect(output).toContain('--tag');
+  });
+});
+
+describe('Show Command', () => {
+  it('should show template details', () => {
+    const output = execSync(`node ${CLI_PATH} show ios-base`, { encoding: 'utf-8' });
+    expect(output).toContain('Template: ios-base');
+    expect(output).toContain('Platform: ios');
+    expect(output).toContain('Variables:');
+  });
+
+  it('should show inheritance information for layered templates', () => {
+    const output = execSync(`node ${CLI_PATH} show ios-mobilesdk`, { encoding: 'utf-8' });
+    expect(output).toContain('Template: ios-mobilesdk');
+    expect(output).toContain('Based on: ios-base');
+  });
+
+  it('should show tags if present', () => {
+    const output = execSync(`node ${CLI_PATH} show ios-mobilesdk`, { encoding: 'utf-8' });
+    expect(output).toContain('Tags:');
+    expect(output).toContain('salesforce');
+  });
+
+  it('should error on non-existent template', () => {
+    expect(() => {
+      execSync(`node ${CLI_PATH} show nonexistent-template`, { encoding: 'utf-8', stdio: 'pipe' });
+    }).toThrow();
+  });
+});
+
+describe('Template Diff Command', () => {
+  it('should show layer.patch for layered template', () => {
+    const output = execSync(`node ${CLI_PATH} template diff ios-mobilesdk`, { encoding: 'utf-8' });
+    expect(output).toContain('Showing layer patch for:');
+    expect(output).toContain('ios-mobilesdk');
+    expect(output).toContain('Based on:');
+    expect(output).toContain('ios-base');
+    expect(output).toContain('Patch file:');
+    expect(output).toContain('layer.patch');
+    expect(output).toContain('diff --git');
+  });
+
+  it('should show layer.patch for multi-level layered template', () => {
+    const output = execSync(`node ${CLI_PATH} template diff ios-mobilesdk-login`, {
+      encoding: 'utf-8',
+    });
+    expect(output).toContain('ios-mobilesdk-login');
+    expect(output).toContain('Based on: ');
+    expect(output).toContain('ios-mobilesdk');
+  });
+
+  it('should error on base template (not layered)', () => {
+    expect(() => {
+      execSync(`node ${CLI_PATH} template diff ios-base`, { encoding: 'utf-8', stdio: 'pipe' });
+    }).toThrow();
+  });
+
+  it('should show help for diff command', () => {
+    const output = execSync(`node ${CLI_PATH} template diff --help`, { encoding: 'utf-8' });
+    expect(output).toContain('Show the layer.patch diff for a layered template');
+  });
+});
+
+describe('Template Command Group', () => {
+  it('should show template subcommands in help', () => {
+    const output = execSync(`node ${CLI_PATH} template --help`, { encoding: 'utf-8' });
+    expect(output).toContain('create');
+    expect(output).toContain('test');
+    expect(output).toContain('layer');
+    expect(output).toContain('materialize');
+    expect(output).toContain('diff');
+    expect(output).toContain('validate');
+  });
+});
+
+describe('Generate Command', () => {
+  let testDir: string;
+
+  beforeEach(() => {
+    const testId = Math.random().toString(36).substring(7);
+    testDir = join(__dirname, '../test-output/cli-generate', testId);
+    mkdirSync(testDir, { recursive: true });
+  });
+
+  afterEach(() => {
+    if (existsSync(testDir)) {
+      rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it('should require --out option', () => {
+    expect(() => {
+      execSync(`node ${CLI_PATH} generate ios-base`, { encoding: 'utf-8', stdio: 'pipe' });
+    }).toThrow();
+  });
+
+  it('should generate from base template', () => {
+    const outputDir = join(testDir, 'output');
+    const output = execSync(`node ${CLI_PATH} generate ios-base --out ${outputDir}`, {
+      encoding: 'utf-8',
+    });
+    expect(output).toContain('Generating ios-base');
+    expect(output).toContain('✓ App generated successfully!');
+    expect(existsSync(outputDir)).toBe(true);
+  });
+
+  it('should accept variables with --var flag', () => {
+    const outputDir = join(testDir, 'output-vars');
+    const output = execSync(
+      `node ${CLI_PATH} generate ios-base --out ${outputDir} --var appName=TestApp --var organizationName="Test Org"`,
+      { encoding: 'utf-8' }
+    );
+    expect(output).toContain('Variables used:');
+    expect(output).toContain('appName: TestApp');
+    expect(output).toContain('organizationName: Test Org');
+  });
+
+  it('should parse boolean variables', () => {
+    const outputDir = join(testDir, 'output-bool');
+    const output = execSync(
+      `node ${CLI_PATH} generate ios-base --out ${outputDir} --var appName=TestApp --var debugMode=true`,
+      { encoding: 'utf-8' }
+    );
+    expect(output).toContain('✓ App generated successfully!');
+  });
+
+  it('should parse number variables', () => {
+    const outputDir = join(testDir, 'output-num');
+    const output = execSync(
+      `node ${CLI_PATH} generate ios-base --out ${outputDir} --var appName=TestApp --var version=42`,
+      { encoding: 'utf-8' }
+    );
+    expect(output).toContain('✓ App generated successfully!');
+  });
+
+  it('should support --overwrite flag', () => {
+    const outputDir = join(testDir, 'output-overwrite');
+    // Generate first time
+    execSync(`node ${CLI_PATH} generate ios-base --out ${outputDir}`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    });
+    // Generate again with overwrite
+    const output = execSync(`node ${CLI_PATH} generate ios-base --out ${outputDir} --overwrite`, {
+      encoding: 'utf-8',
+    });
+    expect(output).toContain('✓ App generated successfully!');
+  });
+});
+
 describe('Template Create - Multi-Layer Inheritance', () => {
   let testDir: string;
 

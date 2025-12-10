@@ -129,8 +129,29 @@ program
   .command('list')
   .description('List available templates')
   .option('--platform <platform>', 'Filter by platform (ios, android, web)')
+  .option('--tag <tags...>', 'Filter by tag(s) - can specify multiple times or comma-separated')
   .action(options => {
-    const templates = listTemplates({ platform: options.platform });
+    const allTemplates = listTemplates({ platform: options.platform });
+    let templates = allTemplates;
+
+    // Filter by tags if specified
+    if (options.tag && options.tag.length > 0) {
+      // Parse tags - support both comma-separated and multiple --tag flags
+      const filterTags: string[] = [];
+      for (const tagArg of options.tag) {
+        // Split by comma and trim whitespace
+        const tags = tagArg.split(',').map((t: string) => t.trim());
+        filterTags.push(...tags);
+      }
+
+      // Filter templates that have ALL specified tags (AND logic)
+      templates = templates.filter(template => {
+        if (!template.tags || template.tags.length === 0) {
+          return false;
+        }
+        return filterTags.every(filterTag => template.tags!.includes(filterTag));
+      });
+    }
 
     if (templates.length === 0) {
       console.log('No templates found.');
@@ -147,8 +168,8 @@ program
         console.log(`    ${template.description}`);
       }
 
-      // Show inheritance tree
-      const chain = buildInheritanceChain(template.name, templates);
+      // Show inheritance tree (use all templates to build complete chain)
+      const chain = buildInheritanceChain(template.name, allTemplates);
       const tree = formatInheritanceTree(chain);
       if (tree) {
         console.log(tree);
