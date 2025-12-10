@@ -731,13 +731,70 @@ templateCmd
     }
   });
 
+// Template diff subcommand
+templateCmd
+  .command('diff <name>')
+  .description('Show the layer.patch diff for a layered template')
+  .option('--out <path>', 'Template directory')
+  .action((templateName: string, options) => {
+    const templateDirectory = options.out || join(process.cwd(), 'templates', templateName);
+
+    try {
+      console.log(`\nShowing layer patch for: ${colors.cyan}${templateName}${colors.reset}\n`);
+
+      // Check if template directory exists
+      if (!existsSync(templateDirectory)) {
+        throw new Error(`Template directory not found: ${templateDirectory}`);
+      }
+
+      // Load template.json
+      const templateJsonPath = join(templateDirectory, 'template.json');
+      if (!existsSync(templateJsonPath)) {
+        throw new Error(`Template descriptor not found at ${templateJsonPath}`);
+      }
+
+      const templateJson = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
+
+      // Check if this is a layered template
+      if (!templateJson.basedOn) {
+        throw new Error(
+          `Template ${templateName} is not a layered template. ` +
+            `Only layered templates have layer.patch files.`
+        );
+      }
+
+      // Check if layer.patch exists
+      const patchPath = join(templateDirectory, 'layer.patch');
+      if (!existsSync(patchPath)) {
+        throw new Error(`layer.patch not found at ${patchPath}`);
+      }
+
+      // Read and display the patch
+      const patchContent = readFileSync(patchPath, 'utf-8');
+
+      if (patchContent.trim().length === 0) {
+        console.log('layer.patch is empty. Run "magen-template template layer" to generate it.');
+        return;
+      }
+
+      console.log(`Based on: ${colors.cyan}${templateJson.basedOn}${colors.reset}`);
+      console.log(`Patch file: ${patchPath}\n`);
+      console.log('─'.repeat(80));
+      console.log(patchContent);
+      console.log('─'.repeat(80));
+    } catch (error) {
+      console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
 // Template validate subcommand
 templateCmd
   .command('validate <name>')
   .description('Validate template structure')
   .action((_templateName: string) => {
     console.error(`Command not yet implemented: validate`);
-    console.error('Currently available: create, test, layer, materialize');
+    console.error('Currently available: create, test, layer, materialize, diff');
     process.exit(1);
   });
 
