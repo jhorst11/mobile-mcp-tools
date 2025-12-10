@@ -17,11 +17,12 @@ import {
 } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { tmpdir } from 'os';
 import { listTemplates, getTemplate, findTemplate } from '../core/discovery.js';
 import { generateApp } from '../core/generator.js';
 import { testTemplate, watchTemplate } from '../core/testing.js';
 import { createLayer, materializeTemplate } from '../core/layering.js';
-import type { TemplateVariable } from '../core/schema.js';
+import type { TemplateVariable, TemplateDescriptor } from '../core/schema.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -46,6 +47,7 @@ Commands:
   template create <name>              Create new template (optionally layered)
   template test <name>                Generate/validate test instance
   template layer <name>               Create layer patch from template
+  template materialize <name>         Materialize layer.patch to work/ directory
   template validate <name>            Validate template structure
 
 Options:
@@ -249,15 +251,19 @@ function commandTemplate(args: string[]): void {
       commandTemplateLayer(subcommandArgs);
       break;
 
+    case 'materialize':
+      commandTemplateMaterialize(subcommandArgs);
+      break;
+
     case 'validate':
       console.error(`Subcommand not yet implemented: ${subcommand}`);
-      console.error('Currently available: create, test, layer');
+      console.error('Currently available: create, test, layer, materialize');
       process.exit(1);
       break;
 
     default:
       console.error(`Unknown subcommand: ${subcommand}`);
-      console.error('Available subcommands: create, test, layer, validate');
+      console.error('Available subcommands: create, test, layer, materialize, validate');
       process.exit(1);
   }
 }
@@ -673,6 +679,127 @@ function commandTemplateLayer(args: string[]): void {
     console.log(`  2. Update template.json to include layer configuration`);
     console.log(`  3. Test generation: magen-template generate ${templateName} --out ~/test-app`);
     console.log('');
+  } catch (error) {
+    console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+}
+
+function commandTemplateMaterialize(args: string[]): void {
+  const templateName = args[0];
+
+  if (!templateName) {
+    console.error('Error: Template name is required.');
+    console.error('Usage: magen-template template materialize <name> [options]');
+    console.error('Options:');
+    console.error('  --out <path>          Template directory (default: ./templates/<name>)');
+    console.error('  --force               Overwrite existing work/ directory');
+    process.exit(1);
+  }
+
+  // Parse options
+  const forceFlag = args.includes('--force');
+  const outIndex = args.indexOf('--out');
+  const templateDirectory =
+    outIndex !== -1 && outIndex + 1 < args.length
+      ? args[outIndex + 1]
+      : join(process.cwd(), 'templates', templateName);
+
+  try {
+    console.log(`\nMaterializing template: ${templateName}`);
+    console.log(`Template directory: ${templateDirectory}`);
+
+    // Check if template directory exists
+    if (!existsSync(templateDirectory)) {
+      throw new Error(`Template directory not found: ${templateDirectory}`);
+    }
+
+    // Load template.json
+    const templateJsonPath = join(templateDirectory, 'template.json');
+    if (!existsSync(templateJsonPath)) {
+      throw new Error(`Template descriptor not found at ${templateJsonPath}`);
+    }
+
+    const templateJson: TemplateDescriptor = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
+
+    // Check if this is a layered template
+    if (!templateJson.basedOn) {
+      throw new Error(
+        `Template ${templateName} is not a layered template. ` +
+          `Only layered templates (with basedOn) can be materialized to work/.`
+      );
+    }
+
+    // Check if work/ already exists
+    const workDir = join(templateDirectory, 'work');
+    if (existsSync(workDir) && !forceFlag) {
+      throw new Error(
+        `work/ directory already exists at ${workDir}. ` +
+          `Use --force to overwrite, or delete it manually first.`
+      );
+    }
+
+    // Find the template to get variables
+    const templateInfo = findTemplate(templateName);
+    if (!templateInfo) {
+      throw new Error(`Template not found: ${templateName}`);
+    }
+
+    // Get default values for all variables
+    const variables: Record<string, string | number | boolean> = {};
+    for (const variable of templateInfo.descriptor.variables) {
+      if (variable.default !== undefined) {
+        variables[variable.name] = variable.default;
+      } else if (variable.required) {
+        // For required variables without defaults, use placeholder values
+        switch (variable.type) {
+          case 'string':
+            variables[variable.name] = `{{${variable.name}}}`;
+            break;
+          case 'number':
+            variables[variable.name] = 0;
+            break;
+          case 'boolean':
+            variables[variable.name] = false;
+            break;
+        }
+      }
+    }
+
+    console.log('\nMaterializing with placeholder variables...');
+
+    // Materialize the template
+    const tempDir = join(tmpdir(), `magen-materialize-${Date.now()}`);
+    try {
+      materializeTemplate({
+        template: templateJson,
+        targetDirectory: tempDir,
+        templateDirectory,
+      });
+
+      // Remove existing work/ directory if it exists
+      if (existsSync(workDir)) {
+        rmSync(workDir, { recursive: true, force: true });
+      }
+
+      // Copy materialized template to work/
+      cpSync(tempDir, workDir, { recursive: true });
+
+      console.log('✓ Template materialized successfully!');
+      console.log(`\n  Work directory: ${workDir}`);
+      console.log(`  Based on: ${templateJson.basedOn}`);
+
+      console.log('\nNext steps:');
+      console.log(`  1. Edit files in ${workDir}`);
+      console.log(`  2. Generate layer patch: magen-template template layer ${templateName}`);
+      console.log(`  3. Test generation: magen-template template test ${templateName}`);
+      console.log('');
+    } finally {
+      // Clean up temp directory
+      if (existsSync(tempDir)) {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    }
   } catch (error) {
     console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);

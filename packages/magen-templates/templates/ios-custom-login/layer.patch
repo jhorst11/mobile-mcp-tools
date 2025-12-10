@@ -1,0 +1,261 @@
+diff --git a/.DS_Store b/.DS_Store
+index 7678a82..7789561 100644
+Binary files a/.DS_Store and b/.DS_Store differ
+diff --git a/{{projectName}}.xcodeproj/project.pbxproj b/{{projectName}}.xcodeproj/project.pbxproj
+index d96407e..c7b7716 100644
+--- a/{{projectName}}.xcodeproj/project.pbxproj
++++ b/{{projectName}}.xcodeproj/project.pbxproj
+@@ -12,6 +12,7 @@
+ 		APP002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* SceneDelegate.swift */; };
+ 		APP003 /* InitialViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* InitialViewController.swift */; };
+ 		APP004 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC004 /* main.swift */; };
++		APP005 /* CustomLoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC005 /* CustomLoginViewController.swift */; };
+ 		C255FEB02EE8B1E8001E31A8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C255FEAF2EE8B1E4001E31A8 /* ContentView.swift */; };
+ 		RES001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = RES001REF /* Assets.xcassets */; };
+ 		RES002 /* bootconfig.plist in Resources */ = {isa = PBXBuildFile; fileRef = RES002REF /* bootconfig.plist */; };
+@@ -31,6 +32,7 @@
+ 		SRC002 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+ 		SRC003 /* InitialViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialViewController.swift; sourceTree = "<group>"; };
+ 		SRC004 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
++		SRC005 /* CustomLoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomLoginViewController.swift; sourceTree = "<group>"; };
+ /* End PBXFileReference section */
+ 
+ /* Begin PBXFrameworksBuildPhase section */
+@@ -88,6 +90,7 @@
+ 				SRC002 /* SceneDelegate.swift */,
+ 				SRC003 /* InitialViewController.swift */,
+ 				SRC004 /* main.swift */,
++				SRC005 /* CustomLoginViewController.swift */,
+ 				BRIDGE /* Bridging-Header.h */,
+ 				RES001REF /* Assets.xcassets */,
+ 				RES002REF /* bootconfig.plist */,
+@@ -207,6 +210,7 @@
+ 				APP002 /* SceneDelegate.swift in Sources */,
+ 				C255FEB02EE8B1E8001E31A8 /* ContentView.swift in Sources */,
+ 				APP003 /* InitialViewController.swift in Sources */,
++				APP005 /* CustomLoginViewController.swift in Sources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+ 		};
+diff --git a/{{projectName}}.xcodeproj/xcshareddata/xcschemes/{{projectName}}.xcscheme b/{{projectName}}.xcodeproj/xcshareddata/xcschemes/MyApp.xcscheme
+similarity index 99%
+rename from {{projectName}}.xcodeproj/xcshareddata/xcschemes/{{projectName}}.xcscheme
+rename to {{projectName}}.xcodeproj/xcshareddata/xcschemes/MyApp.xcscheme
+index 83f863e..2ebc366 100644
+--- a/{{projectName}}.xcodeproj/xcshareddata/xcschemes/{{projectName}}.xcscheme
++++ b/{{projectName}}.xcodeproj/xcshareddata/xcschemes/MyApp.xcscheme
+@@ -75,4 +75,3 @@
+       revealArchiveInOrganizer = "YES">
+    </ArchiveAction>
+ </Scheme>
+-
+diff --git a/{{projectName}}.xcworkspace/contents.xcworkspacedata b/{{projectName}}.xcworkspace/contents.xcworkspacedata
+new file mode 100644
+index 0000000..b5e47f3
+--- /dev/null
++++ b/{{projectName}}.xcworkspace/contents.xcworkspacedata
+@@ -0,0 +1,10 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<Workspace
++   version = "1.0">
++   <FileRef
++      location = "group:{{projectName}}.xcodeproj">
++   </FileRef>
++   <FileRef
++      location = "group:Pods/Pods.xcodeproj">
++   </FileRef>
++</Workspace>
+diff --git a/{{projectName}}.xcworkspace/xcuserdata/justin.horst.xcuserdatad/UserInterfaceState.xcuserstate b/{{projectName}}.xcworkspace/xcuserdata/justin.horst.xcuserdatad/UserInterfaceState.xcuserstate
+new file mode 100644
+index 0000000..7e52c80
+Binary files /dev/null and b/{{projectName}}.xcworkspace/xcuserdata/justin.horst.xcuserdatad/UserInterfaceState.xcuserstate differ
+diff --git a/{{projectName}}/.DS_Store b/{{projectName}}/.DS_Store
+index 1ada293..aa9b78d 100644
+Binary files a/{{projectName}}/.DS_Store and b/{{projectName}}/.DS_Store differ
+diff --git a/{{projectName}}/AppDelegate.swift b/{{projectName}}/AppDelegate.swift
+index a738878..96a3ea0 100644
+--- a/{{projectName}}/AppDelegate.swift
++++ b/{{projectName}}/AppDelegate.swift
+@@ -28,9 +28,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
+ 
+     // MARK: - App delegate lifecycle
+     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
++        // Configure login screen customization
++        configureLoginCustomization()
+         return true
+     }
+     
++    // MARK: - Login Customization
++    private func configureLoginCustomization() {
++        // Get the login view controller configuration
++        let loginConfig = UserAccountManager.shared.loginViewControllerConfig
++        
++        // Option 1: Hide only the Settings (gear) icon
++        // This prevents users from changing the login server
++        loginConfig.showsSettingsIcon = false
++        
++        // Option 2: Hide the entire navigation bar (uncomment to use)
++        // This also hides the Settings icon and title
++        // loginConfig.showsNavigationBar = false
++        
++        // Customize navigation bar colors and fonts
++        loginConfig.navigationBarColor = UIColor.red // Custom brand color
++        loginConfig.navigationBarTintColor = UIColor.white
++        loginConfig.navigationTitleColor = UIColor.white
++        loginConfig.navigationBarFont = UIFont.systemFont(ofSize: 18, weight: .semibold)
++        
++        // Option 3: Use a custom login view controller (uncomment to use)
++        // loginConfig.loginViewControllerCreationBlock = {
++        //     return CustomLoginViewController(nibName: nil, bundle: nil)
++        // }
++    }
++    
+     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+         return UserAccountManager.shared.handleIdentityProviderResponse(from: url, with: options)
+     }
+diff --git a/{{projectName}}/Assets.xcassets/.DS_Store b/{{projectName}}/Assets.xcassets/.DS_Store
+index 26ef873..908ce59 100644
+Binary files a/{{projectName}}/Assets.xcassets/.DS_Store and b/{{projectName}}/Assets.xcassets/.DS_Store differ
+diff --git a/{{projectName}}/CustomLoginViewController.swift b/{{projectName}}/CustomLoginViewController.swift
+new file mode 100644
+index 0000000..65dbfcf
+--- /dev/null
++++ b/{{projectName}}/CustomLoginViewController.swift
+@@ -0,0 +1,137 @@
++//
++//  CustomLoginViewController.swift
++//  {{projectName}}
++//
++//  Custom login view controller for advanced customization
++//
++
++import UIKit
++import SalesforceSDKCore
++
++class CustomLoginViewController: SalesforceLoginViewController {
++    
++    // MARK: - Lifecycle
++    
++    override func viewDidLoad() {
++        super.viewDidLoad()
++        
++        // Perform additional customization here
++        setupCustomAppearance()
++    }
++    
++    // MARK: - Custom Appearance
++    
++    private func setupCustomAppearance() { 
++        // Additional view customization can be done here
++        // For example, adding a custom logo, background, etc.
++        view.backgroundColor = .systemBackground
++    }
++    
++    // MARK: - Navigation Bar Customization
++    
++    /// Enable and customize the back button
++    /// Return true to show the back button in the navigation bar
++    override func shouldShowBackButton() -> Bool {
++        // Enable back button (default is false/hidden)
++        return true
++    }
++    
++    /// Provide a custom action for the back button
++    /// This is called when the user taps the back button
++    override func handleBackButtonAction() {
++        // Custom back button action
++        print("Custom back button tapped")
++        
++        // You could:
++        // 1. Show an alert to confirm exit
++        // 2. Navigate to a different screen
++        // 3. Clear login fields
++        // 4. Return to a custom landing page
++        
++        showExitConfirmation()
++    }
++    
++    /// Factory Method to create a custom back button
++    /// Override to provide your own back button
++    override func createBackButton() -> UIBarButtonItem {
++        let customButton = UIBarButtonItem(
++            title: "Cancel",
++            style: .plain,
++            target: self,
++            action: #selector(handleBackButtonAction)
++        )
++        return customButton
++    }
++    
++    /// Factory Method to create a custom settings button
++    /// Override to provide your own settings/help button
++    override func createSettingsButton() -> UIBarButtonItem {
++        // Option 1: Replace with Help button
++        let helpButton = UIBarButtonItem(
++            title: "Help",
++            style: .plain,
++            target: self,
++            action: #selector(customHelpButtonTapped)
++        )
++        return helpButton
++        
++        // Option 2: Use a custom icon
++        // let customImage = UIImage(systemName: "questionmark.circle")
++        // let customButton = UIBarButtonItem(
++        //     image: customImage,
++        //     style: .plain,
++        //     target: self,
++        //     action: #selector(customHelpButtonTapped)
++        // )
++        // return customButton
++    }
++    
++    /// Factory Method to create a custom navigation title
++    /// Override to provide your own title view
++    override func createTitleItem() -> UIView {
++        let titleLabel = UILabel()
++        titleLabel.text = "{{projectName}} Login"
++        titleLabel.font = UIFont.systemFont(ofSize: 18, weight: .semibold)
++        titleLabel.textColor = self.navigationBarTitleColor ?? .white
++        titleLabel.sizeToFit()
++        return titleLabel
++    }
++    
++    // MARK: - Custom Actions
++    
++    @objc private func customHelpButtonTapped() {
++        print("Custom help button tapped")
++        showHelpScreen()
++    }
++    
++    // MARK: - Helper Methods
++    
++    private func showExitConfirmation() {
++        let alert = UIAlertController(
++            title: "Exit Login",
++            message: "Are you sure you want to exit the login screen?",
++            preferredStyle: .alert
++        )
++        
++        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
++        alert.addAction(UIAlertAction(title: "Exit", style: .destructive) { _ in
++            // Handle exit - you could dismiss or navigate elsewhere
++            print("User confirmed exit")
++            // self.dismiss(animated: true)
++        })
++        
++        present(alert, animated: true)
++    }
++    
++    private func showHelpScreen() {
++        let alert = UIAlertController(
++            title: "Login Help",
++            message: "Please contact your administrator for login assistance.\n\nEmail: support@example.com\nPhone: 1-800-123-4567",
++            preferredStyle: .alert
++        )
++        
++        alert.addAction(UIAlertAction(title: "OK", style: .default))
++        present(alert, animated: true)
++    }
++}
++

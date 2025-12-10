@@ -8,7 +8,7 @@
     "swift",
     "salesforce",
     "mobile-sdk",
-    "oauth",
+    "oauth"
   ],
   "basedOn": "ios-base",
   "layer": {

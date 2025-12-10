@@ -372,15 +372,15 @@ index 2ebc366..83f863e 100644
 +
 diff --git a/{{projectName}}/AppDelegate.swift b/{{projectName}}/AppDelegate.swift
 new file mode 100644
-index 0000000..ab89201
+index 0000000..a738878
 --- /dev/null
 +++ b/{{projectName}}/AppDelegate.swift
 @@ -0,0 +1,39 @@
 +//
 +//  AppDelegate.swift
-+//  MyApp
++//  {{projectName}}
 +//
-+//  Created by Example Inc.
++//  Created by {{organization}}
 +//  Salesforce Mobile SDK App
 +//
 +
@@ -683,13 +683,13 @@ index 0000000..080cbdd
 +</plist>
 diff --git a/{{projectName}}/main.swift b/{{projectName}}/main.swift
 new file mode 100644
-index 0000000..7925a25
+index 0000000..828c91e
 --- /dev/null
 +++ b/{{projectName}}/main.swift
 @@ -0,0 +1,16 @@
 +//
 +//  main.swift
-+//  MyApp
++//  {{projectName}}
 +//
 +//  Created for Salesforce Mobile SDK integration
 +//

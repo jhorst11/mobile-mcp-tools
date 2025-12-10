@@ -1,0 +1,11 @@
+{
+  "name": "ios-custom-login",
+  "platform": "ios",
+  "version": "1.0.0",
+  "description": "ios-custom-login template based on ios-mobilesdk",
+  "tags": [],
+  "basedOn": "ios-mobilesdk",
+  "layer": {
+    "patchFile": "layer.patch"
+  }
+}

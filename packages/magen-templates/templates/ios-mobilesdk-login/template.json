@@ -1,0 +1,19 @@
+{
+  "name": "ios-mobilesdk-login",
+  "platform": "ios",
+  "version": "1.0.0",
+  "description": "iOS app with Salesforce Mobile SDK and custom login screen. Demonstrates login UI customization including hiding the gear icon, custom branding, and navigation bar styling",
+  "tags": [
+    "ios",
+    "swift",
+    "salesforce",
+    "mobile-sdk",
+    "oauth",
+    "login-customization",
+    "ui-customization"
+  ],
+  "basedOn": "ios-mobilesdk",
+  "layer": {
+    "patchFile": "layer.patch"
+  }
+}
