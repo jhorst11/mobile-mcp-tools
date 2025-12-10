@@ -81,6 +81,49 @@ program
     writeErr: str => process.stderr.write(str),
   });
 
+// ANSI color codes
+const colors = {
+  cyan: '\x1b[36m',
+  gray: '\x1b[90m',
+  reset: '\x1b[0m',
+};
+
+/**
+ * Build the complete inheritance chain for a template
+ */
+function buildInheritanceChain(templateName: string, allTemplates: TemplateDescriptor[]): string[] {
+  const chain: string[] = [templateName];
+  const templateMap = new Map(allTemplates.map(t => [t.name, t]));
+
+  let current = templateMap.get(templateName);
+  while (current?.basedOn) {
+    chain.push(current.basedOn);
+    current = templateMap.get(current.basedOn);
+  }
+
+  return chain;
+}
+
+/**
+ * Format the inheritance tree for display
+ */
+function formatInheritanceTree(chain: string[]): string {
+  if (chain.length <= 1) {
+    return '';
+  }
+
+  const lines: string[] = ['', '    Based on:'];
+
+  for (let i = 1; i < chain.length; i++) {
+    const indent = '  '.repeat(i);
+    lines.push(
+      `      ${indent}${colors.gray}└─${colors.reset} ${colors.cyan}${chain[i]}${colors.reset}`
+    );
+  }
+
+  return lines.join('\n');
+}
+
 // List command
 program
   .command('list')
@@ -98,13 +141,19 @@ program
 
     for (const template of templates) {
       const tags = template.tags?.length ? ` [${template.tags.join(', ')}]` : '';
-      console.log(`  ${template.name} (${template.platform})${tags}`);
+      console.log(`  ${colors.cyan}${template.name}${colors.reset} (${template.platform})${tags}`);
+
       if (template.description) {
         console.log(`    ${template.description}`);
       }
-      if (template.basedOn) {
-        console.log(`    Based on: ${template.basedOn}`);
+
+      // Show inheritance tree
+      const chain = buildInheritanceChain(template.name, templates);
+      const tree = formatInheritanceTree(chain);
+      if (tree) {
+        console.log(tree);
       }
+
       console.log('');
     }
   });
