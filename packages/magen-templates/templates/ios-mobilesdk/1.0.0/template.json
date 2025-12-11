@@ -1,4 +1,5 @@
 {
+  "$schema": "../../schemas/template.schema.json",
   "name": "ios-mobilesdk",
   "platform": "ios",
   "version": "1.0.0",
@@ -10,8 +11,9 @@
     "mobile-sdk",
     "oauth"
   ],
-  "basedOn": "ios-base",
-  "layer": {
+  "extends": {
+    "template": "ios-base",
+    "version": "1.0.0",
     "patchFile": "layer.patch"
   }
 }

@@ -23,9 +23,11 @@ export const TemplateVariableSchema = z.object({
 });
 
 /**
- * Zod schema for layer configuration
+ * Zod schema for extends configuration (replaces basedOn + layer)
  */
-export const LayerConfigSchema = z.object({
+export const ExtendsConfigSchema = z.object({
+  template: z.string().min(1, 'Parent template name is required'),
+  version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Version must follow semver format (e.g., 1.0.0)'),
   patchFile: z.string().min(1, 'Patch file path is required'),
 });
 
@@ -61,11 +63,19 @@ export const GenerationConfigSchema = z.object({
  * Zod schema for template.json (metadata only, no variables)
  */
 export const TemplateDescriptorSchema = z.object({
+  $schema: z.string().optional(),
   name: z.string().min(1, 'Template name is required'),
   platform: z.string().min(1, 'Platform is required'),
+  // New unified extends config (preferred)
+  extends: ExtendsConfigSchema.optional(),
+  // Legacy fields (for backwards compatibility)
   basedOn: z.string().optional(),
+  layer: z
+    .object({
+      patchFile: z.string().min(1, 'Patch file path is required'),
+    })
+    .optional(),
   version: z.string().regex(/^\d+\.\d+\.\d+$/, 'Version must follow semver format (e.g., 0.1.0)'),
-  layer: LayerConfigSchema.optional(),
   tags: z.array(z.string()).optional(),
   description: z.string().optional(),
   generation: GenerationConfigSchema.optional(),
@@ -75,6 +85,7 @@ export const TemplateDescriptorSchema = z.object({
  * Zod schema for variables.json (variables only)
  */
 export const TemplateVariablesSchema = z.object({
+  $schema: z.string().optional(),
   variables: z.array(TemplateVariableSchema),
 });
 
@@ -82,7 +93,7 @@ export const TemplateVariablesSchema = z.object({
  * Type inference from Zod schemas
  */
 export type TemplateVariable = z.infer<typeof TemplateVariableSchema>;
-export type LayerConfig = z.infer<typeof LayerConfigSchema>;
+export type ExtendsConfig = z.infer<typeof ExtendsConfigSchema>;
 export type FileTransform = z.infer<typeof FileTransformSchema>;
 export type FileOperation = z.infer<typeof FileOperationSchema>;
 export type GenerationConfig = z.infer<typeof GenerationConfigSchema>;

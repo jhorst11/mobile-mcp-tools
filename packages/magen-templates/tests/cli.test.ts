@@ -324,8 +324,8 @@ describe('Template Create - Multi-Layer Inheritance', () => {
   });
 
   it('should create layered template based on another layered template with variable inheritance', () => {
-    // Create base template (layer 0)
-    const baseDir = join(testDir, 'base');
+    // Create base template (layer 0) with version directory
+    const baseDir = join(testDir, 'base', '1.0.0');
     mkdirSync(join(baseDir, 'template'), { recursive: true });
 
     const baseTemplate = {
@@ -355,16 +355,19 @@ describe('Template Create - Multi-Layer Inheritance', () => {
     writeFileSync(join(baseDir, 'variables.json'), JSON.stringify(baseVariables, null, 2));
     writeFileSync(join(baseDir, 'template', 'App.txt'), 'App: {{appName}}\nBase: {{baseFeature}}');
 
-    // Create layer 1 template based on base
-    const layer1Dir = join(testDir, 'layer1');
+    // Create layer 1 template based on base with version directory
+    const layer1Dir = join(testDir, 'layer1', '1.0.0');
     mkdirSync(join(layer1Dir, 'work'), { recursive: true });
 
     const layer1Template = {
       name: 'layer1',
       platform: 'ios',
       version: '1.0.0',
-      basedOn: 'base',
-      layer: { patchFile: 'layer.patch' },
+      extends: {
+        template: 'base',
+        version: '1.0.0',
+        patchFile: 'layer.patch',
+      },
     };
 
     writeFileSync(join(layer1Dir, 'template.json'), JSON.stringify(layer1Template, null, 2));
@@ -399,7 +402,7 @@ describe('Template Create - Multi-Layer Inheritance', () => {
     });
 
     // Now create layer 2 based on layer 1 using CLI
-    const layer2Dir = join(testDir, 'layer2');
+    const layer2Dir = join(testDir, 'layer2', '1.0.0');
     const output = execSync(
       `node ${CLI_PATH} template create layer2 --based-on layer1 --out ${layer2Dir}`,
       { encoding: 'utf-8' }
@@ -415,8 +418,8 @@ describe('Template Create - Multi-Layer Inheritance', () => {
     expect(existsSync(join(layer2Dir, 'template.json'))).toBe(true);
     const layer2TemplateJson = JSON.parse(readFileSync(join(layer2Dir, 'template.json'), 'utf-8'));
     expect(layer2TemplateJson.name).toBe('layer2');
-    expect(layer2TemplateJson.basedOn).toBe('layer1');
-    expect(layer2TemplateJson.layer).toEqual({ patchFile: 'layer.patch' });
+    expect(layer2TemplateJson.extends?.template).toBe('layer1');
+    expect(layer2TemplateJson.extends?.patchFile).toBe('layer.patch');
 
     // Verify work directory has materialized files from layer1 (which includes base + layer1)
     expect(existsSync(join(layer2Dir, 'work', 'App.txt'))).toBe(true);

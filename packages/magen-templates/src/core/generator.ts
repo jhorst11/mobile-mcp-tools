@@ -252,7 +252,29 @@ export function generateApp(options: GenerateOptions): void {
     if (!existsSync(templateJsonPath)) {
       throw new Error(`Template not found at ${templateDirectory}`);
     }
-    const metadataDescriptor = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
+    const rawDescriptor = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
+
+    // Normalize template descriptor (convert extends to basedOn for internal consistency)
+    const metadataDescriptor = rawDescriptor.extends
+      ? {
+          ...rawDescriptor,
+          basedOn: rawDescriptor.extends.version
+            ? `${rawDescriptor.extends.template}@${rawDescriptor.extends.version}`
+            : rawDescriptor.extends.template,
+        }
+      : rawDescriptor.basedOn
+        ? {
+            ...rawDescriptor,
+            extends: {
+              template: rawDescriptor.basedOn.split('@')[0],
+              version: rawDescriptor.basedOn.includes('@')
+                ? rawDescriptor.basedOn.split('@')[1]
+                : '1.0.0',
+              patchFile: rawDescriptor.layer?.patchFile || 'layer.patch',
+            },
+            basedOn: rawDescriptor.basedOn,
+          }
+        : rawDescriptor;
 
     // Also load variables.json if it exists
     // For layered templates, check work/ directory first

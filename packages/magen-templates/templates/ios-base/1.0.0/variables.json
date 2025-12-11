@@ -1,4 +1,5 @@
 {
+  "$schema": "../../schemas/variables.schema.json",
   "variables": [
     {
       "name": "projectName",

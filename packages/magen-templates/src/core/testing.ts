@@ -140,7 +140,7 @@ export function testTemplate(options: TestTemplateOptions): TestTemplateResult {
   let template: TemplateDescriptor;
   try {
     template = loadTemplateDescriptor(templateDirectory);
-  } catch (_e) {
+  } catch {
     // Fall back to global discovery if template directory doesn't have template.json
     template = getTemplate(templateName);
   }
@@ -268,7 +268,7 @@ export function watchTemplate(options: WatchTemplateOptions): () => void {
   let template: TemplateDescriptor;
   try {
     template = loadTemplateDescriptor(templateDirectory);
-  } catch (_e) {
+  } catch {
     template = getTemplate(templateName);
   }
 

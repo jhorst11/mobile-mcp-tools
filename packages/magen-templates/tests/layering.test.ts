@@ -19,8 +19,8 @@ describe('Template Layering', () => {
       rmSync(testDir, { recursive: true, force: true });
     }
 
-    // Create base template
-    baseTemplateDir = join(testDir, 'templates', 'test-base');
+    // Create base template with version directory structure
+    baseTemplateDir = join(testDir, 'templates', 'test-base', '1.0.0');
     mkdirSync(join(baseTemplateDir, 'template'), { recursive: true });
 
     const baseTemplateJson = {
@@ -52,9 +52,9 @@ let feature = "base"
 
     writeFileSync(join(baseTemplateDir, 'template', 'App.swift'), baseFile);
 
-    // Create child template directory
+    // Create child template directory with version directory structure
     // For layered templates, we use work/ instead of template/
-    childTemplateDir = join(testDir, 'templates', 'test-child');
+    childTemplateDir = join(testDir, 'templates', 'test-child', '1.0.0');
     mkdirSync(join(childTemplateDir, 'work'), { recursive: true });
 
     const childTemplateJson = {
@@ -62,8 +62,9 @@ let feature = "base"
       platform: 'ios',
       version: '1.0.0',
       description: 'Child test template',
-      basedOn: 'test-base',
-      layer: {
+      extends: {
+        template: 'test-base',
+        version: '1.0.0',
         patchFile: 'layer.patch',
       },
       variables: [
@@ -127,7 +128,7 @@ let newFeature = "{{childFeature}}"
       });
 
       expect(result.patchPath).toBe(join(childTemplateDir, 'layer.patch'));
-      expect(result.parentTemplate).toBe('test-base');
+      expect(result.parentTemplate).toBe('test-base@1.0.0'); // Now includes version from extends
       expect(result.childTemplate).toBe('test-child');
       expect(existsSync(result.patchPath)).toBe(true);
 
@@ -171,7 +172,7 @@ let newFeature = "{{childFeature}}"
     });
 
     it('should throw error if parent template not found', () => {
-      const orphan = join(testDir, 'templates', 'orphan');
+      const orphan = join(testDir, 'templates', 'orphan', '1.0.0');
       mkdirSync(join(orphan, 'template'), { recursive: true });
       writeFileSync(
         join(orphan, 'template.json'),
@@ -180,7 +181,11 @@ let newFeature = "{{childFeature}}"
             name: 'orphan',
             platform: 'ios',
             version: '1.0.0',
-            basedOn: 'nonexistent',
+            extends: {
+              template: 'nonexistent',
+              version: '1.0.0',
+              patchFile: 'layer.patch',
+            },
             variables: [],
           },
           null,
@@ -267,7 +272,7 @@ let newFeature = "{{childFeature}}"
     it('should detect direct cycle', () => {
       // Create self-referencing template
       process.env.MAGEN_TEMPLATES_PATH = join(testDir, 'templates');
-      const selfRef = join(testDir, 'templates', 'self-ref');
+      const selfRef = join(testDir, 'templates', 'self-ref', '1.0.0');
       mkdirSync(join(selfRef, 'template'), { recursive: true });
       writeFileSync(
         join(selfRef, 'template.json'),
@@ -276,7 +281,11 @@ let newFeature = "{{childFeature}}"
             name: 'self-ref',
             platform: 'ios',
             version: '1.0.0',
-            basedOn: 'self-ref',
+            extends: {
+              template: 'self-ref',
+              version: '1.0.0',
+              patchFile: 'layer.patch',
+            },
             variables: [],
           },
           null,
@@ -291,34 +300,52 @@ let newFeature = "{{childFeature}}"
       process.env.MAGEN_TEMPLATES_PATH = join(testDir, 'templates');
 
       // Create A -> B -> C -> A cycle
-      const templateA = join(testDir, 'templates', 'cycle-a');
+      const templateA = join(testDir, 'templates', 'cycle-a', '1.0.0');
       mkdirSync(join(templateA, 'template'), { recursive: true });
       writeFileSync(
         join(templateA, 'template.json'),
         JSON.stringify(
-          { name: 'cycle-a', platform: 'ios', version: '1.0.0', basedOn: 'cycle-c', variables: [] },
+          {
+            name: 'cycle-a',
+            platform: 'ios',
+            version: '1.0.0',
+            extends: { template: 'cycle-c', version: '1.0.0', patchFile: 'layer.patch' },
+            variables: [],
+          },
           null,
           2
         )
       );
 
-      const templateB = join(testDir, 'templates', 'cycle-b');
+      const templateB = join(testDir, 'templates', 'cycle-b', '1.0.0');
       mkdirSync(join(templateB, 'template'), { recursive: true });
       writeFileSync(
         join(templateB, 'template.json'),
         JSON.stringify(
-          { name: 'cycle-b', platform: 'ios', version: '1.0.0', basedOn: 'cycle-a', variables: [] },
+          {
+            name: 'cycle-b',
+            platform: 'ios',
+            version: '1.0.0',
+            extends: { template: 'cycle-a', version: '1.0.0', patchFile: 'layer.patch' },
+            variables: [],
+          },
           null,
           2
         )
       );
 
-      const templateC = join(testDir, 'templates', 'cycle-c');
+      const templateC = join(testDir, 'templates', 'cycle-c', '1.0.0');
       mkdirSync(join(templateC, 'template'), { recursive: true });
       writeFileSync(
         join(templateC, 'template.json'),
         JSON.stringify(
-          { name: 'cycle-c', platform: 'ios', version: '1.0.0', basedOn: 'cycle-b', variables: [] },
+          {
+            name: 'cycle-c',
+            platform: 'ios',
+            version: '1.0.0',
+            extends: { template: 'cycle-b', version: '1.0.0', patchFile: 'layer.patch' },
+            variables: [],
+          },
           null,
           2
         )
@@ -377,7 +404,7 @@ let newFeature = "{{childFeature}}"
       process.env.MAGEN_TEMPLATES_PATH = join(testDir, 'templates');
 
       // Create self-referencing template
-      const selfRef = join(testDir, 'templates', 'self-ref');
+      const selfRef = join(testDir, 'templates', 'self-ref', '1.0.0');
       mkdirSync(join(selfRef, 'template'), { recursive: true });
       writeFileSync(
         join(selfRef, 'template.json'),
@@ -386,7 +413,11 @@ let newFeature = "{{childFeature}}"
             name: 'self-ref',
             platform: 'ios',
             version: '1.0.0',
-            basedOn: 'self-ref',
+            extends: {
+              template: 'self-ref',
+              version: '1.0.0',
+              patchFile: 'layer.patch',
+            },
             variables: [],
           },
           null,
@@ -408,7 +439,7 @@ let newFeature = "{{childFeature}}"
   describe('Multi-Layer Materialization', () => {
     it('should materialize 3-layer template chain', () => {
       // Create base template
-      const base = join(testDir, 'templates', 'layer-base');
+      const base = join(testDir, 'templates', 'layer-base', '1.0.0');
       mkdirSync(join(base, 'template'), { recursive: true });
 
       const baseTemplate = {
@@ -436,15 +467,18 @@ let newFeature = "{{childFeature}}"
       );
 
       // Create layer 1 (middle)
-      const layer1 = join(testDir, 'templates', 'layer-1');
+      const layer1 = join(testDir, 'templates', 'layer-1', '1.0.0');
       mkdirSync(join(layer1, 'work'), { recursive: true });
 
       const layer1Template = {
         name: 'layer-1',
         platform: 'ios',
         version: '1.0.0',
-        basedOn: 'layer-base',
-        layer: { patchFile: 'layer.patch' },
+        extends: {
+          template: 'layer-base',
+          version: '1.0.0',
+          patchFile: 'layer.patch',
+        },
       };
 
       writeFileSync(join(layer1, 'template.json'), JSON.stringify(layer1Template, null, 2));
@@ -482,15 +516,18 @@ let newFeature = "{{childFeature}}"
       });
 
       // Create layer 2 (top)
-      const layer2 = join(testDir, 'templates', 'layer-2');
+      const layer2 = join(testDir, 'templates', 'layer-2', '1.0.0');
       mkdirSync(join(layer2, 'work'), { recursive: true });
 
       const layer2Template = {
         name: 'layer-2',
         platform: 'ios',
         version: '1.0.0',
-        basedOn: 'layer-1',
-        layer: { patchFile: 'layer.patch' },
+        extends: {
+          template: 'layer-1',
+          version: '1.0.0',
+          patchFile: 'layer.patch',
+        },
       };
 
       writeFileSync(join(layer2, 'template.json'), JSON.stringify(layer2Template, null, 2));
@@ -550,9 +587,9 @@ let newFeature = "{{childFeature}}"
 
     it('should detect cycles in multi-layer chains', () => {
       // Create A -> B -> C -> A cycle
-      const templateA = join(testDir, 'templates', 'cycle-a');
-      const templateB = join(testDir, 'templates', 'cycle-b');
-      const templateC = join(testDir, 'templates', 'cycle-c');
+      const templateA = join(testDir, 'templates', 'cycle-a', '1.0.0');
+      const templateB = join(testDir, 'templates', 'cycle-b', '1.0.0');
+      const templateC = join(testDir, 'templates', 'cycle-c', '1.0.0');
 
       mkdirSync(join(templateA, 'template'), { recursive: true });
       mkdirSync(join(templateB, 'template'), { recursive: true });
@@ -564,7 +601,7 @@ let newFeature = "{{childFeature}}"
           name: 'cycle-a',
           platform: 'ios',
           version: '1.0.0',
-          basedOn: 'cycle-c',
+          extends: { template: 'cycle-c', version: '1.0.0', patchFile: 'layer.patch' },
         })
       );
 
@@ -574,7 +611,7 @@ let newFeature = "{{childFeature}}"
           name: 'cycle-b',
           platform: 'ios',
           version: '1.0.0',
-          basedOn: 'cycle-a',
+          extends: { template: 'cycle-a', version: '1.0.0', patchFile: 'layer.patch' },
         })
       );
 
@@ -584,7 +621,7 @@ let newFeature = "{{childFeature}}"
           name: 'cycle-c',
           platform: 'ios',
           version: '1.0.0',
-          basedOn: 'cycle-b',
+          extends: { template: 'cycle-b', version: '1.0.0', patchFile: 'layer.patch' },
         })
       );
 
@@ -602,7 +639,7 @@ let newFeature = "{{childFeature}}"
 
     it('should apply patches in correct order for 3-layer chain', () => {
       // Create base
-      const base = join(testDir, 'templates', 'order-base');
+      const base = join(testDir, 'templates', 'order-base', '1.0.0');
       mkdirSync(join(base, 'template'), { recursive: true });
 
       writeFileSync(
@@ -613,7 +650,7 @@ let newFeature = "{{childFeature}}"
       writeFileSync(join(base, 'template', 'Order.txt'), 'base');
 
       // Create layer 1
-      const layer1 = join(testDir, 'templates', 'order-1');
+      const layer1 = join(testDir, 'templates', 'order-1', '1.0.0');
       mkdirSync(join(layer1, 'work'), { recursive: true });
 
       writeFileSync(
@@ -622,8 +659,11 @@ let newFeature = "{{childFeature}}"
           name: 'order-1',
           platform: 'ios',
           version: '1.0.0',
-          basedOn: 'order-base',
-          layer: { patchFile: 'layer.patch' },
+          extends: {
+            template: 'order-base',
+            version: '1.0.0',
+            patchFile: 'layer.patch',
+          },
         })
       );
       writeFileSync(join(layer1, 'work', 'variables.json'), JSON.stringify({ variables: [] }));
@@ -639,7 +679,7 @@ let newFeature = "{{childFeature}}"
       });
 
       // Create layer 2
-      const layer2 = join(testDir, 'templates', 'order-2');
+      const layer2 = join(testDir, 'templates', 'order-2', '1.0.0');
       mkdirSync(join(layer2, 'work'), { recursive: true });
 
       writeFileSync(
@@ -648,8 +688,11 @@ let newFeature = "{{childFeature}}"
           name: 'order-2',
           platform: 'ios',
           version: '1.0.0',
-          basedOn: 'order-1',
-          layer: { patchFile: 'layer.patch' },
+          extends: {
+            template: 'order-1',
+            version: '1.0.0',
+            patchFile: 'layer.patch',
+          },
         })
       );
       writeFileSync(join(layer2, 'work', 'variables.json'), JSON.stringify({ variables: [] }));
@@ -679,7 +722,7 @@ let newFeature = "{{childFeature}}"
 
     it('should handle empty patch files gracefully', () => {
       // Create base template
-      const base = join(testDir, 'templates', 'empty-base');
+      const base = join(testDir, 'templates', 'empty-base', '1.0.0');
       mkdirSync(join(base, 'template'), { recursive: true });
 
       writeFileSync(
@@ -690,7 +733,7 @@ let newFeature = "{{childFeature}}"
       writeFileSync(join(base, 'template', 'test.txt'), 'base content');
 
       // Create layered template with empty patch
-      const layered = join(testDir, 'templates', 'empty-layer');
+      const layered = join(testDir, 'templates', 'empty-layer', '1.0.0');
       mkdirSync(join(layered, 'work'), { recursive: true });
 
       writeFileSync(
@@ -699,8 +742,11 @@ let newFeature = "{{childFeature}}"
           name: 'empty-layer',
           platform: 'ios',
           version: '1.0.0',
-          basedOn: 'empty-base',
-          layer: { patchFile: 'layer.patch' },
+          extends: {
+            template: 'empty-base',
+            version: '1.0.0',
+            patchFile: 'layer.patch',
+          },
         })
       );
 
@@ -728,7 +774,7 @@ let newFeature = "{{childFeature}}"
 
     it('should reload variables after materialization for layered templates', () => {
       // Create base template
-      const base = join(testDir, 'templates', 'reload-base');
+      const base = join(testDir, 'templates', 'reload-base', '1.0.0');
       mkdirSync(join(base, 'template'), { recursive: true });
 
       writeFileSync(
@@ -751,7 +797,7 @@ let newFeature = "{{childFeature}}"
       writeFileSync(join(base, 'template', 'App.txt'), 'App: {{appName}}');
 
       // Create layered template with NEW variable in patch
-      const layered = join(testDir, 'templates', 'reload-layer');
+      const layered = join(testDir, 'templates', 'reload-layer', '1.0.0');
       mkdirSync(join(layered, 'work'), { recursive: true });
 
       writeFileSync(
@@ -760,8 +806,11 @@ let newFeature = "{{childFeature}}"
           name: 'reload-layer',
           platform: 'ios',
           version: '1.0.0',
-          basedOn: 'reload-base',
-          layer: { patchFile: 'layer.patch' },
+          extends: {
+            template: 'reload-base',
+            version: '1.0.0',
+            patchFile: 'layer.patch',
+          },
         })
       );
 

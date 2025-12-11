@@ -1,6 +1,13 @@
-diff --git a/.DS_Store b/.DS_Store
-index 7678a82..7789561 100644
-Binary files a/.DS_Store and b/.DS_Store differ
+diff --git a/variables.json b/variables.json
+index 97bebfb..2197c1e 100644
+--- a/variables.json
++++ b/variables.json
+@@ -1,5 +1,4 @@
+ {
+-  "$schema": "../../schemas/variables.schema.json",
+   "variables": [
+     {
+       "name": "projectName",
 diff --git a/{{projectName}}.xcodeproj/project.pbxproj b/{{projectName}}.xcodeproj/project.pbxproj
 index d96407e..c7b7716 100644
 --- a/{{projectName}}.xcodeproj/project.pbxproj
@@ -65,13 +72,6 @@ index 0000000..b5e47f3
 +      location = "group:Pods/Pods.xcodeproj">
 +   </FileRef>
 +</Workspace>
-diff --git a/{{projectName}}.xcworkspace/xcuserdata/justin.horst.xcuserdatad/UserInterfaceState.xcuserstate b/{{projectName}}.xcworkspace/xcuserdata/justin.horst.xcuserdatad/UserInterfaceState.xcuserstate
-new file mode 100644
-index 0000000..7e52c80
-Binary files /dev/null and b/{{projectName}}.xcworkspace/xcuserdata/justin.horst.xcuserdatad/UserInterfaceState.xcuserstate differ
-diff --git a/{{projectName}}/.DS_Store b/{{projectName}}/.DS_Store
-index 1ada293..aa9b78d 100644
-Binary files a/{{projectName}}/.DS_Store and b/{{projectName}}/.DS_Store differ
 diff --git a/{{projectName}}/AppDelegate.swift b/{{projectName}}/AppDelegate.swift
 index a738878..96a3ea0 100644
 --- a/{{projectName}}/AppDelegate.swift
@@ -113,9 +113,6 @@ index a738878..96a3ea0 100644
      func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
          return UserAccountManager.shared.handleIdentityProviderResponse(from: url, with: options)
      }
-diff --git a/{{projectName}}/Assets.xcassets/.DS_Store b/{{projectName}}/Assets.xcassets/.DS_Store
-index 26ef873..908ce59 100644
-Binary files a/{{projectName}}/Assets.xcassets/.DS_Store and b/{{projectName}}/Assets.xcassets/.DS_Store differ
 diff --git a/{{projectName}}/CustomLoginViewController.swift b/{{projectName}}/CustomLoginViewController.swift
 new file mode 100644
 index 0000000..65dbfcf

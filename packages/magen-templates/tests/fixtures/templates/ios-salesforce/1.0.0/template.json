@@ -1,9 +1,10 @@
 {
     "name": "ios-salesforce",
     "platform": "ios",
-    "basedOn": "ios-base",
-    "version": "0.2.0",
-    "layer": {
+    "version": "1.0.0",
+    "extends": {
+        "template": "ios-base",
+        "version": "1.0.0",
         "patchFile": "layer.patch"
     },
     "tags": [

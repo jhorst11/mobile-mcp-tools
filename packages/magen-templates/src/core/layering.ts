@@ -69,13 +69,26 @@ export function createLayer(options: CreateLayerOptions): CreateLayerResult {
 
   const childTemplate: TemplateDescriptor = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
 
-  // Determine parent template
-  const parentName = parentTemplateName || childTemplate.basedOn;
-  if (!parentName) {
-    throw new Error(`No parent template specified. Use --based-on or set basedOn in template.json`);
+  // Determine parent template (support both old basedOn and new extends format)
+  let parentName: string;
+
+  if (parentTemplateName) {
+    // Explicit parent name from parameter takes precedence
+    parentName = parentTemplateName;
+  } else if (childTemplate.extends) {
+    // New extends format: combine template name and version
+    const version = childTemplate.extends.version || '1.0.0';
+    parentName = `${childTemplate.extends.template}@${version}`;
+  } else if (childTemplate.basedOn) {
+    // Old basedOn format: already includes version if specified
+    parentName = childTemplate.basedOn;
+  } else {
+    throw new Error(
+      `No parent template specified. Use --based-on or set extends.template in template.json`
+    );
   }
 
-  // Load parent template
+  // Load parent template (parentName includes @version)
   const parentTemplateInfo = findTemplate(parentName);
   if (!parentTemplateInfo) {
     throw new Error(`Parent template not found: ${parentName}`);
@@ -126,6 +139,38 @@ export function createLayer(options: CreateLayerOptions): CreateLayerResult {
       cpSync(parentVariablesPath, join(gitRepoDir, 'variables.json'));
     }
 
+    // Create .gitignore to exclude system and IDE files from the patch
+    // This must be done before the first commit to exclude files from both parent and child
+    // Also exclude .gitignore itself so it doesn't appear in the patch
+    const gitignoreContent = `
+.DS_Store
+*.xcuserstate
+xcuserdata/
+.idea/
+.vscode/
+*.swp
+*~
+.gitignore
+    `.trim();
+    writeFileSync(join(gitRepoDir, '.gitignore'), gitignoreContent, 'utf-8');
+
+    // Remove any .DS_Store and other excluded files that were copied from parent
+    execSync('find . -name ".DS_Store" -delete', {
+      cwd: gitRepoDir,
+      stdio: 'pipe',
+      shell: '/bin/bash',
+    });
+    execSync('find . -name "*.xcuserstate" -delete', {
+      cwd: gitRepoDir,
+      stdio: 'pipe',
+      shell: '/bin/bash',
+    });
+    execSync('find . -type d -name "xcuserdata" -exec rm -rf {} + 2>/dev/null || true', {
+      cwd: gitRepoDir,
+      stdio: 'pipe',
+      shell: '/bin/bash',
+    });
+
     // Commit parent as base
     execSync('git add -A', { cwd: gitRepoDir, stdio: 'pipe' });
     execSync('git commit -m "Base template"', { cwd: gitRepoDir, stdio: 'pipe' });
@@ -151,7 +196,24 @@ export function createLayer(options: CreateLayerOptions): CreateLayerResult {
     // Now copy child work directory
     cpSync(childSourceDir, gitRepoDir, { recursive: true });
 
-    // Stage all changes (including new files)
+    // Remove any .DS_Store and other excluded files that were copied from child
+    execSync('find . -name ".DS_Store" -delete', {
+      cwd: gitRepoDir,
+      stdio: 'pipe',
+      shell: '/bin/bash',
+    });
+    execSync('find . -name "*.xcuserstate" -delete', {
+      cwd: gitRepoDir,
+      stdio: 'pipe',
+      shell: '/bin/bash',
+    });
+    execSync('find . -type d -name "xcuserdata" -exec rm -rf {} + 2>/dev/null || true', {
+      cwd: gitRepoDir,
+      stdio: 'pipe',
+      shell: '/bin/bash',
+    });
+
+    // Stage all changes (including new files), respecting .gitignore
     execSync('git add -A', { cwd: gitRepoDir, stdio: 'pipe' });
 
     // Create patch file from staged changes
@@ -183,7 +245,8 @@ export function materializeTemplate(options: MaterializeOptions): void {
   const { template, targetDirectory, templateDirectory } = options;
 
   // Base case: no parent, just copy template files
-  if (!template.basedOn) {
+  const parentName = template.extends?.template || template.basedOn;
+  if (!parentName) {
     const templateSourceDir = join(templateDirectory, 'template');
     if (!existsSync(templateSourceDir)) {
       throw new Error(`Template files not found at ${templateSourceDir}`);
@@ -205,9 +268,9 @@ export function materializeTemplate(options: MaterializeOptions): void {
   }
 
   // Recursive case: materialize parent first
-  const parentTemplateInfo = findTemplate(template.basedOn);
+  const parentTemplateInfo = findTemplate(parentName);
   if (!parentTemplateInfo) {
-    throw new Error(`Parent template not found: ${template.basedOn}`);
+    throw new Error(`Parent template not found: ${parentName}`);
   }
 
   // Materialize parent template to target directory
@@ -218,8 +281,9 @@ export function materializeTemplate(options: MaterializeOptions): void {
   });
 
   // Apply this layer's patch on top
-  if (template.layer?.patchFile) {
-    const patchPath = join(templateDirectory, template.layer.patchFile);
+  const patchFile = template.extends?.patchFile || template.layer?.patchFile;
+  if (patchFile) {
+    const patchPath = join(templateDirectory, patchFile);
     if (!existsSync(patchPath)) {
       throw new Error(`Layer patch file not found at ${patchPath}`);
     }
@@ -273,10 +337,11 @@ export function detectCycle(templateName: string, visited: Set<string> = new Set
       return false; // Template not found - not a cycle, just invalid reference
     }
 
-    if (templateInfo.descriptor.basedOn) {
-      return detectCycle(templateInfo.descriptor.basedOn, visited);
+    const parentName = templateInfo.descriptor.extends?.template || templateInfo.descriptor.basedOn;
+    if (parentName) {
+      return detectCycle(parentName, visited);
     }
-  } catch (_error) {
+  } catch {
     // Template not found - not a cycle, just invalid reference
     return false;
   }

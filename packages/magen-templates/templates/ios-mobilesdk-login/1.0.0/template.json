@@ -1,4 +1,5 @@
 {
+  "$schema": "../../schemas/template.schema.json",
   "name": "ios-mobilesdk-login",
   "platform": "ios",
   "version": "1.0.0",
@@ -12,8 +13,9 @@
     "login-customization",
     "ui-customization"
   ],
-  "basedOn": "ios-mobilesdk",
-  "layer": {
+  "extends": {
+    "template": "ios-mobilesdk",
+    "version": "1.0.0",
     "patchFile": "layer.patch"
   }
 }

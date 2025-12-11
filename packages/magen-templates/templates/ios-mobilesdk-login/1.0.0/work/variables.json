@@ -1,0 +1,52 @@
+{
+  "variables": [
+    {
+      "name": "projectName",
+      "type": "string",
+      "required": true,
+      "description": "The display name of the iOS application",
+      "default": "MyApp"
+    },
+    {
+      "name": "bundleIdentifier",
+      "type": "string",
+      "required": true,
+      "description": "The bundle identifier of the iOS application",
+      "default": "com.example.myapp",
+      "regex": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+$"
+    },
+    {
+      "name": "organization",
+      "type": "string",
+      "required": true,
+      "description": "The organization name of the iOS application",
+      "default": "Example Inc."
+    },
+    {
+      "name": "salesforceMobileSDKVersion",
+      "type": "string",
+      "required": true,
+      "description": "Salesforce Mobile SDK version to use",
+      "default": "13.1"
+    },
+    {
+      "name": "salesforceLoginHost",
+      "type": "string",
+      "required": true,
+      "description": "Salesforce login host (e.g. login.salesforce.com)",
+      "default": "login.salesforce.com"
+    },
+    {
+      "name": "salesforceConsumerKey",
+      "type": "string",
+      "required": true,
+      "description": "Salesforce Connected App Consumer Key (Client ID)"
+    },
+    {
+      "name": "salesforceCallbackUrl",
+      "type": "string",
+      "required": true,
+      "description": "OAuth callback URL configured in Connected App"
+    }
+  ]
+}

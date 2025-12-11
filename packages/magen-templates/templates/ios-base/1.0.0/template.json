@@ -1,4 +1,5 @@
 {
+    "$schema": "../../schemas/template.schema.json",
     "name": "ios-base",
     "platform": "ios",
     "version": "1.0.0",

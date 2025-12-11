@@ -124,9 +124,11 @@ describe('Template Discovery', () => {
     it('should find templates with layering', () => {
       const template = findTemplate('ios-salesforce');
       expect(template).not.toBeNull();
-      expect(template?.descriptor.basedOn).toBe('ios-base');
-      expect(template?.descriptor.layer).toBeDefined();
-      expect(template?.descriptor.layer?.patchFile).toBe('layer.patch');
+      expect(template?.descriptor.basedOn).toBe('ios-base@1.0.0');
+      expect(template?.descriptor.extends).toBeDefined();
+      expect(template?.descriptor.extends?.template).toBe('ios-base');
+      expect(template?.descriptor.extends?.version).toBe('1.0.0');
+      expect(template?.descriptor.extends?.patchFile).toBe('layer.patch');
     });
   });
 
@@ -146,7 +148,9 @@ describe('Template Discovery', () => {
     it('should return complete template metadata', () => {
       const template = getTemplate('ios-salesforce');
       expect(template.name).toBe('ios-salesforce');
-      expect(template.basedOn).toBe('ios-base');
+      expect(template.basedOn).toBe('ios-base@1.0.0');
+      expect(template.extends?.template).toBe('ios-base');
+      expect(template.extends?.version).toBe('1.0.0');
       expect(template.tags).toContain('salesforce');
       expect(template.description).toBeDefined();
       expect(template.variables.length).toBeGreaterThan(0);

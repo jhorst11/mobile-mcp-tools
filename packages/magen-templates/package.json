@@ -5,6 +5,7 @@
   "files": [
     "dist",
     "templates",
+    "schemas",
     "README.md"
   ],
   "description": "Layered, platform-agnostic app templating engine for mobile development",

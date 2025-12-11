@@ -221,8 +221,8 @@ let bundleId = "{{bundleId}}"
     });
 
     it('should use default values for required variables in layered templates', () => {
-      // Create base template with variables
-      const baseDir = join(testDir, 'base-with-defaults');
+      // Create base template with variables (with version directory)
+      const baseDir = join(testDir, 'base-with-defaults', '1.0.0');
       mkdirSync(join(baseDir, 'template'), { recursive: true });
 
       writeFileSync(
@@ -257,8 +257,8 @@ let bundleId = "{{bundleId}}"
         'App: {{appName}}\nFeature: {{baseFeature}}'
       );
 
-      // Create layered template
-      const layeredDir = join(testDir, 'layered-with-defaults');
+      // Create layered template (with version directory)
+      const layeredDir = join(testDir, 'layered-with-defaults', '1.0.0');
       mkdirSync(join(layeredDir, 'work'), { recursive: true });
 
       writeFileSync(
@@ -267,8 +267,11 @@ let bundleId = "{{bundleId}}"
           name: 'layered-with-defaults',
           platform: 'ios',
           version: '1.0.0',
-          basedOn: 'base-with-defaults',
-          layer: { patchFile: 'layer.patch' },
+          extends: {
+            template: 'base-with-defaults',
+            version: '1.0.0',
+            patchFile: 'layer.patch',
+          },
         })
       );
 

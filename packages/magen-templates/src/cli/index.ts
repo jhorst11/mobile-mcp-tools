@@ -18,6 +18,7 @@ import {
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
+import { execSync } from 'child_process';
 import { Command } from 'commander';
 import { listTemplates, getTemplate, findTemplate } from '../core/discovery.js';
 import { generateApp } from '../core/generator.js';
@@ -98,7 +99,15 @@ function buildInheritanceChain(templateName: string, allTemplates: TemplateDescr
   let current = templateMap.get(templateName);
   while (current?.basedOn) {
     chain.push(current.basedOn);
-    current = templateMap.get(current.basedOn);
+    // basedOn might include @version, strip it to find the template
+    const baseName = current.basedOn.split('@')[0];
+    current = templateMap.get(baseName);
+
+    // If we found the parent template but basedOn didn't include version,
+    // add the version to the chain for consistency
+    if (current && !chain[chain.length - 1].includes('@')) {
+      chain[chain.length - 1] = `${baseName}@${current.version}`;
+    }
   }
 
   return chain;
@@ -350,7 +359,7 @@ templateCmd
               }
             }
           }
-        } catch (_error) {
+        } catch {
           console.warn(`⚠ Warning: Could not load parent template ${options.basedOn}`);
           console.warn(`  You can still create the template, but variables won't be inherited.`);
         }
@@ -366,8 +375,7 @@ templateCmd
         version: string;
         description: string;
         tags: string[];
-        basedOn?: string;
-        layer?: { patchFile: string };
+        extends?: { template: string; version: string; patchFile: string };
       } = {
         name: templateName,
         platform: options.platform,
@@ -376,10 +384,15 @@ templateCmd
         tags: [],
       };
 
-      // Add layer configuration if based on another template
+      // Add extends configuration if based on another template
       if (options.basedOn) {
-        templateJson.basedOn = options.basedOn;
-        templateJson.layer = {
+        // Get parent template to extract version
+        const parentInfo = findTemplate(options.basedOn);
+        const parentVersion = parentInfo?.descriptor.version || '1.0.0';
+
+        templateJson.extends = {
+          template: options.basedOn,
+          version: parentVersion,
           patchFile: 'layer.patch',
         };
       }
@@ -503,6 +516,245 @@ The \`work/\` directory is for development only (add to .gitignore).
         console.log(`  3. Test: magen-template template test ${templateName}`);
       }
       console.log('');
+    } catch (error) {
+      console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+    }
+  });
+
+// Template version subcommand
+templateCmd
+  .command('version <name> <new-version>')
+  .description('Create a new version of an existing template')
+  .option('--source-version <version>', 'Source version to copy from (defaults to latest)')
+  .option('--out <path>', 'Base templates directory (default: ./templates)')
+  .action((templateName: string, newVersion: string, options) => {
+    try {
+      // Validate semver format
+      if (!/^\d+\.\d+\.\d+$/.test(newVersion)) {
+        throw new Error(
+          `Invalid version format: ${newVersion}. Must be semver format (e.g., 2.0.0)`
+        );
+      }
+
+      console.log(`\nCreating new version of template: ${templateName}`);
+      console.log(`New version: ${newVersion}`);
+
+      // Find source template
+      const sourceVersion = options.sourceVersion;
+      const sourceTemplate = sourceVersion
+        ? findTemplate(`${templateName}@${sourceVersion}`)
+        : findTemplate(templateName); // Gets latest
+
+      if (!sourceTemplate) {
+        throw new Error(
+          `Source template not found: ${templateName}${sourceVersion ? `@${sourceVersion}` : ''}`
+        );
+      }
+
+      console.log(
+        `Source version: ${sourceTemplate.descriptor.version} at ${sourceTemplate.templatePath}`
+      );
+
+      // Determine output directory
+      const templatesBaseDir = options.out || join(process.cwd(), 'templates');
+      const newVersionDir = join(templatesBaseDir, templateName, newVersion);
+
+      // Check if new version already exists
+      if (existsSync(newVersionDir)) {
+        throw new Error(
+          `Version ${newVersion} of ${templateName} already exists at ${newVersionDir}`
+        );
+      }
+
+      console.log(`Target directory: ${newVersionDir}`);
+
+      // Create new version directory
+      mkdirSync(newVersionDir, { recursive: true });
+
+      // Determine if this is a base or layered template
+      const isLayered = !!sourceTemplate.descriptor.extends;
+
+      if (isLayered) {
+        // Layered template: copy template.json, layer.patch, and README
+        console.log(
+          `\nTemplate is layered (extends ${sourceTemplate.descriptor.extends!.template})`
+        );
+
+        // Copy and update template.json
+        const sourceTemplateJson = JSON.parse(
+          readFileSync(join(sourceTemplate.templatePath, 'template.json'), 'utf-8')
+        );
+        sourceTemplateJson.version = newVersion;
+
+        writeFileSync(
+          join(newVersionDir, 'template.json'),
+          JSON.stringify(sourceTemplateJson, null, 2) + '\n',
+          'utf-8'
+        );
+        console.log(`✓ Created template.json with version ${newVersion}`);
+
+        // Copy layer.patch if it exists
+        const sourcePatchPath = join(sourceTemplate.templatePath, 'layer.patch');
+        if (existsSync(sourcePatchPath)) {
+          cpSync(sourcePatchPath, join(newVersionDir, 'layer.patch'));
+          console.log(`✓ Copied layer.patch from source version`);
+        }
+
+        // Copy README if it exists
+        const sourceReadmePath = join(sourceTemplate.templatePath, 'README.md');
+        if (existsSync(sourceReadmePath)) {
+          cpSync(sourceReadmePath, join(newVersionDir, 'README.md'));
+          console.log(`✓ Copied README.md`);
+        }
+
+        // Materialize parent to work/ directory for editing
+        console.log(`\nMaterializing parent template to work/ directory for editing...`);
+        const workDir = join(newVersionDir, 'work');
+        const parentInfo = findTemplate(
+          `${sourceTemplate.descriptor.extends!.template}@${sourceTemplate.descriptor.extends!.version}`
+        );
+
+        if (!parentInfo) {
+          throw new Error(
+            `Parent template not found: ${sourceTemplate.descriptor.extends!.template}@${sourceTemplate.descriptor.extends!.version}`
+          );
+        }
+
+        const parentTemplateDir = join(parentInfo.templatePath, 'template');
+
+        if (existsSync(parentTemplateDir)) {
+          // Parent is a base template
+          cpSync(parentTemplateDir, workDir, { recursive: true });
+          console.log(`✓ Copied parent template files to work/ directory`);
+
+          // Copy parent's variables.json to work/
+          const parentVariablesPath = join(parentInfo.templatePath, 'variables.json');
+          if (existsSync(parentVariablesPath)) {
+            cpSync(parentVariablesPath, join(workDir, 'variables.json'));
+            console.log(`✓ Copied parent variables.json to work/ directory`);
+          }
+        } else {
+          // Parent is layered - materialize it
+          const tempDir = join(tmpdir(), `magen-materialize-${Date.now()}`);
+          try {
+            materializeTemplate({
+              template: parentInfo.descriptor,
+              targetDirectory: tempDir,
+              templateDirectory: parentInfo.templatePath,
+            });
+            cpSync(tempDir, workDir, { recursive: true });
+            console.log(`✓ Copied materialized parent template files to work/ directory`);
+          } finally {
+            if (existsSync(tempDir)) {
+              rmSync(tempDir, { recursive: true, force: true });
+            }
+          }
+        }
+
+        // Apply existing patch to work/ directory
+        if (existsSync(sourcePatchPath)) {
+          console.log(`\nApplying existing layer patch to work/ directory...`);
+          const gitRepoDir = workDir;
+
+          try {
+            // Initialize git in work directory
+            execSync('git init', { cwd: gitRepoDir, stdio: 'pipe' });
+            execSync('git config user.email "magen@salesforce.com"', {
+              cwd: gitRepoDir,
+              stdio: 'pipe',
+            });
+            execSync('git config user.name "Magen Template System"', {
+              cwd: gitRepoDir,
+              stdio: 'pipe',
+            });
+
+            // Commit current state
+            execSync('git add -A', { cwd: gitRepoDir, stdio: 'pipe' });
+            execSync('git commit -m "Base"', { cwd: gitRepoDir, stdio: 'pipe' });
+
+            // Apply patch
+            execSync(`git apply --allow-empty "${sourcePatchPath}"`, {
+              cwd: gitRepoDir,
+              stdio: 'pipe',
+            });
+
+            // Clean up git
+            rmSync(join(gitRepoDir, '.git'), { recursive: true, force: true });
+
+            console.log(`✓ Applied existing layer.patch to work/ directory`);
+          } catch (error) {
+            console.warn(
+              `⚠ Warning: Could not apply patch automatically. You may need to manually merge changes.`
+            );
+            console.warn(`  Error: ${error instanceof Error ? error.message : String(error)}`);
+
+            // Clean up git even on error
+            const gitDir = join(gitRepoDir, '.git');
+            if (existsSync(gitDir)) {
+              rmSync(gitDir, { recursive: true, force: true });
+            }
+          }
+        }
+      } else {
+        // Base template: copy template/, template.json, variables.json, and README
+        console.log(`\nTemplate is a base template`);
+
+        // Copy template/ directory
+        const sourceTemplateDir = join(sourceTemplate.templatePath, 'template');
+        if (existsSync(sourceTemplateDir)) {
+          cpSync(sourceTemplateDir, join(newVersionDir, 'template'), { recursive: true });
+          console.log(`✓ Copied template/ directory`);
+        }
+
+        // Copy and update template.json
+        const sourceTemplateJson = JSON.parse(
+          readFileSync(join(sourceTemplate.templatePath, 'template.json'), 'utf-8')
+        );
+        sourceTemplateJson.version = newVersion;
+
+        writeFileSync(
+          join(newVersionDir, 'template.json'),
+          JSON.stringify(sourceTemplateJson, null, 2) + '\n',
+          'utf-8'
+        );
+        console.log(`✓ Created template.json with version ${newVersion}`);
+
+        // Copy variables.json
+        const sourceVariablesPath = join(sourceTemplate.templatePath, 'variables.json');
+        if (existsSync(sourceVariablesPath)) {
+          cpSync(sourceVariablesPath, join(newVersionDir, 'variables.json'));
+          console.log(`✓ Copied variables.json`);
+        }
+
+        // Copy README if it exists
+        const sourceReadmePath = join(sourceTemplate.templatePath, 'README.md');
+        if (existsSync(sourceReadmePath)) {
+          cpSync(sourceReadmePath, join(newVersionDir, 'README.md'));
+          console.log(`✓ Copied README.md`);
+        }
+      }
+
+      console.log(`\n✓ Successfully created version ${newVersion} of ${templateName}`);
+      console.log(`\nNext steps:`);
+      if (isLayered) {
+        console.log(`  1. Edit files in ${newVersionDir}/work/`);
+        console.log(
+          `  2. Generate new layer patch: magen-template template layer ${templateName} --out ${newVersionDir}`
+        );
+        console.log(
+          `  3. Test the template: magen-template template test ${templateName}@${newVersion}`
+        );
+      } else {
+        console.log(`  1. Edit files in ${newVersionDir}/template/`);
+        console.log(`  2. Update ${newVersionDir}/variables.json if needed`);
+        console.log(
+          `  3. Test the template: magen-template template test ${templateName}@${newVersion}`
+        );
+      }
+      console.log(
+        `  4. Update dependent templates to use new version (or keep them pinned to current version)\n`
+      );
     } catch (error) {
       console.error(`\nError: ${error instanceof Error ? error.message : String(error)}`);
       process.exit(1);
@@ -668,11 +920,13 @@ templateCmd
 
       const templateJson: TemplateDescriptor = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
 
-      // Check if this is a layered template
-      if (!templateJson.basedOn) {
+      // Check if this is a layered template (support both old and new format)
+      const parentTemplate = templateJson.extends?.template || templateJson.basedOn;
+
+      if (!parentTemplate) {
         throw new Error(
           `Template ${templateName} is not a layered template. ` +
-            `Only layered templates (with basedOn) can be materialized to work/.`
+            `Only layered templates can be materialized to work/.`
         );
       }
 
@@ -758,26 +1012,23 @@ templateCmd
   .description('Show the layer.patch diff for a layered template')
   .option('--out <path>', 'Template directory')
   .action((templateName: string, options) => {
-    const templateDirectory = options.out || join(process.cwd(), 'templates', templateName);
-
     try {
       console.log(`\nShowing layer patch for: ${colors.cyan}${templateName}${colors.reset}\n`);
 
-      // Check if template directory exists
-      if (!existsSync(templateDirectory)) {
-        throw new Error(`Template directory not found: ${templateDirectory}`);
+      const templateInfo = findTemplate(templateName);
+      if (!templateInfo) {
+        throw new Error(`Template not found: ${templateName}`);
       }
 
-      // Load template.json
-      const templateJsonPath = join(templateDirectory, 'template.json');
-      if (!existsSync(templateJsonPath)) {
-        throw new Error(`Template descriptor not found at ${templateJsonPath}`);
-      }
+      const templateDirectory = options.out || templateInfo.templatePath;
+      const templateJson = templateInfo.descriptor;
 
-      const templateJson = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
+      // Check if this is a layered template (support both old and new format)
+      const parentTemplate = templateJson.extends?.template || templateJson.basedOn;
+      const patchFile =
+        templateJson.extends?.patchFile || templateJson.layer?.patchFile || 'layer.patch';
 
-      // Check if this is a layered template
-      if (!templateJson.basedOn) {
+      if (!parentTemplate) {
         throw new Error(
           `Template ${templateName} is not a layered template. ` +
             `Only layered templates have layer.patch files.`
@@ -785,20 +1036,23 @@ templateCmd
       }
 
       // Check if layer.patch exists
-      const patchPath = join(templateDirectory, 'layer.patch');
+      const patchPath = join(templateDirectory, patchFile);
       if (!existsSync(patchPath)) {
-        throw new Error(`layer.patch not found at ${patchPath}`);
+        throw new Error(`${patchFile} not found at ${patchPath}`);
       }
 
       // Read and display the patch
       const patchContent = readFileSync(patchPath, 'utf-8');
 
       if (patchContent.trim().length === 0) {
-        console.log('layer.patch is empty. Run "magen-template template layer" to generate it.');
+        console.log(`${patchFile} is empty. Run "magen-template template layer" to generate it.`);
         return;
       }
 
-      console.log(`Based on: ${colors.cyan}${templateJson.basedOn}${colors.reset}`);
+      console.log(`Based on: ${colors.cyan}${parentTemplate}${colors.reset}`);
+      if (templateJson.extends?.version) {
+        console.log(`Parent version: ${colors.cyan}${templateJson.extends.version}${colors.reset}`);
+      }
       console.log(`Patch file: ${patchPath}\n`);
       console.log('─'.repeat(80));
       console.log(patchContent);
@@ -813,7 +1067,7 @@ templateCmd
 templateCmd
   .command('validate <name>')
   .description('Validate template structure')
-  .action((_templateName: string) => {
+  .action(() => {
     console.error(`Command not yet implemented: validate`);
     console.error('Currently available: create, test, layer, materialize, diff');
     process.exit(1);

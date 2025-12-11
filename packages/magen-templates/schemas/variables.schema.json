@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/salesforce/mobile-mcp-tools-2/schemas/variables.schema.json",
+  "title": "Magen Template Variables",
+  "description": "Schema for variables.json files in the Magen templating system",
+  "type": "object",
+  "required": ["variables"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "variables": {
+      "type": "array",
+      "description": "Array of template variable definitions",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "required"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Variable name used in template placeholders (e.g., {{variableName}})",
+            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+            "examples": ["appName", "organizationName", "bundleIdentifier"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["string", "number", "boolean"],
+            "description": "Data type of the variable"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this variable must be provided during generation"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Human-readable description of the variable's purpose",
+            "examples": [
+              "The name of the application",
+              "Salesforce organization ID for OAuth configuration"
+            ]
+          },
+          "default": {
+            "description": "Default value if not provided (type must match 'type' field)",
+            "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "boolean" }],
+            "examples": ["MyApp", "com.example.app", true, 42]
+          },
+          "regex": {
+            "type": "string",
+            "description": "Regular expression pattern for validating string values",
+            "examples": ["^[a-zA-Z0-9_]+$", "^com\\.[a-z]+\\.[a-z]+$"]
+          },
+          "enum": {
+            "type": "array",
+            "description": "List of allowed values (for string variables only)",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "uniqueItems": true,
+            "examples": [
+              ["production", "staging", "development"],
+              ["light", "dark", "auto"]
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
