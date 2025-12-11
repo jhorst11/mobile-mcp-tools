@@ -401,9 +401,10 @@ describe('Template Create - Multi-Layer Inheritance', () => {
     });
 
     // Now create layer 2 based on layer 1 using CLI
+    // Note: --out now refers to the base templates directory, not the versioned template directory
     const layer2Dir = join(testDir, 'layer2', '1.0.0');
     const output = execSync(
-      `node ${CLI_PATH} template create layer2 --based-on layer1 --out ${layer2Dir}`,
+      `node ${CLI_PATH} template create layer2 --based-on layer1 --out ${testDir}`,
       { encoding: 'utf-8' }
     );
 

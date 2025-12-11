@@ -185,3 +185,129 @@ export async function promptOutputDirectory(defaultValue?: string): Promise<stri
     },
   });
 }
+
+/**
+ * Interactively gather template creation parameters
+ */
+export async function promptTemplateCreate(): Promise<{
+  name: string;
+  platform: string;
+  version: string;
+  basedOn?: string;
+}> {
+  const name = await input({
+    message: 'Template name:',
+    validate: (val: string) => {
+      if (!val) {
+        return 'Template name is required';
+      }
+      if (!/^[a-z0-9-]+$/.test(val)) {
+        return 'Template name must contain only lowercase letters, numbers, and hyphens';
+      }
+      return true;
+    },
+  });
+
+  const platform = await select({
+    message: 'Platform:',
+    choices: [
+      { name: 'iOS', value: 'ios' },
+      { name: 'Android', value: 'android' },
+      { name: 'Web', value: 'web' },
+    ],
+    default: 'ios',
+  });
+
+  const version = await input({
+    message: 'Version (semver):',
+    default: '1.0.0',
+    validate: (val: string) => {
+      if (!/^\d+\.\d+\.\d+$/.test(val)) {
+        return 'Version must be in semver format (e.g., 1.0.0)';
+      }
+      return true;
+    },
+  });
+
+  const isLayered = await confirm({
+    message: 'Create layered template (based on another template)?',
+    default: false,
+  });
+
+  let basedOn: string | undefined;
+  if (isLayered) {
+    basedOn = await selectTemplate({
+      platform,
+      message: 'Select parent template:',
+    });
+  }
+
+  return { name, platform, version, basedOn };
+}
+
+/**
+ * Prompt for a template name
+ */
+export async function promptForTemplateName(defaultValue?: string): Promise<string> {
+  return await input({
+    message: 'Enter template name:',
+    default: defaultValue,
+    validate: (val: string) => {
+      if (!val) {
+        return 'Template name is required';
+      }
+      if (!/^[a-z0-9-]+$/.test(val)) {
+        return 'Template name must be lowercase, alphanumeric, and can contain hyphens';
+      }
+      return true;
+    },
+  });
+}
+
+/**
+ * Prompt for a platform
+ */
+export async function promptForPlatform(defaultValue?: string): Promise<string> {
+  return await select({
+    message: 'Select platform:',
+    choices: [
+      { name: 'iOS', value: 'ios' },
+      { name: 'Android', value: 'android' },
+      { name: 'Web', value: 'web' },
+    ],
+    default: defaultValue || 'ios',
+  });
+}
+
+/**
+ * Prompt for a template version
+ */
+export async function promptForTemplateVersion(
+  messageOrDefaultValue?: string,
+  defaultValue?: string
+): Promise<string> {
+  // Support both old signature (defaultValue only) and new signature (message, defaultValue)
+  const isMessage = messageOrDefaultValue && messageOrDefaultValue.includes(':');
+  const message = isMessage
+    ? messageOrDefaultValue
+    : 'Enter template version (semver, e.g., 1.0.0):';
+  const defaultVal = isMessage ? defaultValue : messageOrDefaultValue;
+
+  return await input({
+    message,
+    default: defaultVal || '1.0.0',
+    validate: (val: string) => {
+      if (!/^\d+\.\d+\.\d+$/.test(val)) {
+        return 'Version must be semver format (e.g., 1.0.0)';
+      }
+      return true;
+    },
+  });
+}
+
+/**
+ * Prompt for a parent template (for layered templates)
+ */
+export async function promptForBasedOnTemplate(): Promise<string> {
+  return await selectTemplate({ message: 'Select parent template:' });
+}
