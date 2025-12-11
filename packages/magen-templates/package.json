@@ -30,10 +30,13 @@
     "format": "prettier --write \"{src,tests}/**/*.ts\" \"*.{json,md}\""
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.2.0",
+    "chalk": "^5.4.1",
     "chokidar": "^5.0.0",
     "commander": "^14.0.2",
     "handlebars": "^4.7.8",
     "minimatch": "^10.1.1",
+    "ora": "^8.2.0",
     "zod": "^3.25.67"
   },
   "devDependencies": {

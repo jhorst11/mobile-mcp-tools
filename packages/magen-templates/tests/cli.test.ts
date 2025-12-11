@@ -257,8 +257,7 @@ describe('Generate Command', () => {
     const output = execSync(`node ${CLI_PATH} generate ios-base --out ${outputDir}`, {
       encoding: 'utf-8',
     });
-    expect(output).toContain('Generating ios-base');
-    expect(output).toContain('✓ App generated successfully!');
+    expect(output).toContain('App generated successfully');
     expect(existsSync(outputDir)).toBe(true);
   });
 
@@ -268,7 +267,7 @@ describe('Generate Command', () => {
       `node ${CLI_PATH} generate ios-base --out ${outputDir} --var appName=TestApp --var organizationName="Test Org"`,
       { encoding: 'utf-8' }
     );
-    expect(output).toContain('Variables used:');
+    expect(output).toContain('Variables:');
     expect(output).toContain('appName: TestApp');
     expect(output).toContain('organizationName: Test Org');
   });

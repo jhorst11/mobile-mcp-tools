@@ -27,24 +27,35 @@ npm install @salesforce/magen-templates
 ### CLI Usage
 
 ```bash
-# List available templates
+# List available templates (with inheritance tree)
 magen-template list
 
 # Filter by platform or tags
 magen-template list --platform ios
 magen-template list --tag salesforce,mobile-sdk
 
-# Show template details
-magen-template show ios-base
+# Get detailed template information
+magen-template info ios-base
 
 # Show layer.patch diff for layered templates
 magen-template template diff ios-mobilesdk
 
 # Generate an app from a template
-magen-template generate ios-salesforce --out ./my-app
+magen-template generate ios-base --out ./my-app \
+  --var projectName="My App" \
+  --var bundleIdentifier="com.example.myapp"
+
+# Generate interactively with prompts
+magen-template generate --interactive
+
+# Generate specific template interactively
+magen-template generate ios-base --interactive
 
 # Create a new template
 magen-template template create my-template --based-on ios-base
+
+# Create a new version of a template
+magen-template template version ios-base 1.1.0
 
 # Test a template (creates test/ directory)
 magen-template template test my-template
@@ -56,24 +67,96 @@ magen-template template test my-template --watch
 magen-template template layer my-template
 ```
 
+### Enhanced UX Features
+
+The CLI includes several UX improvements:
+
+- **Interactive Mode**: Use `--interactive` flag for guided template generation with prompts
+- **Smart Error Messages**: Get helpful suggestions when template names are mistyped
+- **Template Info**: Use `magen-template info <name>` for detailed template information including:
+  - Inheritance chain visualization
+  - Required and optional variables
+  - Usage examples
+- **Progress Indicators**: See real-time progress during generation
+- **Colorized Output**: Templates, inheritance chains, and messages use colors for better readability
+
 ### Programmatic Usage
+
+#### High-Level API (Recommended)
+
+The high-level API provides abstracted, ergonomic functions for common operations:
+
+```typescript
+import {
+  searchTemplates,
+  getTemplateInfo,
+  generate,
+  findSimilarTemplates,
+  apiValidateTemplateVariables,
+} from '@salesforce/magen-templates';
+
+// Search templates
+const result = searchTemplates({
+  platform: 'ios',
+  tags: ['salesforce', 'mobile-sdk'],
+  query: 'login',
+});
+
+console.log(`Found ${result.total} templates`);
+result.templates.forEach(t => console.log(t.name));
+
+// Get detailed template information
+const info = getTemplateInfo('ios-mobilesdk-login');
+console.log(info.inheritanceChain); // Full inheritance chain
+console.log(info.requiredVariables); // List of required variables
+
+// Validate variables before generating
+const validation = apiValidateTemplateVariables('ios-base', {
+  projectName: 'My App',
+});
+
+if (!validation.valid) {
+  console.error(validation.errors);
+  console.log('Missing:', validation.missingRequired);
+}
+
+// Generate an app
+const genResult = generate({
+  templateName: 'ios-base',
+  outputDirectory: './my-app',
+  variables: {
+    projectName: 'My App',
+    bundleIdentifier: 'com.example.myapp',
+    organization: 'Example Inc',
+  },
+});
+
+console.log(`Generated ${genResult.templateUsed} to ${genResult.outputDirectory}`);
+
+// Find similar template names (for error suggestions)
+const similar = findSimilarTemplates('ios-bas'); // Returns ['ios-base']
+```
+
+#### Low-Level Core API
+
+For advanced use cases, you can use the core API directly:
 
 ```typescript
 import { listTemplates, getTemplate, generateApp } from '@salesforce/magen-templates';
 
 // List all templates
-const templates = await listTemplates();
+const templates = listTemplates();
 
 // Get a specific template
-const template = await getTemplate('ios-salesforce');
+const template = getTemplate('ios-base');
 
 // Generate an app
-await generateApp({
-  templateName: 'ios-salesforce',
+generateApp({
+  templateName: 'ios-base',
   outputDirectory: './my-app',
   variables: {
-    appName: 'My App',
-    orgId: 'abc123',
+    projectName: 'My App',
+    bundleIdentifier: 'com.example.myapp',
   },
 });
 ```

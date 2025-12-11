@@ -38,3 +38,6 @@ export type {
 } from './core/testing.js';
 export { createLayer, materializeTemplate, detectCycle } from './core/layering.js';
 export type { CreateLayerOptions, CreateLayerResult, MaterializeOptions } from './core/layering.js';
+
+// High-level API
+export * from './api/index.js';
