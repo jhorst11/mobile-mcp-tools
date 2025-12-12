@@ -1,0 +1,318 @@
+diff --git a/Podfile b/Podfile
+new file mode 100644
+index 0000000..0c0e2ba
+--- /dev/null
++++ b/Podfile
+@@ -0,0 +1,21 @@
++platform :ios, '18.0'
++
++project '{{projectName}}.xcodeproj'
++target '{{projectName}}' do
++  source 'https://github.com/forcedotcom/SalesforceMobileSDK-iOS-Specs.git'
++  source 'https://github.com/livekit/podspecs.git'
++  source 'https://cdn.cocoapods.org/'
++  use_frameworks!
++
++  pod 'AgentforceSDK'
++  pod 'Messaging-InApp-Core', '1.9.3-Experimental'
++  pod 'LiveKitClient', '2.8.1'
++end
++
++post_install do |installer|
++  installer.pods_project.targets.each do |target|
++    target.build_configurations.each do |config|
++      config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
++    end
++  end
++end
+diff --git a/variables.json b/variables.json
+index 1631748..863b8ea 100644
+--- a/variables.json
++++ b/variables.json
+@@ -22,6 +22,27 @@
+       "required": true,
+       "description": "The organization name of the iOS application",
+       "default": "Example Inc."
++    },
++    {
++      "name": "esDeveloperName",
++      "type": "string",
++      "required": true,
++      "description": "The Einstein Service Developer Name for the agent configuration",
++      "default": "YourAgentDeveloperName"
++    },
++    {
++      "name": "organizationId",
++      "type": "string",
++      "required": true,
++      "description": "Your Salesforce Organization ID (15 or 18 characters)",
++      "default": "00D000000000000"
++    },
++    {
++      "name": "serviceApiUrl",
++      "type": "string",
++      "required": true,
++      "description": "The Salesforce Service API URL (e.g., https://your-instance.salesforce.com)",
++      "default": "https://your-instance.salesforce.com"
+     }
+   ]
+ }
+\ No newline at end of file
+diff --git a/{{projectName}}.xcodeproj/project.pbxproj b/{{projectName}}.xcodeproj/project.pbxproj
+index 9138834..780b8b6 100644
+--- a/{{projectName}}.xcodeproj/project.pbxproj
++++ b/{{projectName}}.xcodeproj/project.pbxproj
+@@ -9,6 +9,8 @@
+ /* Begin PBXBuildFile section */
+ 		APP001 /* {{projectName}}App.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC001 /* {{projectName}}App.swift */; };
+ 		APP002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* ContentView.swift */; };
++		APP003 /* AgentforceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* AgentforceViewModel.swift */; };
++		APP004 /* CredentialProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC004 /* CredentialProvider.swift */; };
+ 		RES001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = RES001REF /* Assets.xcassets */; };
+ /* End PBXBuildFile section */
+ 
+@@ -16,6 +18,8 @@
+ 		PRODUCT /* {{projectName}}.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "{{projectName}}.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+ 		SRC001 /* {{projectName}}App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "{{projectName}}App.swift"; sourceTree = "<group>"; };
+ 		SRC002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
++		SRC003 /* AgentforceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentforceViewModel.swift; sourceTree = "<group>"; };
++		SRC004 /* CredentialProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialProvider.swift; sourceTree = "<group>"; };
+ 		INFO /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+ 		RES001REF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+ /* End PBXFileReference section */
+@@ -52,6 +56,8 @@
+ 			children = (
+ 				SRC001 /* {{projectName}}App.swift */,
+ 				SRC002 /* ContentView.swift */,
++				SRC003 /* AgentforceViewModel.swift */,
++				SRC004 /* CredentialProvider.swift */,
+ 				RES001REF /* Assets.xcassets */,
+ 				INFO /* Info.plist */,
+ 			);
+@@ -129,6 +135,8 @@
+ 			files = (
+ 				APP002 /* ContentView.swift in Sources */,
+ 				APP001 /* {{projectName}}App.swift in Sources */,
++				APP003 /* AgentforceViewModel.swift in Sources */,
++				APP004 /* CredentialProvider.swift in Sources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+ 		};
+@@ -187,7 +195,7 @@
+ 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+ 				GCC_WARN_UNUSED_FUNCTION = YES;
+ 				GCC_WARN_UNUSED_VARIABLE = YES;
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
++				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+ 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+ 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+ 				MTL_FAST_MATH = YES;
+@@ -244,7 +252,7 @@
+ 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+ 				GCC_WARN_UNUSED_FUNCTION = YES;
+ 				GCC_WARN_UNUSED_VARIABLE = YES;
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
++				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+ 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+ 				MTL_ENABLE_DEBUG_INFO = NO;
+ 				MTL_FAST_MATH = YES;
+@@ -270,7 +278,7 @@
+ 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+ 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+ 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
++				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+ 				LD_RUNPATH_SEARCH_PATHS = (
+ 					"$(inherited)",
+ 					"@executable_path/Frameworks",
+@@ -300,7 +308,7 @@
+ 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+ 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+ 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
++				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+ 				LD_RUNPATH_SEARCH_PATHS = (
+ 					"$(inherited)",
+ 					"@executable_path/Frameworks",
+diff --git a/{{projectName}}/AgentforceViewModel.swift b/{{projectName}}/AgentforceViewModel.swift
+new file mode 100644
+index 0000000..4143861
+--- /dev/null
++++ b/{{projectName}}/AgentforceViewModel.swift
+@@ -0,0 +1,15 @@
++//
++//  AgentforceViewModel.swift
++//  {{projectName}}
++//
++//  Created by {{organization}}
++//
++
++import Foundation
++import SwiftUI
++
++/// View model for managing Agentforce UI state
++@Observable class AgentforceViewModel {
++    /// Controls the visibility of the Agentforce chat UI
++    var showAgentforceUI = false
++}
+diff --git a/{{projectName}}/ContentView.swift b/{{projectName}}/ContentView.swift
+index a7c3096..322a37c 100644
+--- a/{{projectName}}/ContentView.swift
++++ b/{{projectName}}/ContentView.swift
+@@ -6,20 +6,105 @@
+ //
+ 
+ import SwiftUI
++import AgentforceSDK
++import AgentforceService
+ 
++/// Main view for the Agentforce integration
+ struct ContentView: View {
++    @State private var viewModel = AgentforceViewModel()
++    
++    /// Agentforce client instance for managing conversations
++    let agentforceClient: AgentforceClient
++    let conversation: any AgentConversation
++    
++    /// Initialize the main view with Agentforce configuration
++    init() {
++        // Configure service UI settings
++        let serviceUISettings = ServiceUISettings(
++            downloadTranscript: true,
++            endConversation: true
++        )
++        
++        // Configure service agent with template variables
++        let config = ServiceAgentConfiguration(
++            esDeveloperName: "{{esDeveloperName}}",
++            organizationId: "{{organizationId}}",
++            serviceApiURL: "{{serviceApiUrl}}",
++            serviceUISettings: serviceUISettings
++        )
++        
++        // Initialize Agentforce client with guest credentials
++        self.agentforceClient = AgentforceClient(
++            credentialProvider: CredentialProvider(),
++            mode: .serviceAgent(config),
++            viewProvider: nil,        // No custom view provider
++            themeManager: AgentforceDefaultThemeManager()  // Use default theme
++        )
++        
++        // Start a conversation
++        self.conversation = agentforceClient.startAgentforceConversation(forESDeveloperName: "{{esDeveloperName}}")
++    }
++    
+     var body: some View {
+-        VStack(spacing: 20) {
+-            Image(systemName: "globe")
+-                .imageScale(.large)
+-                .foregroundStyle(.tint)
+-            Text("Welcome to {{projectName}}")
+-                .font(.title)
+-            Text("Built by {{organization}}")
+-                .font(.subheadline)
+-                .foregroundColor(.secondary)
++        NavigationStack {
++            VStack(spacing: 30) {
++                Spacer()
++                
++                // App title
++                VStack(spacing: 8) {
++                    Image(systemName: "message.fill")
++                        .font(.system(size: 60))
++                        .foregroundColor(.blue)
++                    
++                    Text("{{projectName}}")
++                        .font(.title)
++                        .fontWeight(.bold)
++                    
++                    Text("Agentforce SDK Integration")
++                        .font(.headline)
++                        .foregroundColor(.secondary)
++                    
++                    Text("Tap the button below to start chatting")
++                        .font(.subheadline)
++                        .foregroundColor(.secondary)
++                }
++                
++                // Start chat button
++                Button(action: {
++                    viewModel.showAgentforceUI = true
++                }) {
++                    HStack {
++                        Image(systemName: "message.bubble.fill")
++                        Text("Start Chat")
++                    }
++                    .font(.headline)
++                    .foregroundColor(.white)
++                    .padding()
++                    .frame(maxWidth: 200)
++                    .background(Color.blue)
++                    .cornerRadius(12)
++                }
++                
++                Spacer()
++            }
++            .padding()
++            .frame(maxWidth: .infinity, maxHeight: .infinity)
++        }
++        .fullScreenCover(isPresented: $viewModel.showAgentforceUI) {
++            chatView
+         }
+-        .padding()
++    }
++    
++    /// Chat view wrapper
++    @ViewBuilder
++    private var chatView: some View {
++        try! agentforceClient.createAgentforceChatView(
++            conversation: conversation,
++            delegate: nil,
++            onContainerClose: {
++                viewModel.showAgentforceUI = false
++            }
++        )
+     }
+ }
+ 
+diff --git a/{{projectName}}/CredentialProvider.swift b/{{projectName}}/CredentialProvider.swift
+new file mode 100644
+index 0000000..9efad27
+--- /dev/null
++++ b/{{projectName}}/CredentialProvider.swift
+@@ -0,0 +1,21 @@
++//
++//  CredentialProvider.swift
++//  {{projectName}}
++//
++//  Created by {{organization}}
++//
++
++import AgentforceService
++
++/// Credential provider for guest authentication
++/// Implements AgentforceAuthCredentialProviding to supply guest credentials for the Agentforce SDK
++class CredentialProvider: AgentforceAuthCredentialProviding {
++    
++    /// Returns guest authentication credentials
++    /// Guest authentication allows users to start conversations without logging in
++    func getAuthCredentials() -> AgentforceService.AgentforceAuthCredentials {
++        // Guest authentication - no login required
++        // The URL parameter is not used but required by the API
++        return AgentforceAuthCredentials.Guest(url: "https://unused.url")
++    }
++}
+diff --git a/{{projectName}}/Info.plist b/{{projectName}}/Info.plist
+index 88ee3e7..80f8a75 100644
+--- a/{{projectName}}/Info.plist
++++ b/{{projectName}}/Info.plist
+@@ -44,5 +44,9 @@
+ 		<string>UIInterfaceOrientationLandscapeLeft</string>
+ 		<string>UIInterfaceOrientationLandscapeRight</string>
+ 	</array>
++	<key>NSCameraUsageDescription</key>
++	<string>Camera access is required for video chat with agents</string>
++	<key>NSMicrophoneUsageDescription</key>
++	<string>Microphone access is required for voice chat with agents</string>
+ </dict>
+ </plist>

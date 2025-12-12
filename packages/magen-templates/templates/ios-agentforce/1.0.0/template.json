@@ -1,0 +1,17 @@
+{
+  "name": "ios-agentforce",
+  "platform": "ios",
+  "version": "1.0.0",
+  "description": "Barebones template demonstrating basic integration with the Salesforce agentforce sdk for service integration and guest authentication.",
+  "tags": [
+    "ios",
+    "agentforce",
+    "service agents",
+    "guest authentication"
+  ],
+  "extends": {
+    "template": "ios-base",
+    "version": "1.0.0",
+    "patchFile": "layer.patch"
+  }
+}
