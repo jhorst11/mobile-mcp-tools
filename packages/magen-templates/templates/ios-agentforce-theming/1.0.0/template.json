@@ -1,0 +1,12 @@
+{
+  "name": "ios-agentforce-theming",
+  "platform": "ios",
+  "version": "1.0.0",
+  "description": "ios-agentforce-theming template based on ios-agentforce",
+  "tags": [],
+  "extends": {
+    "template": "ios-agentforce",
+    "version": "1.0.0",
+    "patchFile": "layer.patch"
+  }
+}

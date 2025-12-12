@@ -1,0 +1,728 @@
+diff --git a/{{projectName}}.xcodeproj/project.pbxproj b/{{projectName}}.xcodeproj/project.pbxproj
+index 780b8b6..eda207e 100644
+--- a/{{projectName}}.xcodeproj/project.pbxproj
++++ b/{{projectName}}.xcodeproj/project.pbxproj
+@@ -11,6 +11,7 @@
+ 		APP002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* ContentView.swift */; };
+ 		APP003 /* AgentforceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* AgentforceViewModel.swift */; };
+ 		APP004 /* CredentialProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC004 /* CredentialProvider.swift */; };
++		APP005 /* CustomThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC005 /* CustomThemeManager.swift */; };
+ 		RES001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = RES001REF /* Assets.xcassets */; };
+ /* End PBXBuildFile section */
+ 
+@@ -20,6 +21,7 @@
+ 		SRC002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+ 		SRC003 /* AgentforceViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentforceViewModel.swift; sourceTree = "<group>"; };
+ 		SRC004 /* CredentialProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialProvider.swift; sourceTree = "<group>"; };
++		SRC005 /* CustomThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomThemeManager.swift; sourceTree = "<group>"; };
+ 		INFO /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+ 		RES001REF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+ /* End PBXFileReference section */
+@@ -58,6 +60,7 @@
+ 				SRC002 /* ContentView.swift */,
+ 				SRC003 /* AgentforceViewModel.swift */,
+ 				SRC004 /* CredentialProvider.swift */,
++				SRC005 /* CustomThemeManager.swift */,
+ 				RES001REF /* Assets.xcassets */,
+ 				INFO /* Info.plist */,
+ 			);
+@@ -137,6 +140,7 @@
+ 				APP001 /* {{projectName}}App.swift in Sources */,
+ 				APP003 /* AgentforceViewModel.swift in Sources */,
+ 				APP004 /* CredentialProvider.swift in Sources */,
++				APP005 /* CustomThemeManager.swift in Sources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+ 		};
+diff --git a/{{projectName}}/AgentforceViewModel.swift b/{{projectName}}/AgentforceViewModel.swift
+index 4143861..cd7a363 100644
+--- a/{{projectName}}/AgentforceViewModel.swift
++++ b/{{projectName}}/AgentforceViewModel.swift
+@@ -8,8 +8,44 @@
+ import Foundation
+ import SwiftUI
+ 
+-/// View model for managing Agentforce UI state
++/// View model for managing Agentforce UI state and theme preferences
++///
++/// This view model demonstrates how to manage theme state in conjunction with
++/// the Agentforce SDK's theme manager. While the CustomThemeManager handles
++/// the actual color application, this view model tracks user preferences.
++///
++/// **Observable Pattern:**
++/// Using @Observable macro ensures SwiftUI views automatically update when
++/// theme settings change, providing reactive UI updates.
+ @Observable class AgentforceViewModel {
+     /// Controls the visibility of the Agentforce chat UI
+     var showAgentforceUI = false
++    
++    /// Current color scheme preference
++    /// 
++    /// **Color Schemes:**
++    /// - `.light`: Light appearance with dark text on light backgrounds
++    /// - `.dark`: Dark appearance with light text on dark backgrounds
++    ///
++    /// **Usage:**
++    /// When this value changes, you would typically recreate the CustomThemeManager
++    /// with the new color scheme and reinitialize the AgentforceClient. For simplicity
++    /// in this demo, the color scheme is set at initialization.
++    ///
++    /// **Note:** Runtime theme switching requires recreating the AgentforceClient
++    /// instance with a new theme manager, as the SDK doesn't support dynamic theme
++    /// changes on existing client instances.
++    var currentColorScheme: ColorScheme = .light
++    
++    /// Toggles between light and dark mode for demonstration
++    ///
++    /// This helper method toggles between light and dark color schemes. In a
++    /// production app, you would:
++    /// 1. Update this property
++    /// 2. Store the preference (UserDefaults, SwiftData, etc.)
++    /// 3. Recreate the AgentforceClient with new CustomThemeManager
++    /// 4. Refresh the conversation view
++    func toggleColorScheme() {
++        currentColorScheme = (currentColorScheme == .light) ? .dark : .light
++    }
+ }
+diff --git a/{{projectName}}/ContentView.swift b/{{projectName}}/ContentView.swift
+index 322a37c..af7c829 100644
+--- a/{{projectName}}/ContentView.swift
++++ b/{{projectName}}/ContentView.swift
+@@ -9,7 +9,19 @@ import SwiftUI
+ import AgentforceSDK
+ import AgentforceService
+ 
+-/// Main view for the Agentforce integration
++/// Main view for the Agentforce integration with custom theming
++///
++/// This view demonstrates how to integrate custom theming with the Agentforce SDK.
++/// It uses a CustomThemeManager to override the default Agentforce colors while
++/// maintaining the core design system and accessibility standards.
++///
++/// **Key Features:**
++/// - Custom brand colors via CustomThemeManager
++/// - Theme mode switching (light/dark/system)
++/// - Reactive theme updates using @Observable
++/// - Integration with iOS appearance settings
++///
++/// **Reference:** https://developer.salesforce.com/docs/einstein/genai/guide/agent-sdk-ios-branding-theming.html
+ struct ContentView: View {
+     @State private var viewModel = AgentforceViewModel()
+     
+@@ -17,31 +29,57 @@ struct ContentView: View {
+     let agentforceClient: AgentforceClient
+     let conversation: any AgentConversation
+     
+-    /// Initialize the main view with Agentforce configuration
++    /// Custom theme manager for branding the chat interface
++    /// This instance manages color palettes and theme mode (light/dark/system)
++    let themeManager: CustomThemeManager
++    
++    /// Initialize the main view with Agentforce configuration and custom theming
++    ///
++    /// **Theming Integration:**
++    /// The CustomThemeManager is passed to AgentforceClient during initialization,
++    /// which applies the custom colors to all SDK-provided UI components including:
++    /// - Chat message bubbles
++    /// - Input fields and buttons
++    /// - Navigation elements
++    /// - Feedback messages (errors, success, warnings)
++    ///
++    /// **Theme Mode Options:**
++    /// - `.light`: Always display in light mode
++    /// - `.dark`: Always display in dark mode
++    /// - `.system`: Automatically adapt to iOS settings (recommended)
+     init() {
++        // Initialize custom theme manager
++        // The theme manager will automatically adapt to system appearance when
++        // overrideColorSchemeWithSystem is true
++        self.themeManager = CustomThemeManager(colorScheme: .light)
++        
+         // Configure service UI settings
++        // These settings control which actions are available in the chat interface
+         let serviceUISettings = ServiceUISettings(
+-            downloadTranscript: true,
+-            endConversation: true
++            downloadTranscript: true,  // Allow users to download conversation history
++            endConversation: true       // Show button to end the conversation
+         )
+         
+         // Configure service agent with template variables
++        // These values identify your Salesforce org and agent configuration
+         let config = ServiceAgentConfiguration(
+-            esDeveloperName: "{{esDeveloperName}}",
+-            organizationId: "{{organizationId}}",
+-            serviceApiURL: "{{serviceApiUrl}}",
++            esDeveloperName: "{{esDeveloperName}}",  // Agent developer name from Salesforce
++            organizationId: "{{organizationId}}",     // Your Salesforce org ID
++            serviceApiURL: "{{serviceApiUrl}}",       // Service API endpoint
+             serviceUISettings: serviceUISettings
+         )
+         
+-        // Initialize Agentforce client with guest credentials
++        // Initialize Agentforce client with custom theme manager
++        // The themeManager parameter applies custom branding to all SDK UI components
+         self.agentforceClient = AgentforceClient(
+-            credentialProvider: CredentialProvider(),
+-            mode: .serviceAgent(config),
+-            viewProvider: nil,        // No custom view provider
+-            themeManager: AgentforceDefaultThemeManager()  // Use default theme
++            credentialProvider: CredentialProvider(),  // Guest authentication provider
++            mode: .serviceAgent(config),               // Service agent mode configuration
++            viewProvider: nil,                         // No custom view provider needed
++            themeManager: themeManager                 // Apply custom theme (KEY CHANGE)
+         )
+         
+-        // Start a conversation
++        // Start a conversation with the specified agent
++        // This creates a conversation instance that can be used to display the chat UI
+         self.conversation = agentforceClient.startAgentforceConversation(forESDeveloperName: "{{esDeveloperName}}")
+     }
+     
+@@ -50,17 +88,29 @@ struct ContentView: View {
+             VStack(spacing: 30) {
+                 Spacer()
+                 
++                // Theme mode indicator
++                // Shows the current theme setting (for demo purposes)
++                VStack(spacing: 4) {
++                    Image(systemName: themeModeIcon)
++                        .font(.system(size: 24))
++                        .foregroundColor(.secondary)
++                    Text(themeModeText)
++                        .font(.caption)
++                        .foregroundColor(.secondary)
++                }
++                .padding(.top)
++                
+                 // App title
+                 VStack(spacing: 8) {
+                     Image(systemName: "message.fill")
+                         .font(.system(size: 60))
+-                        .foregroundColor(.blue)
++                        .foregroundColor(customBrandColor)  // Using custom theme color
+                     
+                     Text("{{projectName}}")
+                         .font(.title)
+                         .fontWeight(.bold)
+                     
+-                    Text("Agentforce SDK Integration")
++                    Text("Agentforce SDK with Custom Theming")
+                         .font(.headline)
+                         .foregroundColor(.secondary)
+                     
+@@ -69,7 +119,8 @@ struct ContentView: View {
+                         .foregroundColor(.secondary)
+                 }
+                 
+-                // Start chat button
++                // Start chat button with custom theme color
++                // This button uses the same brand color that's applied to the SDK
+                 Button(action: {
+                     viewModel.showAgentforceUI = true
+                 }) {
+@@ -81,7 +132,7 @@ struct ContentView: View {
+                     .foregroundColor(.white)
+                     .padding()
+                     .frame(maxWidth: 200)
+-                    .background(Color.blue)
++                    .background(customBrandColor)  // Using custom theme color
+                     .cornerRadius(12)
+                 }
+                 
+@@ -95,6 +146,39 @@ struct ContentView: View {
+         }
+     }
+     
++    // MARK: - Helper Properties
++    
++    /// Custom brand color from theme manager
++    /// This demonstrates accessing theme colors outside the SDK's UI components
++    private var customBrandColor: Color {
++        // Get the brand color from the current theme
++        return themeManager.colors.brandBase50
++    }
++    
++    /// Icon representing the current color scheme
++    private var themeModeIcon: String {
++        switch viewModel.currentColorScheme {
++        case .light:
++            return "sun.max.fill"
++        case .dark:
++            return "moon.fill"
++        @unknown default:
++            return "circle.lefthalf.filled"
++        }
++    }
++    
++    /// Text description of the current color scheme
++    private var themeModeText: String {
++        switch viewModel.currentColorScheme {
++        case .light:
++            return "Light Mode (System Adaptive)"
++        case .dark:
++            return "Dark Mode (System Adaptive)"
++        @unknown default:
++            return "System Mode"
++        }
++    }
++    
+     /// Chat view wrapper
+     @ViewBuilder
+     private var chatView: some View {
+diff --git a/{{projectName}}/CustomThemeManager.swift b/{{projectName}}/CustomThemeManager.swift
+new file mode 100644
+index 0000000..acacda1
+--- /dev/null
++++ b/{{projectName}}/CustomThemeManager.swift
+@@ -0,0 +1,450 @@
++//
++//  CustomThemeManager.swift
++//  {{projectName}}
++//
++//  Created by {{organization}}
++//
++
++import SwiftUI
++import AgentforceSDK
++
++/// Custom theme manager for the Agentforce chat interface
++/// 
++/// This class implements the AgentforceThemeManager protocol to provide custom branding
++/// and theming for the Agentforce SDK UI components.
++///
++/// **Key Features:**
++/// - Custom brand colors with light and dark mode support
++/// - Semantic color tokens for consistent theming
++/// - System appearance integration (respects iOS dark mode)
++///
++/// **Reference:** https://developer.salesforce.com/docs/einstein/genai/guide/agent-sdk-ios-branding-theming.html
++class CustomThemeManager: AgentforceThemeManager {
++    
++    /// The color scheme to use (light or dark)
++    /// This determines which color palette is returned
++    var colorScheme: ColorScheme
++    
++    /// Whether to override the color scheme with system settings
++    /// - Returns: true to automatically adapt to iOS appearance settings, false for fixed scheme
++    var overrideColorSchemeWithSystem: Bool {
++        // Return true to respect user's iOS dark mode preference
++        // Return false to always use the specified colorScheme
++        return true  // Recommended: adapt to system appearance
++    }
++    
++    /// Initialize with a specific color scheme
++    /// - Parameter colorScheme: The color scheme to use (.light or .dark)
++    init(colorScheme: ColorScheme = .light) {
++        self.colorScheme = colorScheme
++    }
++    
++    // MARK: - Theme Components
++    
++    /// Returns the color palette based on current color scheme
++    /// The SDK calls this method to get colors for all UI components
++    var colors: AgentforceTheme.Colors {
++        if colorScheme == .dark {
++            return CustomDarkColors()
++        } else {
++            return CustomLightColors()
++        }
++    }
++    
++    /// Returns font configuration
++    /// Currently using default SDK fonts as font customization is not yet fully supported
++    var fonts: AgentforceTheme.Fonts {
++        return AgentforceDefaultThemeManager().fonts
++    }
++    
++    /// Returns dimension configuration (spacing, sizing)
++    /// Currently using default SDK dimensions as dimension customization is not yet supported
++    var dimensions: AgentforceTheme.Dimensions {
++        return AgentforceDefaultThemeManager().dimensions
++    }
++    
++    /// Returns shape configuration (corner radius, borders)
++    /// Currently using default SDK shapes as shape customization is not yet supported
++    var shapes: AgentforceTheme.Shapes {
++        return AgentforceDefaultThemeManager().shapes
++    }
++}
++
++// MARK: - Custom Light Mode Colors
++
++/// Custom light mode color palette for Agentforce UI components
++///
++/// This class defines all semantic color tokens for light mode appearance.
++/// Each color is carefully selected to work harmoniously in the chat interface
++/// while maintaining brand identity and accessibility standards.
++///
++/// **Color System Organization:**
++/// The Agentforce color system uses semantic naming to separate visual design
++/// from functional purpose. This allows for consistent theming across components.
++class CustomLightColors: AgentforceTheme.Colors {
++    
++    // MARK: Surface Colors (Backgrounds)
++    
++    /// Primary view background color
++    /// Used for: Main screen backgrounds, root views
++    var surface1: Color
++    
++    /// Secondary view background color
++    /// Used for: Alternate sections, subtle distinctions
++    var surface2: Color
++    
++    /// Default container background (cards, modals)
++    /// Used for: Chat message bubbles, cards, modal dialogs
++    var surfaceContainer1: Color
++    
++    /// Darker container background
++    /// Used for: Nested containers, emphasized cards
++    var surfaceContainer2: Color
++    
++    /// Darkest container background
++    /// Used for: Maximum contrast containers, special emphasis
++    var surfaceContainer3: Color
++    
++    // MARK: On-Surface Colors (Text & Icons)
++    
++    /// Lightest text/icon fill (body text, labels)
++    /// Used for: Primary body text, standard labels
++    var onSurface1: Color
++    
++    /// Darker text/icon fill (headings, input fields)
++    /// Used for: Section headings, emphasized text, active form fields
++    var onSurface2: Color
++    
++    /// Additional text/icon variant
++    /// Used for: Tertiary text, subtle icons
++    var onSurface3: Color
++    
++    // MARK: Border Colors
++    
++    /// Primary border color
++    /// Used for: Default borders, dividers
++    var border1: Color
++    
++    /// Secondary border color
++    /// Used for: Subtle borders, light dividers
++    var border2: Color
++    
++    /// Inverse border color
++    /// Used for: Borders on dark backgrounds
++    var borderInverse2: Color
++    
++    /// Disabled border color
++    /// Used for: Borders on disabled components
++    var borderDisabled1: Color
++    
++    // MARK: Accent Colors (Interactive Elements)
++    
++    /// Primary accent color for interactive elements
++    /// Used for: Icon buttons, toggle switches, small interactive elements
++    var accent1: Color
++    
++    /// Secondary accent (links, hover states, primary actions)
++    /// Used for: Hyperlinks, primary CTAs, hover overlays
++    var accent2: Color
++    
++    /// Tertiary accent (selected states)
++    /// Used for: Selected items, active tabs, focused inputs
++    var accent3: Color
++    
++    /// Quaternary accent color
++    /// Used for: Additional interactive states
++    var accent4: Color
++    
++    /// Quinary accent color
++    /// Used for: Additional brand emphasis
++    var accent5: Color
++    
++    /// Branded button backgrounds
++    /// Used for: Primary action buttons (Send, Submit, etc.)
++    var accentContainer1: Color
++    
++    /// Text/icons on accent containers
++    /// Used for: Text and icons inside branded buttons
++    var onAccent1: Color
++    
++    // MARK: Brand Colors
++    
++    /// Primary brand color (50% luminance)
++    /// Used for: Brand consistency, header accents
++    var brandBase50: Color
++    
++    /// Error brand color (50% luminance)
++    /// Used for: Error state branding
++    var errorBase50: Color
++    
++    // MARK: Feedback Colors (Error States)
++    
++    /// Error text and icons
++    /// Used for: Error messages, validation failures
++    var error1: Color
++    
++    /// Error alert backgrounds
++    /// Used for: Error notification backgrounds
++    var errorContainer1: Color
++    
++    /// Text on error containers
++    /// Used for: Text within error alerts
++    var onError1: Color
++    
++    /// Error button borders
++    /// Used for: Outlined error buttons, error input borders
++    var borderError1: Color
++    
++    // MARK: Feedback Colors (Success States)
++    
++    /// Success alert backgrounds
++    /// Used for: Success notification backgrounds
++    var successContainer1: Color
++    
++    /// Success text and icons
++    /// Used for: Success messages, checkmarks
++    var onSuccess1: Color
++    
++    /// Success button borders
++    /// Used for: Outlined success buttons
++    var borderSuccess1: Color
++    
++    // MARK: Feedback Colors (Warning States)
++    
++    /// Warning text color
++    /// Used for: Warning messages, caution indicators
++    var feedbackWarning1: Color
++    
++    /// Warning container background
++    /// Used for: Warning notification backgrounds
++    var feedbackWarningContainer1: Color
++    
++    // MARK: Feedback Colors (Info States)
++    
++    /// Information text color
++    /// Used for: Info messages, helpful hints
++    var info1: Color
++    
++    /// Information container background
++    /// Used for: Info notification backgrounds
++    var infoContainer1: Color
++    
++    // MARK: Disabled States
++    
++    /// Disabled white component backgrounds
++    /// Used for: Disabled buttons on light backgrounds
++    var disabledContainer1: Color
++    
++    /// Disabled dark component backgrounds
++    /// Used for: Disabled buttons on dark backgrounds
++    var disabledContainer2: Color
++    
++    /// Text on light disabled containers
++    /// Used for: Text on disabled buttons (light variant)
++    var onDisabled1: Color
++    
++    /// Text on dark disabled containers
++    /// Used for: Text on disabled buttons (dark variant)
++    var onDisabled2: Color
++    
++    // MARK: Additional Required Colors
++    
++    /// Foreground color
++    /// Used for: Primary text and content
++    var foregroundColor: Color
++    
++    /// Background color
++    /// Used for: Overall app background
++    var backgroundColor: Color
++    
++    /// Agentforce brand border
++    /// Used for: Agentforce-branded borders and highlights
++    var borderAgentforce1: Color
++    
++    // MARK: Initialization
++    
++    init() {
++        // Define your custom brand colors
++        let brandBlue = Color(red: 0.0, green: 0.48, blue: 0.8)      // #007ACC
++        let brandBlueDark = Color(red: 0.0, green: 0.4, blue: 0.7)   // #0066B3
++        let brandBlueLight = Color(red: 0.3, green: 0.6, blue: 0.9)  // #4D99E6
++        
++        // Surface colors (backgrounds)
++        self.surface1 = Color(red: 1.0, green: 1.0, blue: 1.0)       // Pure white
++        self.surface2 = Color(red: 0.98, green: 0.98, blue: 0.98)    // Very light gray
++        self.surfaceContainer1 = Color(red: 0.95, green: 0.97, blue: 1.0)  // Subtle blue tint
++        self.surfaceContainer2 = Color(red: 0.92, green: 0.94, blue: 0.98)
++        self.surfaceContainer3 = Color(red: 0.88, green: 0.90, blue: 0.95)
++        
++        // On-surface colors (text & icons)
++        self.onSurface1 = Color(red: 0.2, green: 0.2, blue: 0.2)     // Dark gray
++        self.onSurface2 = Color(red: 0.1, green: 0.1, blue: 0.1)     // Near black
++        self.onSurface3 = Color(red: 0.4, green: 0.4, blue: 0.4)     // Medium gray
++        
++        // Border colors
++        self.border1 = Color(red: 0.8, green: 0.8, blue: 0.8)
++        self.border2 = Color(red: 0.9, green: 0.9, blue: 0.9)
++        self.borderInverse2 = Color(red: 0.3, green: 0.3, blue: 0.3)
++        self.borderDisabled1 = Color(red: 0.85, green: 0.85, blue: 0.85)
++        
++        // Accent colors (interactive elements)
++        self.accent1 = brandBlue
++        self.accent2 = brandBlueDark
++        self.accent3 = brandBlueLight
++        self.accent4 = brandBlue
++        self.accent5 = brandBlueLight
++        self.accentContainer1 = brandBlue
++        self.onAccent1 = Color.white
++        
++        // Brand colors
++        self.brandBase50 = brandBlue
++        self.errorBase50 = Color(red: 0.8, green: 0.2, blue: 0.2)
++        
++        // Error states
++        self.error1 = Color(red: 0.8, green: 0.2, blue: 0.2)
++        self.errorContainer1 = Color(red: 1.0, green: 0.9, blue: 0.9)
++        self.onError1 = Color(red: 0.6, green: 0.1, blue: 0.1)
++        self.borderError1 = Color(red: 0.8, green: 0.2, blue: 0.2)
++        
++        // Success states
++        self.successContainer1 = Color(red: 0.9, green: 1.0, blue: 0.9)
++        self.onSuccess1 = Color(red: 0.1, green: 0.6, blue: 0.1)
++        self.borderSuccess1 = Color(red: 0.2, green: 0.7, blue: 0.2)
++        
++        // Warning states
++        self.feedbackWarning1 = Color(red: 0.8, green: 0.6, blue: 0.0)
++        self.feedbackWarningContainer1 = Color(red: 1.0, green: 0.95, blue: 0.85)
++        
++        // Info states
++        self.info1 = brandBlueDark
++        self.infoContainer1 = Color(red: 0.9, green: 0.95, blue: 1.0)
++        
++        // Disabled states
++        self.disabledContainer1 = Color(red: 0.95, green: 0.95, blue: 0.95)
++        self.disabledContainer2 = Color(red: 0.85, green: 0.85, blue: 0.85)
++        self.onDisabled1 = Color(red: 0.6, green: 0.6, blue: 0.6)
++        self.onDisabled2 = Color(red: 0.5, green: 0.5, blue: 0.5)
++        
++        // Additional colors
++        self.foregroundColor = self.onSurface2
++        self.backgroundColor = self.surface1
++        self.borderAgentforce1 = brandBlue
++    }
++}
++
++// MARK: - Custom Dark Mode Colors
++
++/// Custom dark mode color palette for Agentforce UI components
++///
++/// Dark mode inverts the luminance hierarchy while maintaining semantic meaning.
++/// Colors are adjusted for optimal viewing in low-light conditions.
++class CustomDarkColors: AgentforceTheme.Colors {
++    
++    var surface1: Color
++    var surface2: Color
++    var surfaceContainer1: Color
++    var surfaceContainer2: Color
++    var surfaceContainer3: Color
++    var onSurface1: Color
++    var onSurface2: Color
++    var onSurface3: Color
++    var border1: Color
++    var border2: Color
++    var borderInverse2: Color
++    var borderDisabled1: Color
++    var accent1: Color
++    var accent2: Color
++    var accent3: Color
++    var accent4: Color
++    var accent5: Color
++    var accentContainer1: Color
++    var onAccent1: Color
++    var error1: Color
++    var errorContainer1: Color
++    var onError1: Color
++    var borderError1: Color
++    var successContainer1: Color
++    var onSuccess1: Color
++    var borderSuccess1: Color
++    var disabledContainer1: Color
++    var disabledContainer2: Color
++    var onDisabled1: Color
++    var onDisabled2: Color
++    var brandBase50: Color
++    var errorBase50: Color
++    var feedbackWarning1: Color
++    var feedbackWarningContainer1: Color
++    var info1: Color
++    var infoContainer1: Color
++    var foregroundColor: Color
++    var backgroundColor: Color
++    var borderAgentforce1: Color
++    
++    init() {
++        // Define dark mode brand colors (slightly adjusted for dark backgrounds)
++        let brandBlueDark = Color(red: 0.3, green: 0.6, blue: 0.9)
++        let brandBlueDarker = Color(red: 0.2, green: 0.5, blue: 0.8)
++        let brandBlueLight = Color(red: 0.4, green: 0.7, blue: 1.0)
++        
++        // Surface colors (dark backgrounds)
++        self.surface1 = Color(red: 0.12, green: 0.12, blue: 0.12)
++        self.surface2 = Color(red: 0.15, green: 0.15, blue: 0.15)
++        self.surfaceContainer1 = Color(red: 0.18, green: 0.18, blue: 0.20)
++        self.surfaceContainer2 = Color(red: 0.22, green: 0.22, blue: 0.25)
++        self.surfaceContainer3 = Color(red: 0.26, green: 0.26, blue: 0.30)
++        
++        // On-surface colors (light text on dark)
++        self.onSurface1 = Color(red: 0.9, green: 0.9, blue: 0.9)
++        self.onSurface2 = Color(red: 1.0, green: 1.0, blue: 1.0)
++        self.onSurface3 = Color(red: 0.7, green: 0.7, blue: 0.7)
++        
++        // Border colors
++        self.border1 = Color(red: 0.4, green: 0.4, blue: 0.4)
++        self.border2 = Color(red: 0.3, green: 0.3, blue: 0.3)
++        self.borderInverse2 = Color(red: 0.8, green: 0.8, blue: 0.8)
++        self.borderDisabled1 = Color(red: 0.35, green: 0.35, blue: 0.35)
++        
++        // Accent colors
++        self.accent1 = brandBlueDark
++        self.accent2 = brandBlueLight
++        self.accent3 = brandBlueDarker
++        self.accent4 = brandBlueDark
++        self.accent5 = brandBlueLight
++        self.accentContainer1 = brandBlueDarker
++        self.onAccent1 = Color.white
++        
++        // Brand colors
++        self.brandBase50 = brandBlueDark
++        self.errorBase50 = Color(red: 0.9, green: 0.3, blue: 0.3)
++        
++        // Error states
++        self.error1 = Color(red: 1.0, green: 0.4, blue: 0.4)
++        self.errorContainer1 = Color(red: 0.3, green: 0.1, blue: 0.1)
++        self.onError1 = Color(red: 1.0, green: 0.7, blue: 0.7)
++        self.borderError1 = Color(red: 0.9, green: 0.3, blue: 0.3)
++        
++        // Success states
++        self.successContainer1 = Color(red: 0.1, green: 0.3, blue: 0.1)
++        self.onSuccess1 = Color(red: 0.5, green: 1.0, blue: 0.5)
++        self.borderSuccess1 = Color(red: 0.4, green: 0.8, blue: 0.4)
++        
++        // Warning states
++        self.feedbackWarning1 = Color(red: 1.0, green: 0.8, blue: 0.4)
++        self.feedbackWarningContainer1 = Color(red: 0.3, green: 0.25, blue: 0.1)
++        
++        // Info states
++        self.info1 = brandBlueLight
++        self.infoContainer1 = Color(red: 0.1, green: 0.15, blue: 0.25)
++        
++        // Disabled states
++        self.disabledContainer1 = Color(red: 0.25, green: 0.25, blue: 0.25)
++        self.disabledContainer2 = Color(red: 0.30, green: 0.30, blue: 0.30)
++        self.onDisabled1 = Color(red: 0.5, green: 0.5, blue: 0.5)
++        self.onDisabled2 = Color(red: 0.45, green: 0.45, blue: 0.45)
++        
++        // Additional colors
++        self.foregroundColor = self.onSurface2
++        self.backgroundColor = self.surface1
++        self.borderAgentforce1 = brandBlueDark
++    }
++}
