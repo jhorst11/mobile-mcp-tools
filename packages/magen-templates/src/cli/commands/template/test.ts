@@ -108,13 +108,15 @@ export function registerTestCommand(templateCmd: Command): void {
         const templateJsonPath = join(templateDirectory, 'template.json');
         if (existsSync(templateJsonPath)) {
           const templateJson = JSON.parse(readFileSync(templateJsonPath, 'utf-8'));
-          if (templateJson.basedOn) {
+          // Support both new 'extends' format and legacy 'basedOn' format
+          const parentTemplate = templateJson.extends?.template || templateJson.basedOn;
+          if (parentTemplate) {
             console.log('🔄 Generating layer.patch from work/ directory...');
             try {
               createLayer({
                 templateName: finalTemplateName,
                 templateDirectory,
-                parentTemplateName: templateJson.basedOn,
+                parentTemplateName: parentTemplate,
               });
               console.log('✓ layer.patch updated\n');
             } catch (error) {

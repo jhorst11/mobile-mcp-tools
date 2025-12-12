@@ -151,7 +151,7 @@ export function registerMaterializeCommand(templateCmd: Command): void {
 
           console.log(chalk.green('\n✓ Template materialized successfully!'));
           console.log(`\n  Work directory: ${chalk.cyan(workDir)}`);
-          console.log(`  Based on: ${chalk.cyan(templateJson.basedOn)}`);
+          console.log(`  Based on: ${chalk.cyan(parentTemplate)}`);
 
           console.log(chalk.bold('\n📋 Next steps:'));
           console.log(chalk.gray(`  1. Edit files in ${workDir}`));
