@@ -1,0 +1,386 @@
+diff --git a/Podfile b/Podfile
+index 91178dc..16f44cf 100644
+--- a/Podfile
++++ b/Podfile
+@@ -13,6 +13,8 @@ target '{{projectName}}' do
+ 
+   # Salesforce Mobile SDK
+   pod 'SalesforceSDKCore', '~> {{salesforceMobileSDKVersion}}'
++  pod 'SmartStore', '~> {{salesforceMobileSDKVersion}}'
++  pod 'MobileSync', '~> {{salesforceMobileSDKVersion}}'
+   
+   post_install do |installer|
+     installer.pods_project.targets.each do |target|
+diff --git a/{{projectName}}.xcodeproj/project.pbxproj b/{{projectName}}.xcodeproj/project.pbxproj
+index d96407e..7a450e5 100644
+--- a/{{projectName}}.xcodeproj/project.pbxproj
++++ b/{{projectName}}.xcodeproj/project.pbxproj
+@@ -12,9 +12,11 @@
+ 		APP002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* SceneDelegate.swift */; };
+ 		APP003 /* InitialViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* InitialViewController.swift */; };
+ 		APP004 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC004 /* main.swift */; };
++		APP005 /* ContactsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC005 /* ContactsViewController.swift */; };
+ 		C255FEB02EE8B1E8001E31A8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C255FEAF2EE8B1E4001E31A8 /* ContentView.swift */; };
+ 		RES001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = RES001REF /* Assets.xcassets */; };
+ 		RES002 /* bootconfig.plist in Resources */ = {isa = PBXBuildFile; fileRef = RES002REF /* bootconfig.plist */; };
++		RES003 /* userstore.json in Resources */ = {isa = PBXBuildFile; fileRef = RES003REF /* userstore.json */; };
+ /* End PBXBuildFile section */
+ 
+ /* Begin PBXFileReference section */
+@@ -27,10 +29,12 @@
+ 		PRODUCT /* {{projectName}}.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = {{projectName}}.app; sourceTree = BUILT_PRODUCTS_DIR; };
+ 		RES001REF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+ 		RES002REF /* bootconfig.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = bootconfig.plist; sourceTree = "<group>"; };
++		RES003REF /* userstore.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = userstore.json; sourceTree = "<group>"; };
+ 		SRC001 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+ 		SRC002 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+ 		SRC003 /* InitialViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialViewController.swift; sourceTree = "<group>"; };
+ 		SRC004 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
++		SRC005 /* ContactsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsViewController.swift; sourceTree = "<group>"; };
+ /* End PBXFileReference section */
+ 
+ /* Begin PBXFrameworksBuildPhase section */
+@@ -88,9 +92,11 @@
+ 				SRC002 /* SceneDelegate.swift */,
+ 				SRC003 /* InitialViewController.swift */,
+ 				SRC004 /* main.swift */,
++				SRC005 /* ContactsViewController.swift */,
+ 				BRIDGE /* Bridging-Header.h */,
+ 				RES001REF /* Assets.xcassets */,
+ 				RES002REF /* bootconfig.plist */,
++				RES003REF /* userstore.json */,
+ 				INFO /* Info.plist */,
+ 			);
+ 			path = {{projectName}};
+@@ -150,6 +156,7 @@
+ 			files = (
+ 				RES001 /* Assets.xcassets in Resources */,
+ 				RES002 /* bootconfig.plist in Resources */,
++				RES003 /* userstore.json in Resources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+ 		};
+@@ -207,6 +214,7 @@
+ 				APP002 /* SceneDelegate.swift in Sources */,
+ 				C255FEB02EE8B1E8001E31A8 /* ContentView.swift in Sources */,
+ 				APP003 /* InitialViewController.swift in Sources */,
++				APP005 /* ContactsViewController.swift in Sources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+ 		};
+diff --git a/{{projectName}}/AppDelegate.swift b/{{projectName}}/AppDelegate.swift
+index a738878..6bc02e1 100644
+--- a/{{projectName}}/AppDelegate.swift
++++ b/{{projectName}}/AppDelegate.swift
+@@ -3,19 +3,21 @@
+ //  {{projectName}}
+ //
+ //  Created by {{organization}}
+-//  Salesforce Mobile SDK App
++//  Salesforce Mobile SDK App with SmartStore
+ //
+ 
+ import Foundation
+ import UIKit
+ import SalesforceSDKCore
++import MobileSync
++import SmartStore
+ 
+ class AppDelegate: UIResponder, UIApplicationDelegate {
+     var window: UIWindow?
+ 
+     override init() {
+         super.init()
+-        SalesforceManager.initializeSDK()
++        MobileSyncSDKManager.initializeSDK()
+     }
+ 
+     // MARK: UISceneSession Lifecycle
+@@ -34,6 +36,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
+     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+         return UserAccountManager.shared.handleIdentityProviderResponse(from: url, with: options)
+     }
+-}
+ 
+ 
+diff --git a/{{projectName}}/ContactsViewController.swift b/{{projectName}}/ContactsViewController.swift
+new file mode 100644
+index 0000000..e1ed28c
+--- /dev/null
++++ b/{{projectName}}/ContactsViewController.swift
+@@ -0,0 +1,182 @@
++//
++//  ContactsViewController.swift
++//  {{projectName}}
++//
++//  Created by {{organization}}
++//  Demonstrates SmartStore integration with Salesforce Mobile SDK
++//
++
++import UIKit
++import SalesforceSDKCore
++import MobileSync
++import SmartStore
++import Combine
++import os.log
++
++class ContactsViewController: UITableViewController {
++    
++    // MARK: - Properties
++    
++    private var store: SmartStore?
++    private var dataRows: [[String: Any]] = []
++    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.salesforce.app", category: "ContactsViewController")
++    private var contactsFetchCancellable: AnyCancellable?
++    
++    // MARK: - Lifecycle
++    
++    override func viewDidLoad() {
++        super.viewDidLoad()
++        
++        title = "Contacts"
++        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "ContactCell")
++        
++        // Setup refresh control
++        refreshControl = UIRefreshControl()
++        refreshControl?.addTarget(self, action: #selector(fetchContacts), for: .valueChanged)
++        
++        // Get SmartStore instance
++        if let currentUser = UserAccountManager.shared.currentUserAccount {
++            store = SmartStore.shared(withName: SmartStore.defaultStoreName, forUserAccount: currentUser)
++        }
++        
++        // Initial fetch
++        fetchContacts()
++    }
++    
++    // MARK: - Data Fetching
++    
++    @objc private func fetchContacts() {
++        guard let currentUser = UserAccountManager.shared.currentUserAccount else {
++            logger.error("Failed to get user account")
++            refreshControl?.endRefreshing()
++            return
++        }
++        
++        // Query Salesforce for Contacts (including Id field as per documentation)
++        let soql = "SELECT Id, Name FROM Contact ORDER BY Name LIMIT 10"
++        let request = RestClient.shared.request(forQuery: soql, apiVersion: nil)
++        
++        contactsFetchCancellable = RestClient.shared.publisher(for: request)
++            .receive(on: RunLoop.main)
++            .sink(receiveCompletion: { [weak self] completion in
++                guard let self = self else { return }
++                if case .failure(let error) = completion {
++                    self.logger.error("REST API error: \(error.localizedDescription)")
++                    self.refreshControl?.endRefreshing()
++                    self.showError(message: "Failed to fetch contacts: \(error.localizedDescription)")
++                }
++            }, receiveValue: { [weak self] response in
++                guard let self = self else { return }
++                do {
++                    let json = try response.asJson()
++                    self.handleSuccess(response: json as? [String: Any])
++                } catch {
++                    self.logger.error("Failed to parse JSON: \(error.localizedDescription)")
++                    self.refreshControl?.endRefreshing()
++                    self.showError(message: "Failed to parse response")
++                }
++            })
++    }
++    
++    private func handleSuccess(response: [String: Any]?) {
++        guard let records = response?["records"] as? [[String: Any]] else {
++            logger.error("Invalid response format")
++            DispatchQueue.main.async {
++                self.refreshControl?.endRefreshing()
++            }
++            return
++        }
++        
++        // Check if Contact soup exists
++        guard let store = store, store.soupExists(forName: "Contact") else {
++            logger.error("Contact soup does not exist")
++            DispatchQueue.main.async {
++                self.refreshControl?.endRefreshing()
++                self.showError(message: "SmartStore not properly configured. Contact soup is missing.")
++            }
++            return
++        }
++        
++        // Upsert the retrieved records into SmartStore
++        let entries = records.map { record -> [String: Any] in
++            return [
++                "Id": record["Id"] as? String ?? "",
++                "Name": record["Name"] as? String ?? ""
++            ]
++        }
++        
++        store.upsert(entries: entries, forSoupNamed: "Contact")
++        logger.info("Successfully upserted \(entries.count) contacts to SmartStore")
++        
++        // Load data from SmartStore to populate the view
++        loadFromStore()
++    }
++    
++    // MARK: - SmartStore Query
++    
++    private func loadFromStore() {
++        // Build Smart SQL query to extract Name values from Contact soup
++        if let querySpec = QuerySpec.buildSmartQuerySpec(
++            smartSql: "SELECT {Contact:Name} FROM {Contact} ORDER BY {Contact:Name} LIMIT 10",
++            pageSize: 10
++        ) {
++            // Verify SmartStore handle
++            guard let store = store else {
++                logger.error("SmartStore instance is nil")
++                DispatchQueue.main.async {
++                    self.refreshControl?.endRefreshing()
++                }
++                return
++            }
++            
++            // Run the SmartStore query
++            do {
++                let results = try store.query(using: querySpec, startingFromPageIndex: 0)
++                
++                // Transfer names to dataRows
++                if let rows = results as? [[Any]] {
++                    dataRows = rows.map { row in
++                        let name = row.first as? String ?? "Unknown"
++                        return ["Name": name]
++                    }
++                    
++                    logger.info("Loaded \(self.dataRows.count) contacts from SmartStore")
++                    
++                    // Refresh view on main thread
++                    DispatchQueue.main.async {
++                        self.tableView.reloadData()
++                        self.refreshControl?.endRefreshing()
++                    }
++                }
++            } catch {
++                logger.error("SmartStore query failed: \(error.localizedDescription)")
++                DispatchQueue.main.async {
++                    self.refreshControl?.endRefreshing()
++                    self.showError(message: "Failed to load from SmartStore: \(error.localizedDescription)")
++                }
++            }
++        }
++    }
++    
++    // MARK: - UITableViewDataSource
++    
++    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
++        return dataRows.count
++    }
++    
++    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
++        let cell = tableView.dequeueReusableCell(withIdentifier: "ContactCell", for: indexPath)
++        let contact = dataRows[indexPath.row]
++        cell.textLabel?.text = contact["Name"] as? String ?? "Unknown"
++        return cell
++    }
++    
++    // MARK: - Helper Methods
++    
++    private func showError(message: String) {
++        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
++        alert.addAction(UIAlertAction(title: "OK", style: .default))
++        present(alert, animated: true)
++    }
++}
++
+diff --git a/{{projectName}}/InitialViewController.swift b/{{projectName}}/InitialViewController.swift
+index be2c607..a0db888 100644
+--- a/{{projectName}}/InitialViewController.swift
++++ b/{{projectName}}/InitialViewController.swift
+@@ -19,7 +19,7 @@ class InitialViewController: UIViewController {
+         
+         // Setup basic UI
+         let label = UILabel()
+-        label.text = "{{projectName}}\nSalesforce Mobile SDK"
++        label.text = "{{projectName}}\nSalesforce Mobile SDK with SmartStore"
+         label.numberOfLines = 0
+         label.textAlignment = .center
+         label.font = .systemFont(ofSize: 24, weight: .medium)
+@@ -32,7 +32,12 @@ class InitialViewController: UIViewController {
+             label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+         ])
+         
+-        // Observe authentication
++        // Check if already authenticated
++        if let account = UserAccountManager.shared.currentUserAccount {
++            handleAuthentication(account: account)
++        }
++        
++        // Observe authentication changes
+         UserAccountManager.shared.publisher(for: \.currentUserAccount)
+             .receive(on: DispatchQueue.main)
+             .sink { [weak self] account in
+@@ -46,6 +51,20 @@ class InitialViewController: UIViewController {
+     func handleAuthentication(account: UserAccount) {
+         // User is authenticated
+         print("Authenticated as: \(account.accountIdentity.userId)")
++        
++        // Navigate to ContactsViewController
++        DispatchQueue.main.async {
++            let contactsVC = ContactsViewController(style: .plain)
++            let navController = UINavigationController(rootViewController: contactsVC)
++            navController.modalPresentationStyle = .fullScreen
++            
++            // Present the contacts view
++            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
++               let window = windowScene.windows.first {
++                window.rootViewController = navController
++                window.makeKeyAndVisible()
++            }
++        }
+     }
+ }
+ 
+diff --git a/{{projectName}}/SceneDelegate.swift b/{{projectName}}/SceneDelegate.swift
+index 1bbbe3c..e773598 100644
+--- a/{{projectName}}/SceneDelegate.swift
++++ b/{{projectName}}/SceneDelegate.swift
+@@ -1,6 +1,8 @@
+ import UIKit
+ import SwiftUI
+ import SalesforceSDKCore
++import MobileSync
++import SmartStore
+ 
+ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+ 
+@@ -51,6 +53,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+         
+         // Check if login is required and handle authentication
+         AuthHelper.loginIfRequired { [weak self] in
++            MobileSyncSDKManager.shared.setupUserStoreFromDefaultConfig()
+             self?.setupRootViewController()
+         }
+     }
+diff --git a/{{projectName}}/userstore.json b/{{projectName}}/userstore.json
+new file mode 100644
+index 0000000..0d5d5ab
+--- /dev/null
++++ b/{{projectName}}/userstore.json
+@@ -0,0 +1,17 @@
++{
++  "soups": [
++    {
++      "soupName": "Contact",
++      "indexes": [
++        {
++          "path": "Id",
++          "type": "string"
++        },
++        {
++          "path": "Name",
++          "type": "string"
++        }
++      ]
++    }
++  ]
++}
+\ No newline at end of file

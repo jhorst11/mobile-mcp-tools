@@ -1,0 +1,21 @@
+{
+  "$schema": "../../schemas/template.schema.json",
+  "name": "feature-ios-smartstore",
+  "platform": "ios",
+  "version": "1.0.0",
+  "description": "Demonstrates SmartStore integration with Salesforce Mobile SDK including soup creation, data persistence, and offline data management for Contact records",
+  "tags": [
+    "ios",
+    "swift",
+    "salesforce",
+    "mobile-sdk",
+    "smartstore",
+    "offline",
+    "data-persistence"
+  ],
+  "extends": {
+    "template": "ios-mobilesdk",
+    "version": "1.0.0",
+    "patchFile": "layer.patch"
+  }
+}
