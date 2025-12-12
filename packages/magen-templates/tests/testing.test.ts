@@ -161,6 +161,147 @@ let bundleId = "{{bundleId}}"
         });
       }).toThrow();
     });
+
+    it('should throw error when required variables are missing', () => {
+      // Create template with required variable without default
+      const noDefaultDir = join(testDir, 'no-default-template');
+      mkdirSync(join(noDefaultDir, 'template', '{{appName}}'), { recursive: true });
+
+      const templateJson = {
+        name: 'no-default-template',
+        platform: 'ios',
+        version: '1.0.0',
+        description: 'Template with required var without default',
+      };
+
+      const variablesJson = {
+        variables: [
+          {
+            name: 'appName',
+            type: 'string',
+            required: true,
+            description: 'App name',
+            default: 'TestApp',
+          },
+          {
+            name: 'apiKey',
+            type: 'string',
+            required: true,
+            description: 'API Key (no default)',
+            // No default provided
+          },
+        ],
+      };
+
+      writeFileSync(join(noDefaultDir, 'template.json'), JSON.stringify(templateJson, null, 2));
+      writeFileSync(join(noDefaultDir, 'variables.json'), JSON.stringify(variablesJson, null, 2));
+      writeFileSync(join(noDefaultDir, 'template', '{{appName}}', 'App.swift'), 'test');
+
+      // Should throw when required variable is missing
+      expect(() => {
+        testTemplate({
+          templateName: 'no-default-template',
+          templateDirectory: noDefaultDir,
+        });
+      }).toThrow(/Missing required variables: apiKey/);
+    });
+
+    it('should not throw error when required variables are provided via command line', () => {
+      // Create template with required variable without default
+      const noDefaultDir = join(testDir, 'no-default-template-2');
+      mkdirSync(join(noDefaultDir, 'template', '{{appName}}'), { recursive: true });
+
+      const templateJson = {
+        name: 'no-default-template-2',
+        platform: 'ios',
+        version: '1.0.0',
+        description: 'Template with required var without default',
+      };
+
+      const variablesJson = {
+        variables: [
+          {
+            name: 'appName',
+            type: 'string',
+            required: true,
+            description: 'App name',
+            default: 'TestApp',
+          },
+          {
+            name: 'apiKey',
+            type: 'string',
+            required: true,
+            description: 'API Key (no default)',
+          },
+        ],
+      };
+
+      writeFileSync(join(noDefaultDir, 'template.json'), JSON.stringify(templateJson, null, 2));
+      writeFileSync(join(noDefaultDir, 'variables.json'), JSON.stringify(variablesJson, null, 2));
+      writeFileSync(join(noDefaultDir, 'template', '{{appName}}', 'App.swift'), 'test');
+
+      // Should NOT throw when required variable is provided
+      const result = testTemplate({
+        templateName: 'no-default-template-2',
+        templateDirectory: noDefaultDir,
+        variables: {
+          apiKey: 'my-secret-key',
+        },
+      });
+
+      expect(result.variables.apiKey).toBe('my-secret-key');
+      expect(result.variables.appName).toBe('TestApp');
+    });
+
+    it('should throw error for existing test instance when required variables are missing', () => {
+      // Create template with required variable without default
+      const noDefaultDir = join(testDir, 'existing-no-default-template');
+      mkdirSync(join(noDefaultDir, 'template', '{{appName}}'), { recursive: true });
+
+      const templateJson = {
+        name: 'existing-no-default-template',
+        platform: 'ios',
+        version: '1.0.0',
+        description: 'Template with required var without default',
+      };
+
+      const variablesJson = {
+        variables: [
+          {
+            name: 'appName',
+            type: 'string',
+            required: true,
+            description: 'App name',
+            default: 'TestApp',
+          },
+          {
+            name: 'apiKey',
+            type: 'string',
+            required: true,
+            description: 'API Key (no default)',
+          },
+        ],
+      };
+
+      writeFileSync(join(noDefaultDir, 'template.json'), JSON.stringify(templateJson, null, 2));
+      writeFileSync(join(noDefaultDir, 'variables.json'), JSON.stringify(variablesJson, null, 2));
+      writeFileSync(join(noDefaultDir, 'template', '{{appName}}', 'App.swift'), 'test');
+
+      // First, create test instance with apiKey
+      testTemplate({
+        templateName: 'existing-no-default-template',
+        templateDirectory: noDefaultDir,
+        variables: { apiKey: 'initial-key' },
+      });
+
+      // Now try to use existing test instance without providing apiKey
+      expect(() => {
+        testTemplate({
+          templateName: 'existing-no-default-template',
+          templateDirectory: noDefaultDir,
+        });
+      }).toThrow(/Missing required variables: apiKey/);
+    });
   });
 
   describe('getWorkDirectory', () => {

@@ -168,6 +168,23 @@ export function testTemplate(options: TestTemplateOptions): TestTemplateResult {
         mergedVariables[key] = value;
       }
 
+      // Validate that all required variables are provided (even for existing test)
+      const missingRequired: string[] = [];
+      for (const varDef of template.variables) {
+        if (varDef.required && mergedVariables[varDef.name] === undefined) {
+          missingRequired.push(varDef.name);
+        }
+      }
+
+      if (missingRequired.length > 0) {
+        throw new Error(
+          `Missing required variables: ${missingRequired.join(', ')}\n` +
+            `Please provide them using:\n` +
+            `  - Interactive mode: magen-template template test ${templateName} --interactive\n` +
+            `  - Command line: magen-template template test ${templateName} --var ${missingRequired[0]}=<value>`
+        );
+      }
+
       return {
         workDirectory: testDirectory,
         variables: mergedVariables,
@@ -200,6 +217,23 @@ export function testTemplate(options: TestTemplateOptions): TestTemplateResult {
   // Override with provided variables
   for (const [key, value] of Object.entries(variables)) {
     mergedVariables[key] = value;
+  }
+
+  // Validate that all required variables are provided
+  const missingRequired: string[] = [];
+  for (const varDef of template.variables) {
+    if (varDef.required && mergedVariables[varDef.name] === undefined) {
+      missingRequired.push(varDef.name);
+    }
+  }
+
+  if (missingRequired.length > 0) {
+    throw new Error(
+      `Missing required variables: ${missingRequired.join(', ')}\n` +
+        `Please provide them using:\n` +
+        `  - Interactive mode: magen-template template test ${templateName} --interactive\n` +
+        `  - Command line: magen-template template test ${templateName} --var ${missingRequired[0]}=<value>`
+    );
   }
 
   // Generate the test instance
