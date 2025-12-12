@@ -322,6 +322,54 @@ describe('Template Create - Multi-Layer Inheritance', () => {
     }
   });
 
+  it('should not create root variables.json for layered templates created from base template', () => {
+    // Create a base template to use as parent
+    const baseDir = join(testDir, 'base', '1.0.0');
+    mkdirSync(join(baseDir, 'template'), { recursive: true });
+
+    const baseTemplate = {
+      name: 'base',
+      platform: 'ios',
+      version: '1.0.0',
+    };
+
+    const baseVariables = {
+      variables: [
+        {
+          name: 'appName',
+          type: 'string',
+          required: true,
+          default: 'BaseApp',
+        },
+      ],
+    };
+
+    writeFileSync(join(baseDir, 'template.json'), JSON.stringify(baseTemplate, null, 2));
+    writeFileSync(join(baseDir, 'variables.json'), JSON.stringify(baseVariables, null, 2));
+    writeFileSync(join(baseDir, 'template', 'App.txt'), 'App: {{appName}}');
+
+    // Create a layered template based on base using CLI
+    process.env.MAGEN_TEMPLATES_PATH = testDir;
+    const layeredDir = join(testDir, 'layered', '1.0.0');
+    execSync(`node ${CLI_PATH} template create layered --based-on base --out ${testDir}`, {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    });
+
+    // Verify that variables.json was NOT created at the root level
+    expect(existsSync(join(layeredDir, 'variables.json'))).toBe(false);
+
+    // Verify that variables.json WAS created in the work/ directory
+    expect(existsSync(join(layeredDir, 'work', 'variables.json'))).toBe(true);
+
+    // Verify the work/variables.json has the correct content from parent
+    const workVariables = JSON.parse(
+      readFileSync(join(layeredDir, 'work', 'variables.json'), 'utf-8')
+    );
+    expect(workVariables.variables).toHaveLength(1);
+    expect(workVariables.variables[0].name).toBe('appName');
+  });
+
   it('should create layered template based on another layered template with variable inheritance', () => {
     // Create base template (layer 0) with version directory
     const baseDir = join(testDir, 'base', '1.0.0');

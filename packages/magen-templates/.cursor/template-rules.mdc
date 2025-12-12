@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+- When generating a template it is very important that you do not manually modify the layer.patch files. You should make your changes in the <feature-template>/work directory and use the `magen-template template layer` command to regenerate the layer.

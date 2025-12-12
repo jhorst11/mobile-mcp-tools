@@ -190,7 +190,7 @@ export function registerCreateCommand(templateCmd: Command): void {
         // Create variables.json (only for base templates, not layered)
         // For layered templates, variables.json is in work/ and will be part of the patch
         let variablesJson;
-        if (!options.basedOn) {
+        if (!finalBasedOn) {
           variablesJson = {
             variables: [
               {
