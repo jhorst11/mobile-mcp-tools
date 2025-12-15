@@ -9,12 +9,11 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ProjectGenerationNode } from '../../../src/workflow/nodes/projectGeneration.js';
 import { createTestState } from '../../utils/stateBuilders.js';
 import { MockLogger } from '../../utils/MockLogger.js';
-import * as childProcess from 'child_process';
 import * as fs from 'fs';
 
-// Mock execSync, existsSync, and readdirSync
-vi.mock('child_process', () => ({
-  execSync: vi.fn(),
+// Mock @salesforce/magen-templates
+vi.mock('@salesforce/magen-templates', () => ({
+  generateApp: vi.fn(),
 }));
 
 vi.mock('fs', async importOriginal => {
@@ -29,17 +28,21 @@ vi.mock('fs', async importOriginal => {
 describe('ProjectGenerationNode', () => {
   let node: ProjectGenerationNode;
   let mockLogger: MockLogger;
-  let mockExecSync: ReturnType<typeof vi.fn>;
+  let mockGenerateApp: ReturnType<typeof vi.fn>;
   let mockExistsSync: ReturnType<typeof vi.fn>;
   let mockReaddirSync: ReturnType<typeof vi.fn>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     mockLogger = new MockLogger();
     node = new ProjectGenerationNode(mockLogger);
-    mockExecSync = vi.mocked(childProcess.execSync);
+
+    // Import the mocked module to get access to the mock function
+    const magenTemplates = await import('@salesforce/magen-templates');
+    mockGenerateApp = vi.mocked(magenTemplates.generateApp);
     mockExistsSync = vi.mocked(fs.existsSync);
     mockReaddirSync = vi.mocked(fs.readdirSync);
-    mockExecSync.mockReset();
+
+    mockGenerateApp.mockReset();
     mockExistsSync.mockReset();
     mockReaddirSync.mockReset();
 
@@ -79,62 +82,75 @@ describe('ProjectGenerationNode', () => {
     it('should generate iOS project successfully', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
-        packageName: 'com.example.myiosapp',
-        organization: 'ExampleOrg',
+        templateProperties: {
+          bundleIdentifier: 'com.example.myiosapp',
+          organization: 'ExampleOrg',
+          loginHost: 'https://login.salesforce.com',
+        },
         connectedAppClientId: 'client123',
         connectedAppCallbackUri: 'myapp://callback',
-        loginHost: 'https://login.salesforce.com',
       });
 
-      mockExecSync.mockReturnValue('Project generated successfully');
+      mockGenerateApp.mockReturnValue(undefined);
 
       const result = node.execute(inputState);
 
       expect(result.projectPath).toBeDefined();
       expect(result.projectPath).toContain('MyiOSApp');
       expect(result.workflowFatalErrorMessages).toBeUndefined();
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('sf mobilesdk ios createwithtemplate'),
-        expect.objectContaining({ encoding: 'utf-8', timeout: 120000 })
+      expect(mockGenerateApp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          templateName: 'ios-base',
+          outputDirectory: expect.stringContaining('MyiOSApp'),
+          overwrite: false,
+          variables: expect.objectContaining({
+            projectName: 'MyiOSApp',
+            bundleIdentifier: 'com.example.myiosapp',
+            organization: 'ExampleOrg',
+            connectedAppClientId: 'client123',
+            connectedAppCallbackUri: 'myapp://callback',
+          }),
+        })
       );
     });
 
-    it('should use correct command format for iOS', () => {
+    it('should pass correct variables to generateApp for iOS', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-mobilesdk@1.0.0',
         projectName: 'MyiOSApp',
-        packageName: 'com.example.myiosapp',
-        organization: 'ExampleOrg',
+        templateProperties: {
+          bundleIdentifier: 'com.example.myiosapp',
+          organization: 'ExampleOrg',
+        },
         connectedAppClientId: 'client123',
         connectedAppCallbackUri: 'myapp://callback',
-        loginHost: undefined,
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue(undefined);
 
       node.execute(inputState);
 
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('--template="ContactsApp"'),
-        expect.any(Object)
-      );
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('--appname="MyiOSApp"'),
-        expect.any(Object)
-      );
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('--consumerkey="client123"'),
-        expect.any(Object)
+      expect(mockGenerateApp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          templateName: 'ios-mobilesdk',
+          variables: expect.objectContaining({
+            projectName: 'MyiOSApp',
+            bundleIdentifier: 'com.example.myiosapp',
+            organization: 'ExampleOrg',
+            connectedAppClientId: 'client123',
+            connectedAppCallbackUri: 'myapp://callback',
+          }),
+        })
       );
     });
 
     it('should validate iOS project structure', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -142,7 +158,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue(undefined);
       mockReaddirSync.mockReturnValue(['MyiOSApp.xcodeproj', 'Podfile'] as unknown as string[]);
       mockExistsSync.mockReturnValue(true);
 
@@ -158,7 +174,7 @@ describe('ProjectGenerationNode', () => {
     it('should fail when .xcodeproj directory is missing', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -166,7 +182,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue(undefined);
       mockReaddirSync.mockReturnValue(['Podfile', 'README.md'] as unknown as string[]);
 
       const result = node.execute(inputState);
@@ -181,7 +197,7 @@ describe('ProjectGenerationNode', () => {
     it('should fail when readdirSync throws an error', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -189,7 +205,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockReaddirSync.mockImplementation(() => {
         throw new Error('ENOENT: no such file or directory');
       });
@@ -203,7 +219,7 @@ describe('ProjectGenerationNode', () => {
     it('should succeed when .xcodeproj exists even if other files are missing', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -211,7 +227,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       // Only .xcodeproj exists, no Podfile
       mockReaddirSync.mockReturnValue(['MyiOSApp.xcodeproj'] as unknown as string[]);
       mockExistsSync.mockReturnValue(true);
@@ -225,7 +241,7 @@ describe('ProjectGenerationNode', () => {
     it('should handle .xcworkspace files in project directory', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -233,7 +249,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockReaddirSync.mockReturnValue([
         'MyiOSApp.xcodeproj',
         'MyiOSApp.xcworkspace',
@@ -250,7 +266,7 @@ describe('ProjectGenerationNode', () => {
     it('should detect .xcodeproj even with different naming', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -258,7 +274,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       // Project name doesn't match .xcodeproj name
       mockReaddirSync.mockReturnValue([
         'DifferentName.xcodeproj',
@@ -277,7 +293,7 @@ describe('ProjectGenerationNode', () => {
     it('should generate Android project successfully with valid structure', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -286,7 +302,7 @@ describe('ProjectGenerationNode', () => {
         loginHost: 'https://test.salesforce.com',
       });
 
-      mockExecSync.mockReturnValue('Project generated successfully');
+      mockGenerateApp.mockReturnValue('Project generated successfully');
       mockExistsSync.mockReturnValue(true); // All files exist
 
       const result = node.execute(inputState);
@@ -294,16 +310,19 @@ describe('ProjectGenerationNode', () => {
       expect(result.projectPath).toBeDefined();
       expect(result.projectPath).toContain('MyAndroidApp');
       expect(result.workflowFatalErrorMessages).toBeUndefined();
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('sf mobilesdk android createwithtemplate'),
-        expect.objectContaining({ encoding: 'utf-8', timeout: 120000 })
+      expect(mockGenerateApp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          templateName: 'ios-base',
+          outputDirectory: expect.stringContaining('MyAndroidApp'),
+          overwrite: false,
+        })
       );
     });
 
     it('should validate Android project structure', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -311,7 +330,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockExistsSync.mockReturnValue(true);
 
       const result = node.execute(inputState);
@@ -326,7 +345,7 @@ describe('ProjectGenerationNode', () => {
     it('should accept Kotlin build files as alternative', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -334,7 +353,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       // Mock scenario: Groovy files don't exist, but Kotlin files do
       mockExistsSync.mockImplementation((path: string) => {
@@ -352,7 +371,7 @@ describe('ProjectGenerationNode', () => {
     it('should accept Groovy build files', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -360,7 +379,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       // Mock scenario: Groovy files exist, Kotlin files don't
       mockExistsSync.mockImplementation((path: string) => {
@@ -380,7 +399,7 @@ describe('ProjectGenerationNode', () => {
     it('should fail when build.gradle and build.gradle.kts both missing', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -388,7 +407,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       // Mock: Both build.gradle and build.gradle.kts don't exist
       mockExistsSync.mockImplementation((path: string) => {
@@ -409,7 +428,7 @@ describe('ProjectGenerationNode', () => {
     it('should fail when AndroidManifest.xml is missing', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -417,7 +436,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       mockExistsSync.mockImplementation((path: string) => {
         const pathStr = String(path);
@@ -436,7 +455,7 @@ describe('ProjectGenerationNode', () => {
     it('should fail when app directory is missing', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -444,7 +463,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       mockExistsSync.mockImplementation((path: string) => {
         const pathStr = String(path);
@@ -461,7 +480,7 @@ describe('ProjectGenerationNode', () => {
     it('should fail when settings.gradle and settings.gradle.kts both missing', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -469,7 +488,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       mockExistsSync.mockImplementation((path: string) => {
         const pathStr = String(path);
@@ -488,7 +507,7 @@ describe('ProjectGenerationNode', () => {
     it('should fail when project directory does not exist after command execution', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -496,7 +515,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Command completed');
+      mockGenerateApp.mockReturnValue('Command completed');
       // First call to existsSync (project directory check) returns false
       // This simulates the directory not being created
       mockExistsSync.mockReturnValue(false);
@@ -508,14 +527,14 @@ describe('ProjectGenerationNode', () => {
       expect(result.workflowFatalErrorMessages).toHaveLength(1);
       expect(result.workflowFatalErrorMessages![0]).toContain('Project directory not found');
       expect(result.workflowFatalErrorMessages![0]).toContain(
-        'command executed successfully but the project was not created'
+        'generation completed but the project was not created'
       );
     });
 
     it('should log error when project directory does not exist', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -523,7 +542,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Command completed');
+      mockGenerateApp.mockReturnValue('Command completed');
       mockExistsSync.mockReturnValue(false);
       mockLogger.reset();
 
@@ -531,7 +550,7 @@ describe('ProjectGenerationNode', () => {
 
       const errorLogs = mockLogger.getLogsByLevel('error');
       const missingDirLog = errorLogs.find(log =>
-        log.message.includes('Project directory not found after command execution')
+        log.message.includes('Project directory not found after generation')
       );
       expect(missingDirLog).toBeDefined();
     });
@@ -539,7 +558,7 @@ describe('ProjectGenerationNode', () => {
     it('should proceed with validation when project directory exists', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -547,7 +566,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockExistsSync.mockReturnValue(true);
       mockReaddirSync.mockReturnValue(['MyiOSApp.xcodeproj'] as unknown as string[]);
 
@@ -562,7 +581,7 @@ describe('ProjectGenerationNode', () => {
     it('should handle execSync throwing an error', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -570,7 +589,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockImplementation(() => {
+      mockGenerateApp.mockImplementation(() => {
         throw new Error('Command not found: sf');
       });
 
@@ -586,7 +605,7 @@ describe('ProjectGenerationNode', () => {
     it('should handle non-Error exceptions', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -594,7 +613,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockImplementation(() => {
+      mockGenerateApp.mockImplementation(() => {
         throw 'Unknown error';
       });
 
@@ -608,7 +627,7 @@ describe('ProjectGenerationNode', () => {
     it('should handle timeout errors', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -616,7 +635,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockImplementation(() => {
+      mockGenerateApp.mockImplementation(() => {
         const error = new Error('Command timed out after 120000ms');
         throw error;
       });
@@ -630,7 +649,7 @@ describe('ProjectGenerationNode', () => {
     it('should handle permission errors', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -638,7 +657,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockImplementation(() => {
+      mockGenerateApp.mockImplementation(() => {
         throw new Error('EACCES: permission denied');
       });
 
@@ -653,7 +672,7 @@ describe('ProjectGenerationNode', () => {
     it('should log debug message before command execution', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -661,14 +680,14 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockLogger.reset();
 
       node.execute(inputState);
 
       const debugLogs = mockLogger.getLogsByLevel('debug');
       const preExecutionLog = debugLogs.find(log =>
-        log.message.includes('Executing project generation command')
+        log.message.includes('Generating project with magen-templates')
       );
       expect(preExecutionLog).toBeDefined();
     });
@@ -676,7 +695,7 @@ describe('ProjectGenerationNode', () => {
     it('should log debug message after command execution', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -684,7 +703,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockExistsSync.mockReturnValue(true);
       mockLogger.reset();
 
@@ -692,7 +711,7 @@ describe('ProjectGenerationNode', () => {
 
       const debugLogs = mockLogger.getLogsByLevel('debug');
       const postExecutionLog = debugLogs.find(log =>
-        log.message.includes('Command executed successfully')
+        log.message.includes('Project generation completed')
       );
       expect(postExecutionLog).toBeDefined();
     });
@@ -700,7 +719,7 @@ describe('ProjectGenerationNode', () => {
     it('should log Android validation success', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -708,7 +727,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockExistsSync.mockReturnValue(true);
       mockLogger.reset();
 
@@ -724,7 +743,7 @@ describe('ProjectGenerationNode', () => {
     it('should log iOS validation success', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -732,7 +751,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockReaddirSync.mockReturnValue(['MyiOSApp.xcodeproj'] as unknown as string[]);
       mockExistsSync.mockReturnValue(true);
       mockLogger.reset();
@@ -749,7 +768,7 @@ describe('ProjectGenerationNode', () => {
     it('should log warning for missing Android files', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -757,7 +776,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       // First call (project directory check) returns true, subsequent calls return false
       let callCount = 0;
       mockExistsSync.mockImplementation(() => {
@@ -775,7 +794,7 @@ describe('ProjectGenerationNode', () => {
     it('should log warning for missing iOS .xcodeproj', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -783,7 +802,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockReaddirSync.mockReturnValue(['Podfile', 'README.md'] as unknown as string[]);
       mockLogger.reset();
 
@@ -799,7 +818,7 @@ describe('ProjectGenerationNode', () => {
     it('should log warning when iOS project directory cannot be read', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -807,7 +826,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockReaddirSync.mockImplementation(() => {
         throw new Error('EACCES: permission denied');
       });
@@ -825,7 +844,7 @@ describe('ProjectGenerationNode', () => {
     it('should log error when command fails', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -833,7 +852,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockImplementation(() => {
+      mockGenerateApp.mockImplementation(() => {
         throw new Error('Command failed');
       });
       mockLogger.reset();
@@ -850,7 +869,7 @@ describe('ProjectGenerationNode', () => {
     it('should not log sensitive credentials in debug messages', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -858,7 +877,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://secret-callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockLogger.reset();
 
       node.execute(inputState);
@@ -874,7 +893,7 @@ describe('ProjectGenerationNode', () => {
     it('should log "Command executed successfully" before validation', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -882,14 +901,14 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Project created successfully');
+      mockGenerateApp.mockReturnValue('Project created successfully');
       mockLogger.reset();
 
       node.execute(inputState);
 
       const debugLogs = mockLogger.getLogsByLevel('debug');
       const commandExecutedLog = debugLogs.find(log =>
-        log.message.includes('Command executed successfully')
+        log.message.includes('Project generation completed')
       );
       expect(commandExecutedLog).toBeDefined();
     });
@@ -897,7 +916,7 @@ describe('ProjectGenerationNode', () => {
     it('should log "Project generation completed successfully" only after validation passes', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -905,7 +924,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockExistsSync.mockReturnValue(true);
       mockLogger.reset();
 
@@ -921,7 +940,7 @@ describe('ProjectGenerationNode', () => {
     it('should not log completion message when validation fails', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -929,7 +948,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockExistsSync.mockReturnValue(false); // Validation will fail
       mockLogger.reset();
 
@@ -947,7 +966,7 @@ describe('ProjectGenerationNode', () => {
     it('should return partial state object on success', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -955,7 +974,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       const result = node.execute(inputState);
 
@@ -968,7 +987,7 @@ describe('ProjectGenerationNode', () => {
     it('should return projectPath on success', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -976,7 +995,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       const result = node.execute(inputState);
 
@@ -987,7 +1006,7 @@ describe('ProjectGenerationNode', () => {
     it('should return error messages on failure', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -995,7 +1014,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockImplementation(() => {
+      mockGenerateApp.mockImplementation(() => {
         throw new Error('Failed');
       });
 
@@ -1007,11 +1026,11 @@ describe('ProjectGenerationNode', () => {
     });
   });
 
-  describe('execute() - Command Timeout Configuration', () => {
-    it('should set timeout to 120000ms', () => {
+  describe('execute() - Template Name Parsing', () => {
+    it('should parse template name from name@version format', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -1019,14 +1038,15 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue(undefined);
 
       node.execute(inputState);
 
-      expect(mockExecSync).toHaveBeenCalledWith(expect.any(String), {
-        encoding: 'utf-8',
-        timeout: 120000,
-      });
+      expect(mockGenerateApp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          templateName: 'ios-base',
+        })
+      );
     });
   });
 
@@ -1034,7 +1054,7 @@ describe('ProjectGenerationNode', () => {
     it('should handle typical iOS project generation', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'SalesApp',
         packageName: 'com.salesforce.sales',
         organization: 'Salesforce',
@@ -1043,7 +1063,7 @@ describe('ProjectGenerationNode', () => {
         loginHost: 'https://login.salesforce.com',
       });
 
-      mockExecSync.mockReturnValue('Project created successfully at /Users/developer/SalesApp');
+      mockGenerateApp.mockReturnValue('Project created successfully at /Users/developer/SalesApp');
 
       const result = node.execute(inputState);
 
@@ -1054,32 +1074,37 @@ describe('ProjectGenerationNode', () => {
     it('should handle typical Android project generation with sandbox', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'SalesApp',
-        packageName: 'com.salesforce.sales',
-        organization: 'Salesforce',
+        templateProperties: {
+          packageName: 'com.salesforce.sales',
+          organization: 'Salesforce',
+          loginHost: 'https://test.salesforce.com',
+        },
         connectedAppClientId: '3MVG9...actual_client_id',
         connectedAppCallbackUri: 'salesapp://callback',
-        loginHost: 'https://test.salesforce.com',
       });
 
-      mockExecSync.mockReturnValue('Project created successfully');
+      mockGenerateApp.mockReturnValue('Project created successfully');
       mockExistsSync.mockReturnValue(true);
 
       const result = node.execute(inputState);
 
       expect(result.projectPath).toContain('SalesApp');
       expect(result.workflowFatalErrorMessages).toBeUndefined();
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('https://test.salesforce.com'),
-        expect.any(Object)
+      expect(mockGenerateApp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variables: expect.objectContaining({
+            loginHost: 'https://test.salesforce.com',
+          }),
+        })
       );
     });
 
     it('should handle project generation in CI/CD environment', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'CIApp',
         packageName: 'com.example.ciapp',
         organization: 'CI',
@@ -1087,7 +1112,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'ciapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockExistsSync.mockReturnValue(true);
 
       const result = node.execute(inputState);
@@ -1098,10 +1123,10 @@ describe('ProjectGenerationNode', () => {
   });
 
   describe('execute() - Template Properties', () => {
-    it('should include template properties flags when templateProperties exist', () => {
+    it('should include template properties in variables when templateProperties exist', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -1113,20 +1138,23 @@ describe('ProjectGenerationNode', () => {
         },
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue(undefined);
 
       node.execute(inputState);
 
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('--template-property-customField="customValue"'),
-        expect.any(Object)
+      expect(mockGenerateApp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variables: expect.objectContaining({
+            customField: 'customValue',
+          }),
+        })
       );
     });
 
-    it('should include multiple template properties flags', () => {
+    it('should include multiple template properties in variables', () => {
       const inputState = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyAndroidApp',
         packageName: 'com.example.myandroidapp',
         organization: 'ExampleOrg',
@@ -1139,41 +1167,51 @@ describe('ProjectGenerationNode', () => {
         },
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue(undefined);
       mockExistsSync.mockReturnValue(true);
 
       node.execute(inputState);
 
-      const command = mockExecSync.mock.calls[0][0] as string;
-      expect(command).toContain('--template-property-apiVersion="60.0"');
-      expect(command).toContain('--template-property-customObject="Account"');
-      expect(command).toContain('--template-property-enableFeatureX="true"');
+      expect(mockGenerateApp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variables: expect.objectContaining({
+            apiVersion: '60.0',
+            customObject: 'Account',
+            enableFeatureX: 'true',
+          }),
+        })
+      );
     });
 
-    it('should not include template properties flags when templateProperties is undefined', () => {
+    it('should not merge undefined template properties into variables', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
-        packageName: 'com.example.myiosapp',
-        organization: 'ExampleOrg',
         connectedAppClientId: 'client123',
         connectedAppCallbackUri: 'myapp://callback',
         templateProperties: undefined,
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue(undefined);
 
       node.execute(inputState);
 
-      const command = mockExecSync.mock.calls[0][0] as string;
-      expect(command).not.toContain('--template-property-');
+      const call = mockGenerateApp.mock.calls[0][0];
+      // Verify only workflow-level properties and connected app props are present
+      expect(call.variables).toEqual(
+        expect.objectContaining({
+          projectName: 'MyiOSApp',
+          connectedAppClientId: 'client123',
+          connectedAppCallbackUri: 'myapp://callback',
+        })
+      );
     });
 
-    it('should not include template properties flags when templateProperties is empty', () => {
+    it('should not add extra properties when templateProperties is empty', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -1182,18 +1220,21 @@ describe('ProjectGenerationNode', () => {
         templateProperties: {},
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue(undefined);
 
       node.execute(inputState);
 
-      const command = mockExecSync.mock.calls[0][0] as string;
-      expect(command).not.toContain('--template-property-');
+      const call = mockGenerateApp.mock.calls[0][0];
+      // Empty templateProperties should not add any extra variables
+      const variableKeys = Object.keys(call.variables);
+      expect(variableKeys).not.toContain('customField');
+      expect(variableKeys).not.toContain('apiVersion');
     });
 
-    it('should log template properties in debug message', () => {
+    it('should log variables in debug message', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -1204,26 +1245,25 @@ describe('ProjectGenerationNode', () => {
         },
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue(undefined);
       mockLogger.reset();
 
       node.execute(inputState);
 
       const debugLogs = mockLogger.getLogsByLevel('debug');
       const preExecutionLog = debugLogs.find(log =>
-        log.message.includes('Executing project generation command')
+        log.message.includes('Generating project with magen-templates')
       );
       expect(preExecutionLog).toBeDefined();
-      // The log should include templateProperties in its data
+      // The log should include variables count in its data
       const logData = preExecutionLog?.data as Record<string, unknown> | undefined;
-      expect(logData).toHaveProperty('templateProperties');
-      expect(logData?.templateProperties).toEqual({ customProp: 'customVal' });
+      expect(logData).toHaveProperty('variables');
     });
 
     it('should handle template properties with special characters in values', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -1235,13 +1275,18 @@ describe('ProjectGenerationNode', () => {
         },
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue(undefined);
 
       node.execute(inputState);
 
-      const command = mockExecSync.mock.calls[0][0] as string;
-      expect(command).toContain('--template-property-description="My App Description"');
-      expect(command).toContain('--template-property-url="https://example.com/api"');
+      expect(mockGenerateApp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          variables: expect.objectContaining({
+            description: 'My App Description',
+            url: 'https://example.com/api',
+          }),
+        })
+      );
     });
   });
 
@@ -1249,7 +1294,7 @@ describe('ProjectGenerationNode', () => {
     it('should handle project names with spaces', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'My Sales App',
         packageName: 'com.example.mysalesapp',
         organization: 'ExampleOrg',
@@ -1257,7 +1302,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       const result = node.execute(inputState);
 
@@ -1267,7 +1312,7 @@ describe('ProjectGenerationNode', () => {
     it('should handle project names with special characters', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'My-App_2024',
         packageName: 'com.example.myapp',
         organization: 'ExampleOrg',
@@ -1275,7 +1320,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       const result = node.execute(inputState);
 
@@ -1286,7 +1331,7 @@ describe('ProjectGenerationNode', () => {
       const longName = 'A'.repeat(100);
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: longName,
         packageName: 'com.example.app',
         organization: 'ExampleOrg',
@@ -1294,7 +1339,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'myapp://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       const result = node.execute(inputState);
 
@@ -1306,7 +1351,7 @@ describe('ProjectGenerationNode', () => {
     it('should not modify input state', () => {
       const inputState = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'MyiOSApp',
         packageName: 'com.example.myiosapp',
         organization: 'ExampleOrg',
@@ -1317,7 +1362,7 @@ describe('ProjectGenerationNode', () => {
       const originalPlatform = inputState.platform;
       const originalProjectName = inputState.projectName;
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
 
       node.execute(inputState);
 
@@ -1328,7 +1373,7 @@ describe('ProjectGenerationNode', () => {
     it('should handle multiple invocations independently', () => {
       const state1 = createTestState({
         platform: 'iOS',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'App1',
         packageName: 'com.example.app1',
         organization: 'Org1',
@@ -1338,7 +1383,7 @@ describe('ProjectGenerationNode', () => {
 
       const state2 = createTestState({
         platform: 'Android',
-        selectedTemplate: 'ContactsApp',
+        selectedTemplate: 'ios-base@1.0.0',
         projectName: 'App2',
         packageName: 'com.example.app2',
         organization: 'Org2',
@@ -1346,7 +1391,7 @@ describe('ProjectGenerationNode', () => {
         connectedAppCallbackUri: 'app2://callback',
       });
 
-      mockExecSync.mockReturnValue('Success');
+      mockGenerateApp.mockReturnValue('Success');
       mockExistsSync.mockReturnValue(true);
 
       const result1 = node.execute(state1);
@@ -1354,7 +1399,7 @@ describe('ProjectGenerationNode', () => {
 
       expect(result1.projectPath).toContain('App1');
       expect(result2.projectPath).toContain('App2');
-      expect(mockExecSync).toHaveBeenCalledTimes(2);
+      expect(mockGenerateApp).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -91,7 +91,9 @@ describe('DeploymentNode', () => {
         projectPath: testProjectPath,
         buildType: testBuildType as 'debug',
         targetDevice: testTargetDevice,
-        packageName: testPackageName,
+        templateProperties: {
+          bundleIdentifier: testPackageName,
+        },
         projectName: testProjectName,
       });
 
@@ -620,7 +622,9 @@ describe('DeploymentNode', () => {
           projectPath: '/path/to/project',
           buildType: 'debug',
           targetDevice: 'iPhone 15',
-          packageName,
+          templateProperties: {
+            bundleIdentifier: packageName,
+          },
           projectName: 'TestApp',
         });
 

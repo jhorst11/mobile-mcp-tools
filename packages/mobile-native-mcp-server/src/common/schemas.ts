@@ -33,35 +33,52 @@ export const PROJECT_NAME_FIELD = z.string().describe('Name for the mobile app p
 /**
  * Template-related schemas
  * Used for validating template discovery and selection data structures
+ * Now based on magen-templates format
  */
 
-// Schema for template metadata - only require platform and displayName, allow everything else to passthrough
-const TemplateMetadataSchema = z
+// Schema for template variable definition (from magen-templates)
+const TemplateVariableSchema = z.object({
+  name: z.string(),
+  type: z.enum(['string', 'number', 'boolean']),
+  required: z.boolean(),
+  description: z.string().optional(),
+  default: z.union([z.string(), z.number(), z.boolean()]).optional(),
+  regex: z.string().optional(),
+  enum: z.array(z.string()).optional(),
+});
+
+// Schema for template descriptor (from magen-templates)
+const TemplateDescriptorSchema = z
   .object({
+    name: z.string(),
     platform: z.enum(['ios', 'android']),
+    version: z.string(),
+    tags: z.array(z.string()).optional(),
+    description: z.string().optional(),
+    variables: z.array(TemplateVariableSchema).default([]),
+    extends: z
+      .object({
+        template: z.string(),
+        version: z.string().optional(),
+        patchFile: z.string().optional(),
+      })
+      .optional(),
+    basedOn: z.string().optional(),
   })
   .passthrough();
 
-// Schema for individual template entry in the list - require metadata and path (template identifier)
-// Note: path is not defined in template-schema.json (which only defines the metadata structure),
-// but it IS present in the CLI output from `sf mobilesdk listtemplates --doc --json`
-const TemplateEntrySchema = z
-  .object({
-    path: z
-      .string()
-      .describe(
-        'Template path/name identifier used for template selection and detail fetching. Present in CLI output but not in template-schema.json'
-      ),
-    metadata: TemplateMetadataSchema,
-  })
-  .passthrough();
+// Schema for individual template entry in the list
+// This matches what we'll construct from magen-templates discovery API
+const TemplateEntrySchema = z.object({
+  path: z.string().describe('Template name identifier used for template selection'),
+  metadata: TemplateDescriptorSchema,
+  descriptor: TemplateDescriptorSchema.optional(), // For compatibility
+});
 
-// Schema for the complete template list output structure - allow passthrough for flexibility
-export const TEMPLATE_LIST_SCHEMA = z
-  .object({
-    templates: z.array(TemplateEntrySchema),
-  })
-  .passthrough();
+// Schema for the complete template list output structure
+export const TEMPLATE_LIST_SCHEMA = z.object({
+  templates: z.array(TemplateEntrySchema),
+});
 
 // Type inferred from the schema
 export type TemplateListOutput = z.infer<typeof TEMPLATE_LIST_SCHEMA>;

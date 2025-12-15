@@ -7,10 +7,9 @@
 
 import { BaseNode, createComponentLogger, Logger } from '@salesforce/magen-mcp-workflow';
 import { State } from '../metadata.js';
-import { execSync } from 'child_process';
 import { existsSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
-import { MOBILE_SDK_TEMPLATES_PATH } from '../../common.js';
+import { generateApp } from '@salesforce/magen-templates';
 
 export class ProjectGenerationNode extends BaseNode<State> {
   protected readonly logger: Logger;
@@ -22,51 +21,59 @@ export class ProjectGenerationNode extends BaseNode<State> {
 
   execute = (state: State): Partial<State> => {
     try {
-      const platformLower = state.platform.toLowerCase();
+      // Prepare variables for magen-templates generation
+      // Start with projectName (workflow-level property) and merge in all template properties
+      const variables: Record<string, string | number | boolean> = {
+        projectName: state.projectName,
+        ...state.templateProperties,
+      };
 
-      // Build template properties flags if they exist
-      let templatePropertiesFlags = '';
-      if (state.templateProperties && Object.keys(state.templateProperties).length > 0) {
-        const propertyFlags = Object.entries(state.templateProperties)
-          .map(([key, value]) => `--template-property-${key}="${value}"`)
-          .join(' ');
-        templatePropertiesFlags = ` ${propertyFlags}`;
+      // Add connected app properties from environment (workflow-level, not template-specific)
+      if (state.connectedAppClientId) {
+        variables.connectedAppClientId = state.connectedAppClientId;
+      }
+      if (state.connectedAppCallbackUri) {
+        variables.connectedAppCallbackUri = state.connectedAppCallbackUri;
       }
 
-      // Build the sf mobilesdk command with all parameters including sensitive credentials
-      const command = `sf mobilesdk ${platformLower} createwithtemplate --templatesource="${MOBILE_SDK_TEMPLATES_PATH}" --template="${state.selectedTemplate}" --appname="${state.projectName}" --packagename="${state.packageName}" --organization="${state.organization}" --consumerkey="${state.connectedAppClientId}" --callbackurl="${state.connectedAppCallbackUri}" --loginserver="${state.loginHost}" ${templatePropertiesFlags}`;
+      // Extract template name from path (format: "template-name@version")
+      const templateIdentifier = state.selectedTemplate;
+      const templateName = templateIdentifier.includes('@')
+        ? templateIdentifier.split('@')[0]
+        : templateIdentifier;
 
-      this.logger.debug('Executing project generation command', {
-        template: state.selectedTemplate,
+      this.logger.debug('Generating project with magen-templates', {
+        template: templateName,
+        templateIdentifier,
         projectName: state.projectName,
         platform: state.platform,
-        packageName: state.packageName,
-        organization: state.organization,
-        connectedAppClientId: state.connectedAppClientId,
-        connectedAppCallbackUri: state.connectedAppCallbackUri,
-        loginHost: state.loginHost,
-        templateProperties: state.templateProperties,
+        variables: Object.keys(variables),
       });
 
-      // Execute the command directly without exposing credentials to LLM
-      const output = execSync(command, { encoding: 'utf-8', timeout: 120000 });
-
-      this.logger.debug('Command executed successfully', {
-        outputLength: output.length,
-        hasOutput: output.trim().length > 0,
-      });
-
-      // Determine project path (the CLI creates the project in the current working directory)
+      // Determine project path (relative to current working directory)
       const projectPath = resolve(process.cwd(), state.projectName);
+
+      // Generate the app using magen-templates
+      generateApp({
+        templateName,
+        outputDirectory: projectPath,
+        variables,
+        overwrite: false,
+      });
+
+      this.logger.debug('Project generation completed', {
+        projectPath,
+        templateUsed: templateName,
+      });
 
       // Verify project directory was created
       if (!existsSync(projectPath)) {
         this.logger.error(
-          `Project directory not found after command execution. Expected path: ${projectPath}`
+          `Project directory not found after generation. Expected path: ${projectPath}`
         );
         return {
           workflowFatalErrorMessages: [
-            `Project directory not found at ${projectPath}. The command executed successfully but the project was not created in the expected location.`,
+            `Project directory not found at ${projectPath}. The generation completed but the project was not created in the expected location.`,
           ],
         };
       }
@@ -112,7 +119,7 @@ export class ProjectGenerationNode extends BaseNode<State> {
       }
       return {
         workflowFatalErrorMessages: [
-          `Failed to generate project: ${errorMessage}. Please ensure the Salesforce Mobile SDK CLI is properly installed and configured.`,
+          `Failed to generate project: ${errorMessage}. Please ensure the magen-templates package is properly configured.`,
         ],
       };
     }

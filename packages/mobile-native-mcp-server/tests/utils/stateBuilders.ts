@@ -49,11 +49,8 @@ export function createTestState(overrides: Partial<State> = {}): State {
     templatePropertiesMetadata: undefined,
     projectName: undefined,
     projectPath: undefined,
-    packageName: undefined,
-    organization: undefined,
     connectedAppClientId: undefined,
     connectedAppCallbackUri: undefined,
-    loginHost: undefined,
 
     // Build and deployment state
     buildType: undefined,

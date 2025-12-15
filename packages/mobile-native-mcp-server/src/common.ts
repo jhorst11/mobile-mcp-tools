@@ -5,17 +5,9 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
 
-import { resolve, dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { join } from 'path';
 import { FileSystemOperations, NodeFileSystemOperations } from '@salesforce/magen-mcp-workflow';
 import { PlatformEnum } from './common/schemas.js';
-
-// Shared template source path for Salesforce Mobile SDK commands
-export const MOBILE_SDK_TEMPLATES_PATH = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  '..',
-  'templates'
-);
 
 /**
  * Manages temporary directory creation and cleanup for workflow artifacts and logs.

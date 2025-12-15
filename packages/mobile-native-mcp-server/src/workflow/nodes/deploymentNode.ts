@@ -20,6 +20,12 @@ export class DeploymentNode extends AbstractToolNode<State> {
   }
 
   execute = (state: State): Partial<State> => {
+    // packageName comes from templateProperties (bundleIdentifier for iOS, packageName for Android)
+    const packageName =
+      (state.templateProperties?.bundleIdentifier as string) ||
+      (state.templateProperties?.packageName as string) ||
+      '';
+
     const toolInvocationData: MCPToolInvocationData<typeof DEPLOYMENT_TOOL.inputSchema> = {
       llmMetadata: {
         name: DEPLOYMENT_TOOL.toolId,
@@ -31,7 +37,7 @@ export class DeploymentNode extends AbstractToolNode<State> {
         projectPath: state.projectPath,
         buildType: state.buildType,
         targetDevice: state.targetDevice,
-        packageName: state.packageName,
+        packageName,
         projectName: state.projectName,
       },
     };

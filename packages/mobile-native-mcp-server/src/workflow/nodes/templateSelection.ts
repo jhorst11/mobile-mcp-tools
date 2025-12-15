@@ -84,86 +84,41 @@ export class TemplateSelectionNode extends AbstractToolNode<State> {
         return undefined;
       }
 
-      // Navigate to metadata.properties.templatePrerequisites.properties.templateProperties.properties
-      // This matches the deeply nested structure in template.json files
-      const metadata = template.metadata as Record<string, unknown> | undefined;
-      if (!metadata) {
-        this.logger.debug(`No metadata found for template ${selectedTemplate}`);
+      // Access the template descriptor (from magen-templates format)
+      const descriptor = template.metadata;
+      if (!descriptor) {
+        this.logger.debug(`No descriptor found for template ${selectedTemplate}`);
         return undefined;
       }
 
-      const properties = metadata.properties as Record<string, unknown> | undefined;
-      if (!properties) {
-        this.logger.debug(`No properties found for template ${selectedTemplate}`);
+      // Access the variables array from the descriptor
+      const variables = descriptor.variables;
+      if (!variables || !Array.isArray(variables) || variables.length === 0) {
+        this.logger.debug(`No variables found for template ${selectedTemplate}`);
         return undefined;
       }
 
-      const templatePrerequisites = properties.templatePrerequisites as
-        | Record<string, unknown>
-        | undefined;
-      if (!templatePrerequisites) {
-        this.logger.debug(`No templatePrerequisites found for template ${selectedTemplate}`);
-        return undefined;
-      }
-
-      const templatePrerequisitesProperties = templatePrerequisites.properties as
-        | Record<string, unknown>
-        | undefined;
-      if (!templatePrerequisitesProperties) {
-        this.logger.debug(
-          `No templatePrerequisites.properties found for template ${selectedTemplate}`
-        );
-        return undefined;
-      }
-
-      const templatePropertiesContainer = templatePrerequisitesProperties.templateProperties as
-        | Record<string, unknown>
-        | undefined;
-      if (!templatePropertiesContainer) {
-        this.logger.debug(`No templateProperties found for template ${selectedTemplate}`);
-        return undefined;
-      }
-
-      const templateProperties = templatePropertiesContainer.properties as
-        | Record<string, unknown>
-        | undefined;
-      if (!templateProperties || Object.keys(templateProperties).length === 0) {
-        this.logger.debug(
-          `No templateProperties.properties found for template ${selectedTemplate}`
-        );
-        return undefined;
-      }
-
-      // Convert template properties to TemplatePropertiesMetadata format
+      // Convert all template variables to TemplatePropertiesMetadata format
+      // All variables are dynamically handled - no hardcoded filtering
       const propertiesMetadata: TemplatePropertiesMetadata = {};
 
-      for (const [propertyName, propertyValue] of Object.entries(templateProperties)) {
-        // Property can be a simple value or an object with value, required, description
-        if (
-          typeof propertyValue === 'object' &&
-          propertyValue !== null &&
-          !Array.isArray(propertyValue)
-        ) {
-          const propObj = propertyValue as Record<string, unknown>;
-          propertiesMetadata[propertyName] = {
-            value: propObj.value !== undefined ? String(propObj.value) : undefined,
-            required: typeof propObj.required === 'boolean' ? propObj.required : false,
-            description: typeof propObj.description === 'string' ? propObj.description : '',
-          };
-        } else {
-          // Simple value - treat as optional with empty description
-          propertiesMetadata[propertyName] = {
-            value: propertyValue !== undefined ? String(propertyValue) : undefined,
-            required: false,
-            description: '',
-          };
-        }
+      for (const variable of variables) {
+        propertiesMetadata[variable.name] = {
+          value: variable.default !== undefined ? String(variable.default) : undefined,
+          required: variable.required,
+          description: variable.description || '',
+        };
       }
 
-      this.logger.info(
-        `Extracted ${Object.keys(propertiesMetadata).length} template properties for ${selectedTemplate}`
-      );
-      return Object.keys(propertiesMetadata).length > 0 ? propertiesMetadata : undefined;
+      if (Object.keys(propertiesMetadata).length > 0) {
+        this.logger.info(
+          `Extracted ${Object.keys(propertiesMetadata).length} template variables for ${selectedTemplate}`
+        );
+        return propertiesMetadata;
+      } else {
+        this.logger.debug(`No template variables found for ${selectedTemplate}`);
+        return undefined;
+      }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : `${error}`;
       this.logger.error(

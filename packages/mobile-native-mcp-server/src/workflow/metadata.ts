@@ -31,6 +31,10 @@ export type TemplatePropertiesMetadata = Record<string, TemplatePropertyMetadata
  *
  * This collection serves as the single source of truth for what data needs to be
  * collected from users during the workflow initialization phase.
+ *
+ * Note: Only workflow-level properties are defined here. Template-specific properties
+ * (like packageName, organization, loginHost, etc.) are defined in the template's
+ * variables.json and collected through the template properties extraction flow.
  */
 export const WORKFLOW_USER_INPUT_PROPERTIES = {
   platform: {
@@ -42,21 +46,6 @@ export const WORKFLOW_USER_INPUT_PROPERTIES = {
     zodType: PROJECT_NAME_FIELD,
     description: PROJECT_NAME_FIELD.description!,
     friendlyName: 'project name',
-  } satisfies PropertyMetadata<z.ZodString>,
-  packageName: {
-    zodType: z.string(),
-    description: 'The package identifier of the mobile app, for example com.company.appname',
-    friendlyName: 'package identifier',
-  } satisfies PropertyMetadata<z.ZodString>,
-  organization: {
-    zodType: z.string(),
-    description: 'The organization or company name',
-    friendlyName: 'organization or company name',
-  } satisfies PropertyMetadata<z.ZodString>,
-  loginHost: {
-    zodType: z.string(),
-    description: 'The Salesforce login host for the mobile app.',
-    friendlyName: 'Salesforce login host',
   } satisfies PropertyMetadata<z.ZodString>,
 } as const satisfies PropertyMetadataCollection;
 
@@ -116,11 +105,8 @@ export const MobileNativeWorkflowState = Annotation.Root({
   templatePropertiesMetadata: Annotation<TemplatePropertiesMetadata>,
   projectName: Annotation<z.infer<typeof WORKFLOW_USER_INPUT_PROPERTIES.projectName.zodType>>,
   projectPath: Annotation<string>,
-  packageName: Annotation<z.infer<typeof WORKFLOW_USER_INPUT_PROPERTIES.packageName.zodType>>,
-  organization: Annotation<z.infer<typeof WORKFLOW_USER_INPUT_PROPERTIES.organization.zodType>>,
   connectedAppClientId: Annotation<string>,
   connectedAppCallbackUri: Annotation<string>,
-  loginHost: Annotation<z.infer<typeof WORKFLOW_USER_INPUT_PROPERTIES.loginHost.zodType>>,
 
   // Build and deployment state
   buildType: Annotation<'debug' | 'release'>,

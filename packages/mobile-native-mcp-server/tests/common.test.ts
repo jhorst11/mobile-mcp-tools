@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import path from 'path';
-import { MOBILE_SDK_TEMPLATES_PATH, TempDirectoryManager } from '../src/common.js';
+import { TempDirectoryManager } from '../src/common.js';
 import { MockFileSystemOperations } from './utils/MockFileSystemProvider.js';
 
 const mockTempDir = path.resolve('/mock/temp/dir');
@@ -20,14 +20,6 @@ describe('Common Module', () => {
     // Create a fresh mock filesystem and manager for each test
     mockFs = new MockFileSystemOperations(mockTempDir);
     manager = new TempDirectoryManager(mockFs);
-  });
-
-  describe('Constants', () => {
-    it('should export MOBILE_SDK_TEMPLATES_PATH', () => {
-      expect(MOBILE_SDK_TEMPLATES_PATH).toBeDefined();
-      expect(typeof MOBILE_SDK_TEMPLATES_PATH).toBe('string');
-      expect(MOBILE_SDK_TEMPLATES_PATH).toContain('templates');
-    });
   });
 
   describe('TempDirectoryManager', () => {
