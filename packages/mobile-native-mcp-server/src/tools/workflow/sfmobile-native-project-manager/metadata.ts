@@ -53,7 +53,11 @@ export const ORCHESTRATOR_TOOL: ToolMetadata<
 > = {
   toolId: 'sfmobile-native-project-manager',
   title: 'Salesforce Mobile Native Project Manager',
-  description: 'Orchestrates the end-to-end workflow for generating Salesforce native mobile apps.',
+  description:
+    'Orchestrates the end-to-end workflow for CREATING NEW Salesforce native mobile apps from scratch. ' +
+    'Use this tool when the user wants to create a new mobile app. ' +
+    'DO NOT use this tool for adding features to existing apps - use sfmobile-native-add-feature instead. ' +
+    'Once you call this tool, continue calling it with the workflowStateData from each response until the workflow completes.',
   inputSchema: ORCHESTRATOR_INPUT_SCHEMA,
   outputSchema: ORCHESTRATOR_OUTPUT_SCHEMA,
 } as const;
