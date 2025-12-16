@@ -1,0 +1,350 @@
+diff --git a/variables.json b/variables.json
+index 97bebfb..14766a8 100644
+--- a/variables.json
++++ b/variables.json
+@@ -48,6 +48,12 @@
+       "type": "string",
+       "required": true,
+       "description": "OAuth callback URL configured in Connected App"
++    },
++    {
++      "name": "salesforceCommunityUrl",
++      "type": "string",
++      "required": true,
++      "description": "Experience Cloud community URL (e.g. https://your-community.force.com)"
+     }
+   ]
+ }
+\ No newline at end of file
+diff --git a/{{projectName}}.xcodeproj/project.pbxproj b/{{projectName}}.xcodeproj/project.pbxproj
+index d96407e..78b59b0 100644
+--- a/{{projectName}}.xcodeproj/project.pbxproj
++++ b/{{projectName}}.xcodeproj/project.pbxproj
+@@ -12,6 +12,8 @@
+ 		APP002 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC002 /* SceneDelegate.swift */; };
+ 		APP003 /* InitialViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC003 /* InitialViewController.swift */; };
+ 		APP004 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC004 /* main.swift */; };
++		APP005 /* NativeLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC005 /* NativeLoginView.swift */; };
++		APP006 /* NativeLoginViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = SRC006 /* NativeLoginViewFactory.swift */; };
+ 		C255FEB02EE8B1E8001E31A8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C255FEAF2EE8B1E4001E31A8 /* ContentView.swift */; };
+ 		RES001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = RES001REF /* Assets.xcassets */; };
+ 		RES002 /* bootconfig.plist in Resources */ = {isa = PBXBuildFile; fileRef = RES002REF /* bootconfig.plist */; };
+@@ -31,6 +33,8 @@
+ 		SRC002 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+ 		SRC003 /* InitialViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InitialViewController.swift; sourceTree = "<group>"; };
+ 		SRC004 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
++		SRC005 /* NativeLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLoginView.swift; sourceTree = "<group>"; };
++		SRC006 /* NativeLoginViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLoginViewFactory.swift; sourceTree = "<group>"; };
+ /* End PBXFileReference section */
+ 
+ /* Begin PBXFrameworksBuildPhase section */
+@@ -88,6 +92,8 @@
+ 				SRC002 /* SceneDelegate.swift */,
+ 				SRC003 /* InitialViewController.swift */,
+ 				SRC004 /* main.swift */,
++				SRC005 /* NativeLoginView.swift */,
++				SRC006 /* NativeLoginViewFactory.swift */,
+ 				BRIDGE /* Bridging-Header.h */,
+ 				RES001REF /* Assets.xcassets */,
+ 				RES002REF /* bootconfig.plist */,
+@@ -207,6 +213,8 @@
+ 				APP002 /* SceneDelegate.swift in Sources */,
+ 				C255FEB02EE8B1E8001E31A8 /* ContentView.swift in Sources */,
+ 				APP003 /* InitialViewController.swift in Sources */,
++				APP005 /* NativeLoginView.swift in Sources */,
++				APP006 /* NativeLoginViewFactory.swift in Sources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+ 		};
+diff --git a/{{projectName}}/NativeLoginView.swift b/{{projectName}}/NativeLoginView.swift
+new file mode 100644
+index 0000000..6972a6f
+--- /dev/null
++++ b/{{projectName}}/NativeLoginView.swift
+@@ -0,0 +1,215 @@
++//
++//  NativeLoginView.swift
++//  {{projectName}}
++//
++//  Created by {{organization}}
++//  Copyright (c) 2025-present, salesforce.com, inc. All rights reserved.
++//
++
++import SwiftUI
++import SalesforceSDKCore
++
++struct NativeLoginView: View {
++    @Environment(\.colorScheme) var colorScheme
++    
++    /// The layout type for the user's active identity flow
++    @State private var identityFlowLayoutType = IdentityFlowLayoutType.Login
++    
++    // MARK: User Messaging
++    
++    /// Indicates if the message displayed to the user is informational or an error
++    @State private var isMessageError = false
++    
++    /// A message displayed to the user
++    @State private var messageText = ""
++    
++    // MARK: Common User Interface State
++    
++    /// An option to display indicators when an identity action is in progress
++    @State private var isAuthenticating = false
++    
++    /// The user's entered password
++    @State private var password = ""
++    
++    /// The user's entered username
++    @State private var username = ""
++    
++    // MARK: Layout
++    
++    var body: some View {
++        VStack(spacing: 20) {
++            HStack {
++                // Check Native Login Manager to see if back button should be shown.
++                if (SalesforceManager.shared.nativeLoginManager().shouldShowBackButton()) {
++                    Button {
++                        // Let Native Login Manager do all the work.
++                        SalesforceManager.shared.nativeLoginManager().cancelAuthentication()
++                    } label: {
++                        Image(systemName: "arrowshape.backward.fill")
++                            .resizable()
++                            .frame(width: 30, height: 30, alignment: .topLeading)
++                            .tint(colorScheme == .dark ? .white : .blue)
++                            .opacity(0.5)
++                    }
++                    .frame(width: 30, height: 30, alignment: .topLeading)
++                    .padding(.leading)
++                    
++                } else {
++                    Spacer()
++                }
++                Spacer()
++            }
++            
++            Spacer()
++            
++            Image(systemName: "lock.shield.fill")
++                .imageScale(.large)
++                .foregroundStyle(.blue)
++                .font(.system(size: 60))
++            
++            if isAuthenticating {
++                ProgressView()
++            }
++            
++            if !messageText.isEmpty {
++                Text(messageText)
++                    .font(.body)
++                    .foregroundStyle(isMessageError ? Color.red : Color.blue)
++                    .multilineTextAlignment(.center)
++                    .padding()
++            }
++            
++            // Login layout
++            switch(identityFlowLayoutType) {
++            case .Login:
++                TextField("Username", text: $username)
++                    .loginTextField()
++                
++                SecureField("Password", text: $password)
++                    .loginSecureField()
++                
++                Button {
++                    Task {
++                        messageReset()
++                        isAuthenticating = true
++                        
++                        // Login.
++                        let result = await SalesforceManager.shared.nativeLoginManager()
++                            .login(username: username, password: password)
++                        isAuthenticating = false
++                        
++                        // Act on the response.
++                        unwrapResult(result) {
++                            layoutReset()
++                        }
++                    }
++                } label: {
++                    HStack {
++                        Image(systemName: "lock")
++                        Text("Log In")
++                    }.frame(minWidth: 150)
++                }
++                .buttonStyle(.bordered)
++                .tint(colorScheme == .dark ? .white : .blue)
++                
++                Button("Salesforce Login") {
++                    SalesforceManager.shared.nativeLoginManager().fallbackToWebAuthentication()
++                }
++                .buttonStyle(.bordered)
++                .tint(colorScheme == .dark ? .white : .blue)
++            }
++            
++            Spacer()
++        }
++        .padding()
++        .blur(radius: isAuthenticating ? 2.0 : 0.0)
++    }
++    
++    // MARK: Private User Messaging Utilities
++    
++    /// Sets the error message displayed to the user.
++    private func errorMessage(_ text: String) {
++        messageReset()
++        
++        messageText = text
++        isMessageError = true
++    }
++    
++    /// Resets the message state.
++    private func messageReset() {
++        isMessageError = false
++        messageText = ""
++    }
++    
++    /// Unwraps a native login result to a success outcome or sets an appropriate error user message.
++    /// - Parameters:
++    ///   - result: The native login result
++    ///   - onSuccess: The success outcome
++    private func unwrapResult(
++        _ result: NativeLoginResult,
++        onSuccess: () -> ())
++    {
++        switch result {
++        case .invalidCredentials:
++            errorMessage("Please check your username and password.")
++        case .invalidEmail:
++            errorMessage("Invalid email address.")
++        case .invalidUsername:
++            errorMessage("Username format is incorrect.")
++        case .invalidPassword:
++            errorMessage("Invalid password.")
++        case .unknownError:
++            errorMessage("An unknown error has occurred.")
++        case .success:
++            onSuccess()
++        }
++    }
++    
++    // MARK: Private Navigation Utilities
++    
++    /// Resets to the initial layout.
++    private func layoutReset() {
++        password = ""
++        username = ""
++        
++        navigate(.Login)
++    }
++    
++    /// Navigates to the specified layout.
++    private func navigate(_ identityFlowLayoutType: IdentityFlowLayoutType) {
++        messageReset()
++        self.identityFlowLayoutType = identityFlowLayoutType
++    }
++}
++
++///
++/// Layouts for the available Salesforce identity flows.
++///
++enum IdentityFlowLayoutType {
++    /// A layout for authorization code and credentials flow via username and password
++    case Login
++}
++
++// MARK: Private SwiftUI Utilities
++
++private struct LoginField: ViewModifier {
++    func body(content: Content) -> some View {
++        content
++            .textFieldStyle(.roundedBorder)
++            .disableAutocorrection(true)
++            .autocapitalization(.none)
++    }
++}
++
++extension TextField {
++    func loginTextField() -> some View {
++        modifier(LoginField())
++    }
++}
++
++extension SecureField {
++    func loginSecureField() -> some View {
++        modifier(LoginField())
++    }
++}
++
+diff --git a/{{projectName}}/NativeLoginViewFactory.swift b/{{projectName}}/NativeLoginViewFactory.swift
+new file mode 100644
+index 0000000..1458496
+--- /dev/null
++++ b/{{projectName}}/NativeLoginViewFactory.swift
+@@ -0,0 +1,36 @@
++//
++//  NativeLoginViewFactory.swift
++//  {{projectName}}
++//
++//  Created by {{organization}}
++//  Copyright (c) 2025-present, salesforce.com, inc. All rights reserved.
++//
++
++import Foundation
++import SwiftUI
++import UIKit
++
++class NativeLoginViewFactory: NSObject {
++    
++    static func create() -> UIViewController {
++        return NativeLoginTemplateHostingController(rootView: NativeLoginView())
++    }
++}
++
++class NativeLoginTemplateHostingController<Content>: UIHostingController<Content> where Content : View {
++    
++    override func willMove(toParent parent: UIViewController?) {
++        
++        guard let navigationController = (parent as? UINavigationController) else {
++            return
++        }
++        
++        //
++        // The Salesforce Mobile SDK provided navigation controller displays a
++        // navigation bar that is redundant with the SwiftUI navigation in the
++        // template app, so hide it.
++        //
++        navigationController.setNavigationBarHidden(true, animated: true)
++    }
++}
++
+diff --git a/{{projectName}}/SceneDelegate.swift b/{{projectName}}/SceneDelegate.swift
+index 1bbbe3c..67b9ec5 100644
+--- a/{{projectName}}/SceneDelegate.swift
++++ b/{{projectName}}/SceneDelegate.swift
+@@ -13,6 +13,24 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+         self.window = UIWindow(windowScene: windowScene)
+         self.window?.makeKeyAndVisible()
+         
++        //
++        // Fill in the values below from the connected app that was created for Native Login and
++        // the url of your Experience Cloud community.
++        //
++        let clientId = "{{salesforceConsumerKey}}"
++        let redirectUri = "{{salesforceCallbackUrl}}"
++        let loginUrl = "{{salesforceCommunityUrl}}"
++        
++        // Used to create a View Controller from SwiftUI.
++        let nativeLoginViewController = NativeLoginViewFactory.create()
++        
++        // This line tells the SDK the app intends to use Native Login.
++        SalesforceManager.shared.useNativeLogin(withConsumerKey: clientId,
++                                                callbackUrl: redirectUri,
++                                                communityUrl: loginUrl,
++                                                nativeLoginViewController: nativeLoginViewController,
++                                                scene: scene)
++        
+         // Register for user change notifications
+         AuthHelper.registerBlock(forCurrentUserChangeNotifications: { [weak self] in
+             self?.resetViewState {

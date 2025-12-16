@@ -1,0 +1,20 @@
+{
+  "$schema": "../../schemas/template.schema.json",
+  "name": "ios-native-login",
+  "platform": "ios",
+  "version": "1.0.0",
+  "description": "iOS application with Salesforce Mobile SDK and native login for Experience Cloud. Includes customizable native login UI with username/password authentication.",
+  "tags": [
+    "ios",
+    "swift",
+    "salesforce",
+    "mobile-sdk",
+    "native-login",
+    "experience-cloud"
+  ],
+  "extends": {
+    "template": "ios-mobilesdk",
+    "version": "1.0.0",
+    "patchFile": "layer.patch"
+  }
+}
