@@ -217,6 +217,28 @@ describe('Template Diff Command', () => {
     const output = execSync(`node ${CLI_PATH} template diff --help`, { encoding: 'utf-8' });
     expect(output).toContain('Show the layer.patch diff for a layered template');
   });
+
+  it('should show recursive diffs when --recursive flag is used', () => {
+    const output = execSync(`node ${CLI_PATH} template diff ios-mobilesdk-login --recursive`, {
+      encoding: 'utf-8',
+    });
+    expect(output).toContain('Showing recursive layer patches from:');
+    expect(output).toContain('ios-mobilesdk-login');
+    // Should show diff for ios-mobilesdk-login -> ios-mobilesdk
+    // Note: output includes ANSI color codes, so check for template name within "Template:" line
+    expect(output).toMatch(/Template:.*ios-mobilesdk-login/);
+    expect(output).toMatch(/Based on:.*ios-mobilesdk/);
+    // Should show diff for ios-mobilesdk -> ios-base
+    expect(output).toMatch(/Template:.*ios-mobilesdk/);
+    expect(output).toMatch(/Based on:.*ios-base/);
+  });
+
+  it('should handle base template with --recursive flag', () => {
+    const output = execSync(`node ${CLI_PATH} template diff ios-base --recursive`, {
+      encoding: 'utf-8',
+    });
+    expect(output).toContain('is a base template (no parent)');
+  });
 });
 
 describe('Template Command Group', () => {
