@@ -36,8 +36,9 @@ export const WORKFLOW_TOOL_BASE_INPUT_SCHEMA = z.object({
 });
 
 /**
- * MCP tool invocation data structure used in LangGraph interrupts
- * Contains all information needed for the orchestrator to create tool invocation instructions
+ * MCP tool invocation data structure used for actual MCP tool invocations.
+ * Used by services that invoke MCP tools (e.g., get-input, input-extraction).
+ * For workflow nodes, use NodeGuidanceData instead.
  *
  * @template TWorkflowInputSchema - The full workflow input schema (includes workflowStateData)
  */
@@ -50,6 +51,27 @@ export interface MCPToolInvocationData<TWorkflowInputSchema extends z.ZodObject<
   };
   /** Input parameters for the tool invocation - typed to business logic schema only */
   input: Omit<z.infer<TWorkflowInputSchema>, 'workflowStateData'>;
+}
+
+/**
+ * Node guidance data structure used in LangGraph interrupts
+ * Contains all information needed for the orchestrator to create task instructions directly
+ * This replaces MCPToolInvocationData for nodes that provide guidance directly
+ */
+export interface NodeGuidanceData {
+  /** Unique identifier for the node/task */
+  nodeId: string;
+  /** Direct LLM instructions (was in tool) */
+  taskPrompt: string;
+  /** Input data from workflow state */
+  taskInput: Record<string, unknown>;
+  /** Zod schema for validation */
+  resultSchema: z.ZodObject<z.ZodRawShape>;
+  /** Optional debugging info */
+  metadata?: {
+    nodeName: string;
+    description: string;
+  };
 }
 
 /**

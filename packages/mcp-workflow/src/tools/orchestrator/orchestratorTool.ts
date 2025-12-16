@@ -12,6 +12,7 @@ import { Command } from '@langchain/langgraph';
 import { createWorkflowLogger } from '../../logging/logger.js';
 import { AbstractTool } from '../base/abstractTool.js';
 import {
+  NodeGuidanceData,
   MCPToolInvocationData,
   WORKFLOW_PROPERTY_NAMES,
   WorkflowStateData,
@@ -149,29 +150,55 @@ export class OrchestratorTool extends AbstractTool<OrchestratorToolMetadata> {
     graphState = await compiledWorkflow.getState(threadConfig);
     if (graphState.next.length > 0) {
       // There are more nodes to execute.
-      const mcpToolInvocationData: MCPToolInvocationData<z.ZodObject<z.ZodRawShape>> | undefined =
+      const interruptData:
+        | (NodeGuidanceData | MCPToolInvocationData<z.ZodObject<z.ZodRawShape>>)
+        | undefined =
         '__interrupt__' in result
           ? (
               result.__interrupt__ as Array<{
-                value: MCPToolInvocationData<z.ZodObject<z.ZodRawShape>>;
+                value: NodeGuidanceData | MCPToolInvocationData<z.ZodObject<z.ZodRawShape>>;
               }>
             )[0].value
           : undefined;
 
-      if (!mcpToolInvocationData) {
-        this.logger.error('Workflow completed without expected MCP tool invocation.');
+      if (!interruptData) {
+        this.logger.error('Workflow completed without expected interrupt data.');
         throw new Error('FATAL: Unexpected workflow state without an interrupt');
       }
 
-      this.logger.info('Invoking next MCP tool', {
-        toolName: mcpToolInvocationData.llmMetadata?.name,
+      // Detect whether this is NodeGuidanceData (workflow nodes) or MCPToolInvocationData (services)
+      const isGuidanceData = 'taskPrompt' in interruptData;
+
+      this.logger.debug('Detected interrupt data type', {
+        isGuidanceData,
+        hasTaskPrompt: 'taskPrompt' in interruptData,
+        hasLlmMetadata: 'llmMetadata' in interruptData,
+        interruptDataKeys: Object.keys(interruptData),
       });
 
-      // Create orchestration prompt
-      const orchestrationPrompt = this.createOrchestrationPrompt(
-        mcpToolInvocationData,
-        workflowStateData
-      );
+      let orchestrationPrompt: string;
+      if (isGuidanceData) {
+        const guidanceData = interruptData as NodeGuidanceData;
+        this.logger.info('Invoking next node with guidance', {
+          nodeId: guidanceData.nodeId,
+          hasResultSchema: !!guidanceData.resultSchema,
+        });
+
+        // Create task prompt for guidance-based nodes
+        orchestrationPrompt = this.createTaskPrompt(guidanceData, workflowStateData);
+      } else {
+        const mcpToolInvocationData = interruptData as MCPToolInvocationData<
+          z.ZodObject<z.ZodRawShape>
+        >;
+        this.logger.info('Invoking MCP tool from service', {
+          toolName: mcpToolInvocationData.llmMetadata?.name,
+          hasLlmMetadata: !!mcpToolInvocationData.llmMetadata,
+          hasInputSchema: !!mcpToolInvocationData.llmMetadata?.inputSchema,
+        });
+
+        // Create orchestration prompt for MCP tool invocations (from services)
+        orchestrationPrompt = this.createOrchestrationPrompt(mcpToolInvocationData, workflowStateData);
+      }
 
       // Save the workflow state.
       await this.stateManager.saveCheckpointerState(checkpointer);
@@ -189,12 +216,90 @@ export class OrchestratorTool extends AbstractTool<OrchestratorToolMetadata> {
   }
 
   /**
-   * Create orchestration prompt for LLM with embedded tool invocation data and workflow state
+   * Create task prompt for LLM with guidance data and workflow state
+   */
+  private createTaskPrompt(guidanceData: NodeGuidanceData, workflowStateData: WorkflowStateData): string {
+    // Validate required fields
+    if (!guidanceData.resultSchema) {
+      this.logger.debug('NodeGuidanceData missing resultSchema', { guidanceData });
+      this.logger.error('FATAL: NodeGuidanceData missing required resultSchema field');
+      throw new Error('FATAL: NodeGuidanceData missing required resultSchema field');
+    }
+
+    const resultSchemaJson = JSON.stringify(zodToJsonSchema(guidanceData.resultSchema), null, 2);
+    const taskInputJson = JSON.stringify(guidanceData.taskInput, null, 2);
+    const workflowStateJson = JSON.stringify(workflowStateData, null, 2);
+
+    return `
+# Your Role
+
+You are participating in a workflow orchestration process. The current
+(\`${this.toolMetadata.toolId}\`) MCP server tool is the orchestrator, and is sending
+you instructions on what to do next.
+
+# Your Task
+
+${guidanceData.taskPrompt}
+
+# Task Input Data
+
+\`\`\`json
+${taskInputJson}
+\`\`\`
+
+# Expected Result Schema
+
+Your response must conform to the following JSON schema:
+
+\`\`\`json
+${resultSchemaJson}
+\`\`\`
+
+# Workflow State
+
+\`${WORKFLOW_PROPERTY_NAMES.workflowStateData}\` represents opaque workflow state data that should be
+round-tripped back to the \`${this.toolMetadata.toolId}\` MCP server tool orchestrator at the
+completion of this task, without modification:
+
+\`\`\`json
+${workflowStateJson}
+\`\`\`
+
+Complete the task and return your result in the format specified by the result schema above.
+`;
+  }
+
+  /**
+   * Create orchestration prompt for LLM with embedded tool invocation data and workflow state.
+   * Used when services invoke actual MCP tools (e.g., get-input, input-extraction).
    */
   private createOrchestrationPrompt(
     mcpToolInvocationData: MCPToolInvocationData<z.ZodObject<z.ZodRawShape>>,
     workflowStateData: WorkflowStateData
   ): string {
+    // Validate required fields
+    if (!mcpToolInvocationData.llmMetadata) {
+      this.logger.debug('MCPToolInvocationData missing llmMetadata', { mcpToolInvocationData });
+      this.logger.error('FATAL: MCPToolInvocationData missing required llmMetadata field');
+      throw new Error('FATAL: MCPToolInvocationData missing required llmMetadata field');
+    }
+
+    if (!mcpToolInvocationData.llmMetadata.inputSchema) {
+      this.logger.debug('MCPToolInvocationData missing inputSchema', {
+        llmMetadata: mcpToolInvocationData.llmMetadata,
+      });
+      this.logger.error('FATAL: MCPToolInvocationData missing required inputSchema field');
+      throw new Error('FATAL: MCPToolInvocationData missing required inputSchema field');
+    }
+
+    const inputSchemaJson = JSON.stringify(
+      zodToJsonSchema(mcpToolInvocationData.llmMetadata.inputSchema),
+      null,
+      2
+    );
+    const inputValuesJson = JSON.stringify(mcpToolInvocationData.input, null, 2);
+    const workflowStateJson = JSON.stringify(workflowStateData, null, 2);
+
     return `
 # Your Role
 
@@ -208,13 +313,14 @@ MCP server tool to invoke, along with its input schema and input values.
 Invoke the following MCP server tool:
 
 **MCP Server Tool Name**: ${mcpToolInvocationData.llmMetadata?.name}
+**MCP Server Tool Description**: ${mcpToolInvocationData.llmMetadata?.description}
 **MCP Server Tool Input Schema**:
 \`\`\`json
-${JSON.stringify(zodToJsonSchema(mcpToolInvocationData.llmMetadata?.inputSchema))}
+${inputSchemaJson}
 \`\`\`
 **MCP Server Tool Input Values**:
 \`\`\`json
-${JSON.stringify(mcpToolInvocationData.input)}
+${inputValuesJson}
 \`\`\`
 
 ## Additional Input: \`${WORKFLOW_PROPERTY_NAMES.workflowStateData}\`
@@ -224,7 +330,7 @@ specified in the input schema above, and should be passed to the next MCP server
 invocation, with the following object value:
 
 \`\`\`json
-${JSON.stringify(workflowStateData)}
+${workflowStateJson}
 \`\`\`
 
 This represents opaque workflow state data that should be round-tripped back to the
@@ -236,4 +342,5 @@ The MCP server tool you invoke will respond with its output, along with further
 instructions for continuing the workflow.
 `;
   }
+
 }

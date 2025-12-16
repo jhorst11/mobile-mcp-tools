@@ -9,18 +9,12 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { SFMobileNativeTemplateSelectionTool } from './tools/plan/sfmobile-native-template-selection/tool.js';
-import { SFMobileNativeAddFeatureTemplateSelectionTool } from './tools/plan/sfmobile-native-add-feature-template-selection/tool.js';
-import { SFMobileNativeFeatureIntegrationTool } from './tools/plan/sfmobile-native-feature-integration/tool.js';
 import { UtilsXcodeAddFilesTool } from './tools/utils/utils-xcode-add-files/tool.js';
 
-import { SFMobileNativeDeploymentTool } from './tools/run/sfmobile-native-deployment/tool.js';
 import { SFMobileNativeBuildTool } from './tools/plan/sfmobile-native-build/tool.js';
 import { SFMobileNativeBuildRecoveryTool } from './tools/plan/sfmobile-native-build-recovery/tool.js';
 import { MobileNativeOrchestrator } from './tools/workflow/sfmobile-native-project-manager/tool.js';
 import { MobileNativeAddFeatureOrchestrator } from './tools/workflow/sfmobile-native-add-feature/tool.js';
-import { SFMobileNativeCompletionTool } from './tools/workflow/sfmobile-native-completion/tool.js';
-import { SFMobileNativeFailureTool } from './tools/workflow/sfmobile-native-failure/tool.js';
 import { registerMagiMcpTools } from '@salesforce/workflow-magi';
 
 import packageJson from '../package.json' with { type: 'json' };
@@ -59,15 +53,9 @@ const getInputTool = createSFMobileNativeGetInputTool(server);
 const inputExtractionTool = createSFMobileNativeInputExtractionTool(server);
 const addFeatureGetInputTool = createSFMobileNativeAddFeatureGetInputTool(server);
 const addFeatureInputExtractionTool = createSFMobileNativeAddFeatureInputExtractionTool(server);
-const templateSelectionTool = new SFMobileNativeTemplateSelectionTool(server);
-const addFeatureTemplateSelectionTool = new SFMobileNativeAddFeatureTemplateSelectionTool(server);
-const featureIntegrationTool = new SFMobileNativeFeatureIntegrationTool(server);
 const buildTool = new SFMobileNativeBuildTool(server);
 const buildRecoveryTool = new SFMobileNativeBuildRecoveryTool(server);
-const deploymentTool = new SFMobileNativeDeploymentTool(server);
 const xcodeAddFilesTool = new UtilsXcodeAddFilesTool(server);
-const completionTool = new SFMobileNativeCompletionTool(server);
-const failureTool = new SFMobileNativeFailureTool(server);
 
 // Register Magi tools
 registerMagiMcpTools(server);
@@ -84,15 +72,9 @@ getInputTool.register(readOnlyAnnotations);
 inputExtractionTool.register(readOnlyAnnotations);
 addFeatureGetInputTool.register(readOnlyAnnotations);
 addFeatureInputExtractionTool.register(readOnlyAnnotations);
-templateSelectionTool.register(readOnlyAnnotations);
-addFeatureTemplateSelectionTool.register(readOnlyAnnotations);
-featureIntegrationTool.register(readOnlyAnnotations);
 buildTool.register(readOnlyAnnotations);
 buildRecoveryTool.register(readOnlyAnnotations);
-deploymentTool.register(readOnlyAnnotations);
 xcodeAddFilesTool.register(readOnlyAnnotations);
-completionTool.register(readOnlyAnnotations);
-failureTool.register(readOnlyAnnotations);
 
 // Register prompts
 mobileAppProjectPrompt.register();

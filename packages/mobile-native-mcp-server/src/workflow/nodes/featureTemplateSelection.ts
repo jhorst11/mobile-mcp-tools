@@ -6,24 +6,25 @@
  */
 
 import {
-  AbstractToolNode,
+  AbstractGuidanceNode,
   Logger,
-  MCPToolInvocationData,
-  ToolExecutor,
+  NodeExecutor,
+  NodeGuidanceData,
   createComponentLogger,
 } from '@salesforce/magen-mcp-workflow';
 import { ADD_FEATURE_TEMPLATE_SELECTION_TOOL } from '../../tools/plan/sfmobile-native-add-feature-template-selection/metadata.js';
 import { AddFeatureState } from '../add-feature-metadata.js';
+import dedent from 'dedent';
 
 /**
  * Selects the most appropriate feature template based on the user's feature description.
- * Uses the add-feature-specific template selection tool that points to the correct orchestrator.
+ * Provides guidance directly to the LLM for template selection.
  */
-export class FeatureTemplateSelectionNode extends AbstractToolNode<AddFeatureState> {
+export class FeatureTemplateSelectionNode extends AbstractGuidanceNode<AddFeatureState> {
   protected readonly logger: Logger;
 
-  constructor(toolExecutor?: ToolExecutor, logger?: Logger) {
-    super('selectFeatureTemplate', toolExecutor, logger);
+  constructor(nodeExecutor?: NodeExecutor, logger?: Logger) {
+    super('selectFeatureTemplate', nodeExecutor, logger);
     this.logger = logger ?? createComponentLogger('FeatureTemplateSelectionNode');
   }
 
@@ -50,25 +51,24 @@ export class FeatureTemplateSelectionNode extends AbstractToolNode<AddFeatureSta
       };
     }
 
-    // Invoke the add-feature-specific template selection tool
-    const toolInvocationData: MCPToolInvocationData<
-      typeof ADD_FEATURE_TEMPLATE_SELECTION_TOOL.inputSchema
-    > = {
-      llmMetadata: {
-        name: ADD_FEATURE_TEMPLATE_SELECTION_TOOL.toolId,
-        description: ADD_FEATURE_TEMPLATE_SELECTION_TOOL.description,
-        inputSchema: ADD_FEATURE_TEMPLATE_SELECTION_TOOL.inputSchema,
-      },
-      input: {
+    const guidanceData: NodeGuidanceData = {
+      nodeId: 'selectFeatureTemplate',
+      taskPrompt: this.generateTemplateSelectionGuidance(state),
+      taskInput: {
         platform: state.platform,
         templateOptions: state.featureTemplateOptions,
       },
+      resultSchema: ADD_FEATURE_TEMPLATE_SELECTION_TOOL.resultSchema,
+      metadata: {
+        nodeName: this.name,
+        description: ADD_FEATURE_TEMPLATE_SELECTION_TOOL.description,
+      },
     };
 
-    const validatedResult = this.executeToolWithLogging(
-      toolInvocationData,
-      ADD_FEATURE_TEMPLATE_SELECTION_TOOL.resultSchema
-    );
+    const validatedResult =
+      this.executeWithGuidance<typeof ADD_FEATURE_TEMPLATE_SELECTION_TOOL.resultSchema>(
+        guidanceData
+      );
 
     if (!validatedResult.selectedTemplate) {
       return {
@@ -82,4 +82,34 @@ export class FeatureTemplateSelectionNode extends AbstractToolNode<AddFeatureSta
       selectedFeatureTemplate: validatedResult.selectedTemplate,
     };
   };
+
+  private generateTemplateSelectionGuidance(state: AddFeatureState): string {
+    const templateOptionsJson = JSON.stringify(state.featureTemplateOptions, null, 2);
+
+    return dedent`
+      # Feature Template Selection Guidance for ${state.platform}
+
+      ## Task: Select the Best Feature Template
+
+      The following feature template options are available:
+
+      \`\`\`json
+      ${templateOptionsJson}
+      \`\`\`
+
+      Review the available feature templates and choose the template that best matches:
+      - **Platform compatibility**: ${state.platform}
+      - **Feature requirements**: Based on the user's feature description
+      - **Feature capabilities**: What the feature adds to an existing app
+      - **Complexity level**: Appropriate for the integration requirements
+
+      Each template includes:
+      - **path**: The template identifier to use as the selectedTemplate value
+      - **metadata**: Contains descriptive information about the feature template
+      - **extends**: Information about what base template this feature builds upon
+
+      **Important**: These are feature templates (layered templates), not full app templates.
+      They represent incremental features that can be added to existing applications.
+    `;
+  }
 }

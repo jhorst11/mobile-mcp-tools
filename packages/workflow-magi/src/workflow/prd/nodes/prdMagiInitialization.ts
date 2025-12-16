@@ -6,12 +6,15 @@
  */
 
 import { PRDState } from '../metadata.js';
-import { AbstractToolNode, Logger, ToolExecutor } from '@salesforce/magen-mcp-workflow';
+import { BaseNode, Logger, createComponentLogger } from '@salesforce/magen-mcp-workflow';
 import { ensureMagiSddDirectory } from '../../../utils/magiDirectory.js';
 
-export class PRDMagiInitializationNode extends AbstractToolNode<PRDState> {
-  constructor(toolExecutor?: ToolExecutor, logger?: Logger) {
-    super('magiInitialization', toolExecutor, logger);
+export class PRDMagiInitializationNode extends BaseNode<PRDState> {
+  protected readonly logger: Logger;
+
+  constructor(logger?: Logger) {
+    super('magiInitialization');
+    this.logger = logger ?? createComponentLogger('PRDMagiInitializationNode');
   }
 
   execute = (state: PRDState): Partial<PRDState> => {

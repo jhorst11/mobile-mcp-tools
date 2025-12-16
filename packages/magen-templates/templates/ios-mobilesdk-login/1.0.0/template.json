@@ -3,7 +3,7 @@
   "name": "ios-mobilesdk-login",
   "platform": "ios",
   "version": "1.0.0",
-  "description": "Showcases Salesforce Mobile SDK login customization including hiding the gear icon, custom branding, and navigation bar styling",
+  "description": "Showcases Salesforce Mobile SDK login customization including hiding the gear icon, custom branding, and navigation bar styling. Note this does NOT showcase how to add login functionality to the app, only how to customize the login UI. For login functionailty refer to the base app.",
   "tags": [
     "ios",
     "swift",

@@ -7,6 +7,12 @@
 
 export { BaseNode } from './abstractBaseNode.js';
 export { AbstractToolNode } from './abstractToolNode.js';
-export { type ToolExecutor, LangGraphToolExecutor } from './toolExecutor.js';
+export { AbstractGuidanceNode } from './abstractGuidanceNode.js';
+export {
+  type ToolExecutor,
+  LangGraphToolExecutor,
+  type NodeExecutor,
+  LangGraphNodeExecutor,
+} from './toolExecutor.js';
 export * from './getUserInput/index.js';
 export * from './userInputExtraction/index.js';

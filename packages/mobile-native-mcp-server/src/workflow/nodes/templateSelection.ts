@@ -6,20 +6,21 @@
  */
 
 import {
-  AbstractToolNode,
+  AbstractGuidanceNode,
   Logger,
-  MCPToolInvocationData,
-  ToolExecutor,
+  NodeExecutor,
+  NodeGuidanceData,
   createComponentLogger,
 } from '@salesforce/magen-mcp-workflow';
 import { TEMPLATE_SELECTION_TOOL } from '../../tools/plan/sfmobile-native-template-selection/metadata.js';
 import { State, TemplatePropertiesMetadata } from '../metadata.js';
+import dedent from 'dedent';
 
-export class TemplateSelectionNode extends AbstractToolNode<State> {
+export class TemplateSelectionNode extends AbstractGuidanceNode<State> {
   protected readonly logger: Logger;
 
-  constructor(toolExecutor?: ToolExecutor, logger?: Logger) {
-    super('selectTemplate', toolExecutor, logger);
+  constructor(nodeExecutor?: NodeExecutor, logger?: Logger) {
+    super('selectTemplate', nodeExecutor, logger);
     this.logger = logger ?? createComponentLogger('TemplateSelectionNode');
   }
 
@@ -37,21 +38,22 @@ export class TemplateSelectionNode extends AbstractToolNode<State> {
       };
     }
 
-    const toolInvocationData: MCPToolInvocationData<typeof TEMPLATE_SELECTION_TOOL.inputSchema> = {
-      llmMetadata: {
-        name: TEMPLATE_SELECTION_TOOL.toolId,
-        description: TEMPLATE_SELECTION_TOOL.description,
-        inputSchema: TEMPLATE_SELECTION_TOOL.inputSchema,
-      },
-      input: {
+    const guidanceData: NodeGuidanceData = {
+      nodeId: 'selectTemplate',
+      taskPrompt: this.generateTemplateSelectionGuidance(state),
+      taskInput: {
         platform: state.platform,
         templateOptions: state.templateOptions,
       },
+      resultSchema: TEMPLATE_SELECTION_TOOL.resultSchema,
+      metadata: {
+        nodeName: this.name,
+        description: TEMPLATE_SELECTION_TOOL.description,
+      },
     };
 
-    const validatedResult = this.executeToolWithLogging(
-      toolInvocationData,
-      TEMPLATE_SELECTION_TOOL.resultSchema
+    const validatedResult = this.executeWithGuidance<typeof TEMPLATE_SELECTION_TOOL.resultSchema>(
+      guidanceData
     );
 
     if (!validatedResult.selectedTemplate) {
@@ -127,5 +129,31 @@ export class TemplateSelectionNode extends AbstractToolNode<State> {
       );
       return undefined;
     }
+  }
+
+  private generateTemplateSelectionGuidance(state: State): string {
+    const templateOptionsJson = JSON.stringify(state.templateOptions, null, 2);
+
+    return dedent`
+      # Template Selection Guidance for ${state.platform}
+
+      ## Task: Select the Best Template
+
+      The following template options are available:
+
+      \`\`\`json
+      ${templateOptionsJson}
+      \`\`\`
+
+      Review the available templates and choose the template that best matches:
+      - **Platform compatibility**: ${state.platform}
+      - **Feature requirements**: General mobile app needs
+      - **Use case alignment**: Record management, data display, CRUD operations
+      - **Complexity level**: Appropriate for the user's requirements
+
+      Each template includes:
+      - **path**: The template identifier to use as the selectedTemplate value
+      - **metadata**: Contains descriptive information about the template
+    `;
   }
 }

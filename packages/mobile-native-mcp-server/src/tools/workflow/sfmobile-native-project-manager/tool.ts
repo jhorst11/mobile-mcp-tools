@@ -27,8 +27,7 @@ export class MobileNativeOrchestrator extends OrchestratorTool {
     const config: OrchestratorConfig = {
       toolId: ORCHESTRATOR_TOOL.toolId,
       title: 'Salesforce Mobile Native Project Manager',
-      description:
-        'Orchestrates the end-to-end workflow for generating Salesforce native mobile apps.',
+      description: 'Build new Salesforce native mobile apps from scratch.',
       workflow: mobileNativeWorkflow,
       stateManager: new WorkflowStateManager({
         environment,

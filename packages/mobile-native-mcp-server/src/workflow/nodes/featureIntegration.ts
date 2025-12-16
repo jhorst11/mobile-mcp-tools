@@ -6,24 +6,25 @@
  */
 
 import {
-  AbstractToolNode,
+  AbstractGuidanceNode,
   Logger,
-  MCPToolInvocationData,
-  ToolExecutor,
+  NodeExecutor,
+  NodeGuidanceData,
   createComponentLogger,
 } from '@salesforce/magen-mcp-workflow';
 import { AddFeatureState } from '../add-feature-metadata.js';
 import { FEATURE_INTEGRATION_TOOL } from '../../tools/plan/sfmobile-native-feature-integration/metadata.js';
+import dedent from 'dedent';
 
 /**
- * Integrates the feature into the existing project by invoking the feature integration tool.
- * The tool provides comprehensive guidance to the LLM on how to apply the patch changes.
+ * Integrates the feature into the existing project by providing guidance to the LLM.
+ * The guidance explains how to apply the patch changes.
  */
-export class FeatureIntegrationNode extends AbstractToolNode<AddFeatureState> {
+export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState> {
   protected readonly logger: Logger;
 
-  constructor(toolExecutor?: ToolExecutor, logger?: Logger) {
-    super('integrateFeature', toolExecutor, logger);
+  constructor(nodeExecutor?: NodeExecutor, logger?: Logger) {
+    super('integrateFeature', nodeExecutor, logger);
     this.logger = logger ?? createComponentLogger('FeatureIntegrationNode');
   }
 
@@ -37,14 +38,10 @@ export class FeatureIntegrationNode extends AbstractToolNode<AddFeatureState> {
       };
     }
 
-    // Invoke the feature integration tool to guide the LLM through applying the changes
-    const toolInvocationData: MCPToolInvocationData<typeof FEATURE_INTEGRATION_TOOL.inputSchema> = {
-      llmMetadata: {
-        name: FEATURE_INTEGRATION_TOOL.toolId,
-        description: FEATURE_INTEGRATION_TOOL.description,
-        inputSchema: FEATURE_INTEGRATION_TOOL.inputSchema,
-      },
-      input: {
+    const guidanceData: NodeGuidanceData = {
+      nodeId: 'integrateFeature',
+      taskPrompt: this.generateIntegrationGuidance(state),
+      taskInput: {
         platform: state.platform,
         projectPath: state.projectPath,
         projectName: state.projectName,
@@ -53,11 +50,15 @@ export class FeatureIntegrationNode extends AbstractToolNode<AddFeatureState> {
         patchContent: state.patchContent,
         patchAnalysis: state.patchAnalysis,
       },
+      resultSchema: FEATURE_INTEGRATION_TOOL.resultSchema,
+      metadata: {
+        nodeName: this.name,
+        description: FEATURE_INTEGRATION_TOOL.description,
+      },
     };
 
-    const validatedResult = this.executeToolWithLogging(
-      toolInvocationData,
-      FEATURE_INTEGRATION_TOOL.resultSchema
+    const validatedResult = this.executeWithGuidance<typeof FEATURE_INTEGRATION_TOOL.resultSchema>(
+      guidanceData
     );
 
     // Check if integration was completed
@@ -81,4 +82,81 @@ export class FeatureIntegrationNode extends AbstractToolNode<AddFeatureState> {
       integrationErrorMessages: [],
     };
   };
+
+  private generateIntegrationGuidance(state: AddFeatureState): string {
+    return dedent`
+      # Feature Integration Task
+
+      ## Project Context
+      - **Project**: ${state.projectName}
+      - **Platform**: ${state.platform}
+      - **Location**: ${state.projectPath}
+      - **Feature Template**: ${state.selectedFeatureTemplate}
+      - **Feature Description**: ${state.featureDescription}
+
+      ## Patch Analysis
+      ${state.patchAnalysis}
+
+      ## Your Task: Apply the Feature Changes
+
+      You need to apply the changes from the feature template patch to the existing project.
+      The patch shows the minimal diff needed to add this feature.
+
+      ### Integration Steps
+
+      1. **Review the patch** (provided below) to understand what changes are needed
+      
+      2. **Apply changes systematically**:
+         - **New files**: Create them with the content shown in the patch
+         - **Modified files**: Apply the diffs to existing files
+         - **Deleted files**: Remove them (if any)
+
+      3. **Platform-specific considerations** (${state.platform}):
+      ${
+        state.platform === 'iOS'
+          ? dedent`
+         - **Xcode project (.pbxproj)**: Carefully apply file reference additions
+         - **Info.plist**: Merge any new keys/values
+         - **Podfile**: Add any new dependencies
+         - **Swift files**: Ensure proper imports and module references
+         - **Assets**: Copy any new assets to the project
+      `
+          : dedent`
+         - **build.gradle**: Merge dependency changes
+         - **AndroidManifest.xml**: Merge permissions and configuration
+         - **Java/Kotlin files**: Ensure proper package structure
+         - **Resources**: Copy any new resources to appropriate directories
+      `
+      }
+
+      4. **Verify your work**:
+         - All new files are in correct locations
+         - Dependencies are properly declared
+         - Imports/references are correct
+         - No syntax errors introduced
+
+      ## Complete Patch File
+
+      Here is the complete patch showing all changes needed:
+
+      \`\`\`diff
+      ${state.patchContent}
+      \`\`\`
+
+      ## Expected Result Format
+
+      After you've applied all the changes, respond with:
+      
+      \`\`\`json
+      {
+        "integrationComplete": true,
+        "filesModified": ["list", "of", "files", "you", "modified"],
+        "notes": "Brief summary of what you did"
+      }
+      \`\`\`
+
+      **Important**: Do not proceed until you have actually applied all the changes to the project files.
+      The next step in the workflow will build the project to verify your changes.
+    `;
+  }
 }

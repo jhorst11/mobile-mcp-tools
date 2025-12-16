@@ -6,35 +6,65 @@
  */
 
 import {
-  AbstractToolNode,
+  AbstractGuidanceNode,
   Logger,
-  MCPToolInvocationData,
-  ToolExecutor,
+  NodeExecutor,
+  NodeGuidanceData,
 } from '@salesforce/magen-mcp-workflow';
 import { PRDState } from '../metadata.js';
 import { PRD_FAILURE_TOOL } from '../../../tools/prd/magi-prd-failure/metadata.js';
 
-export class PRDFailureNode extends AbstractToolNode<PRDState> {
-  constructor(toolExecutor?: ToolExecutor, logger?: Logger) {
-    super('prdFailure', toolExecutor, logger);
+export class PRDFailureNode extends AbstractGuidanceNode<PRDState> {
+  constructor(nodeExecutor?: NodeExecutor, logger?: Logger) {
+    super('prdFailure', nodeExecutor, logger);
   }
 
   execute = (state: PRDState): Partial<PRDState> => {
-    const toolInvocationData: MCPToolInvocationData<typeof PRD_FAILURE_TOOL.inputSchema> = {
-      llmMetadata: {
-        name: PRD_FAILURE_TOOL.toolId,
-        description: PRD_FAILURE_TOOL.description,
-        inputSchema: PRD_FAILURE_TOOL.inputSchema,
-      },
-      input: {
+    const guidanceData: NodeGuidanceData = {
+      nodeId: 'prdFailure',
+      taskPrompt: this.generatePRDFailureGuidance(state),
+      taskInput: {
         messages: state.prdWorkflowFatalErrorMessages || [],
+      },
+      resultSchema: PRD_FAILURE_TOOL.resultSchema,
+      metadata: {
+        nodeName: this.name,
+        description: PRD_FAILURE_TOOL.description,
       },
     };
 
-    const validatedResult = this.executeToolWithLogging(
-      toolInvocationData,
-      PRD_FAILURE_TOOL.resultSchema
+    const validatedResult = this.executeWithGuidance<typeof PRD_FAILURE_TOOL.resultSchema>(
+      guidanceData
     );
     return validatedResult;
   };
+
+  private generatePRDFailureGuidance(state: PRDState): string {
+    return `
+# ROLE
+You are the tool that describes a failure of the PRD generation workflow to the user.
+
+# TASK
+Your task is to describe the failure of the PRD generation workflow to the user, along with supporting
+evidence in the way of specific failure messages.
+
+# CONTEXT
+The following is the list of failure messages associated with the PRD generation workflow failure:
+
+${this.makeFailureMessageList(state.prdWorkflowFatalErrorMessages || [])}
+
+# INSTRUCTIONS
+1. Describe the failure of the PRD generation workflow to the user, along with supporting
+   evidence in the way of specific failure messages.
+2. Do not add any extra conversation or pleasantries. Just describe the failure.
+3. **NOTE:** These failures are non-recoverable. You should not spend time trying to fix
+   them with the user. Simply describe and explain the failure(s) to the user, and advise them
+   to fix the issues.
+4. Continue with the completion of the workflow, based on the instructions below.
+    `;
+  }
+
+  private makeFailureMessageList(messages: string[]): string {
+    return messages.map(message => `- ${message}`).join('\n');
+  }
 }
