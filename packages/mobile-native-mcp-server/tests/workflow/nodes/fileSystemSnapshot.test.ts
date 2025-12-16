@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { FileSystemSnapshotNode } from '../../../src/workflow/nodes/fileSystemSnapshot.js';
+import { FileSystemSnapshotNode } from '../../../src/workflow/nodes/add-feature/fileSystemSnapshot.js';
 import { AddFeatureState } from '../../../src/workflow/add-feature-metadata.js';
 import * as fs from 'fs';
 import * as path from 'path';

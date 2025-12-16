@@ -11,29 +11,29 @@ import {
   AddFeatureState,
   ADD_FEATURE_USER_INPUT_PROPERTIES,
 } from './add-feature-metadata.js';
-import { ProjectValidationNode } from './nodes/projectValidation.js';
-import { FeatureTemplateFetchNode } from './nodes/featureTemplateFetch.js';
-import { FeatureTemplateSelectionNode } from './nodes/featureTemplateSelection.js';
-import { FeatureTemplatePropertiesExtractionNode } from './nodes/featureTemplatePropertiesExtraction.js';
-import { CheckExistingAppConfigurationNode } from './nodes/checkExistingAppConfiguration.js';
-import { FeatureTemplatePropertiesUserInputNode } from './nodes/featureTemplatePropertiesUserInput.js';
-import { FeatureTemplatePropertiesExtractionFromInputNode } from './nodes/featureTemplatePropertiesExtractionFromInput.js';
-import { CheckFeatureTemplatePropertiesFulfilledRouter } from './nodes/checkFeatureTemplatePropertiesFulfilledRouter.js';
-import { PatchInspectionNode } from './nodes/patchInspection.js';
-import { FileSystemSnapshotNode } from './nodes/fileSystemSnapshot.js';
-import { FeatureIntegrationNode } from './nodes/featureIntegration.js';
-import { FileSystemDiffNode } from './nodes/fileSystemDiff.js';
-import { XcodeProjectSyncNode } from './nodes/xcodeProjectSync.js';
-import { PodInstallNode } from './nodes/podInstall.js';
+import { ProjectValidationNode } from './nodes/add-feature/projectValidation.js';
+import { FeatureTemplateFetchNode } from './nodes/add-feature/featureTemplateFetch.js';
+import { FeatureTemplateSelectionNode } from './nodes/add-feature/featureTemplateSelection.js';
+import { FeatureTemplatePropertiesExtractionNode } from './nodes/add-feature/featureTemplatePropertiesExtraction.js';
+import { CheckExistingAppConfigurationNode } from './nodes/add-feature/checkExistingAppConfiguration.js';
+import { FeatureTemplatePropertiesUserInputNode } from './nodes/add-feature/featureTemplatePropertiesUserInput.js';
+import { FeatureTemplatePropertiesExtractionFromInputNode } from './nodes/add-feature/featureTemplatePropertiesExtractionFromInput.js';
+import { CheckFeatureTemplatePropertiesFulfilledRouter } from './nodes/add-feature/checkFeatureTemplatePropertiesFulfilledRouter.js';
+import { PatchInspectionNode } from './nodes/add-feature/patchInspection.js';
+import { FileSystemSnapshotNode } from './nodes/add-feature/fileSystemSnapshot.js';
+import { FeatureIntegrationNode } from './nodes/add-feature/featureIntegration.js';
+import { FileSystemDiffNode } from './nodes/add-feature/fileSystemDiff.js';
+import { XcodeProjectSyncNode } from './nodes/add-feature/xcodeProjectSync.js';
+import { PodInstallNode } from './nodes/add-feature/podInstall.js';
 import { BuildValidationNode } from './nodes/buildValidation.js';
 import { BuildRecoveryNode } from './nodes/buildRecovery.js';
 import { DeploymentNode } from './nodes/deploymentNode.js';
 import { CompletionNode } from './nodes/completionNode.js';
 import { FailureNode } from './nodes/failureNode.js';
-import { CheckProjectValidRouter } from './nodes/checkProjectValidRouter.js';
-import { CheckFeatureIntegrationRouter } from './nodes/checkFeatureIntegrationRouter.js';
-import { CheckPodInstallRouter } from './nodes/checkPodInstallRouter.js';
-import { CheckAddFeatureBuildSuccessfulRouter } from './nodes/checkAddFeatureBuildSuccessfulRouter.js';
+import { CheckProjectValidRouter } from './nodes/add-feature/checkProjectValidRouter.js';
+import { CheckFeatureIntegrationRouter } from './nodes/add-feature/checkFeatureIntegrationRouter.js';
+import { CheckPodInstallRouter } from './nodes/add-feature/checkPodInstallRouter.js';
+import { CheckAddFeatureBuildSuccessfulRouter } from './nodes/add-feature/checkAddFeatureBuildSuccessfulRouter.js';
 import {
   createGetUserInputNode,
   createUserInputExtractionNode,

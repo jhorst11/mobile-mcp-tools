@@ -6,11 +6,11 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { FileSystemDiffNode } from '../../../src/workflow/nodes/fileSystemDiff.js';
+import { FileSystemDiffNode } from '../../../src/workflow/nodes/add-feature/fileSystemDiff.js';
 import {
   FileSystemSnapshotNode,
   FileSnapshot,
-} from '../../../src/workflow/nodes/fileSystemSnapshot.js';
+} from '../../../src/workflow/nodes/add-feature/fileSystemSnapshot.js';
 import { AddFeatureState } from '../../../src/workflow/add-feature-metadata.js';
 import * as fs from 'fs';
 import * as path from 'path';

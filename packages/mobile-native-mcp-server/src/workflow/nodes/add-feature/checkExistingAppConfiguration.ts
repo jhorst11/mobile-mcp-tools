@@ -12,7 +12,7 @@ import {
   NodeGuidanceData,
   createComponentLogger,
 } from '@salesforce/magen-mcp-workflow';
-import { AddFeatureState } from '../add-feature-metadata.js';
+import { AddFeatureState } from '../../add-feature-metadata.js';
 import dedent from 'dedent';
 import z from 'zod';
 

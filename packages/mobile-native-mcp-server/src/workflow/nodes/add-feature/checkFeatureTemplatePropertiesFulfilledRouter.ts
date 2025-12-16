@@ -5,7 +5,7 @@
  * For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/MIT
  */
 
-import { AddFeatureState } from '../add-feature-metadata.js';
+import { AddFeatureState } from '../../add-feature-metadata.js';
 
 /**
  * Conditional router to check whether all required template properties have been collected.

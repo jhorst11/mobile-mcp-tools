@@ -12,8 +12,8 @@ import {
   NodeGuidanceData,
   createComponentLogger,
 } from '@salesforce/magen-mcp-workflow';
-import { ADD_FEATURE_TEMPLATE_SELECTION_TOOL } from '../../tools/plan/sfmobile-native-add-feature-template-selection/metadata.js';
-import { AddFeatureState } from '../add-feature-metadata.js';
+import { ADD_FEATURE_TEMPLATE_SELECTION_TOOL } from '../../../tools/plan/sfmobile-native-add-feature-template-selection/metadata.js';
+import { AddFeatureState } from '../../add-feature-metadata.js';
 import dedent from 'dedent';
 
 /**

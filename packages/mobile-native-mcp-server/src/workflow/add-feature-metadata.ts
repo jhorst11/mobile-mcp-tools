@@ -10,7 +10,7 @@ import z from 'zod';
 import { PLATFORM_ENUM, TemplateListOutput } from '../common/schemas.js';
 import { PropertyMetadata, PropertyMetadataCollection } from '@salesforce/magen-mcp-workflow';
 import { TemplatePropertiesMetadata } from './metadata.js';
-import { FileSnapshot } from './nodes/fileSystemSnapshot.js';
+import { FileSnapshot } from './nodes/add-feature/fileSystemSnapshot.js';
 
 /**
  * Definition of user input properties required by the add-feature workflow.

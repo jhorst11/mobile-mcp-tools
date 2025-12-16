@@ -9,8 +9,8 @@ import {
   createUserInputExtractionNode,
   PropertyMetadataCollection,
 } from '@salesforce/magen-mcp-workflow';
-import { AddFeatureState } from '../add-feature-metadata.js';
-import { SFMOBILE_NATIVE_ADD_FEATURE_INPUT_EXTRACTION_TOOL_ID } from '../../tools/utils/sfmobile-native-add-feature-input-extraction/metadata.js';
+import { AddFeatureState } from '../../add-feature-metadata.js';
+import { SFMOBILE_NATIVE_ADD_FEATURE_INPUT_EXTRACTION_TOOL_ID } from '../../../tools/utils/sfmobile-native-add-feature-input-extraction/metadata.js';
 import z from 'zod';
 
 /**

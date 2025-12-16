@@ -12,8 +12,8 @@ import {
   NodeGuidanceData,
   createComponentLogger,
 } from '@salesforce/magen-mcp-workflow';
-import { AddFeatureState } from '../add-feature-metadata.js';
-import { FEATURE_INTEGRATION_TOOL } from '../../tools/plan/sfmobile-native-feature-integration/metadata.js';
+import { AddFeatureState } from '../../add-feature-metadata.js';
+import { FEATURE_INTEGRATION_TOOL } from '../../../tools/plan/sfmobile-native-feature-integration/metadata.js';
 import dedent from 'dedent';
 
 /**

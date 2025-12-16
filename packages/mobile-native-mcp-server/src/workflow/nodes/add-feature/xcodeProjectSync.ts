@@ -6,8 +6,8 @@
  */
 
 import { BaseNode, createComponentLogger, Logger } from '@salesforce/magen-mcp-workflow';
-import { AddFeatureState } from '../add-feature-metadata.js';
-import { XcodeProjectManagementService } from '../../services/xcodeProjectManagementService.js';
+import { AddFeatureState } from '../../add-feature-metadata.js';
+import { XcodeProjectManagementService } from '../../../services/xcodeProjectManagementService.js';
 
 /**
  * Automatically synchronizes the Xcode project file with the actual file system state.

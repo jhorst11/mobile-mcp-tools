@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { XcodeProjectSyncNode } from '../../../src/workflow/nodes/xcodeProjectSync.js';
+import { XcodeProjectSyncNode } from '../../../src/workflow/nodes/add-feature/xcodeProjectSync.js';
 import { XcodeProjectManagementService } from '../../../src/services/xcodeProjectManagementService.js';
 import { AddFeatureState } from '../../../src/workflow/add-feature-metadata.js';
 

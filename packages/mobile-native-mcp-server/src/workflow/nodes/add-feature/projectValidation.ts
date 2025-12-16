@@ -6,7 +6,7 @@
  */
 
 import { BaseNode, createComponentLogger, Logger } from '@salesforce/magen-mcp-workflow';
-import { AddFeatureState } from '../add-feature-metadata.js';
+import { AddFeatureState } from '../../add-feature-metadata.js';
 import { existsSync, readdirSync, statSync } from 'fs';
 import { join, basename } from 'path';
 

@@ -6,8 +6,8 @@
  */
 
 import { BaseNode, createComponentLogger, Logger } from '@salesforce/magen-mcp-workflow';
-import { AddFeatureState } from '../add-feature-metadata.js';
-import { TEMPLATE_LIST_SCHEMA, TemplateListOutput } from '../../common/schemas.js';
+import { AddFeatureState } from '../../add-feature-metadata.js';
+import { TEMPLATE_LIST_SCHEMA, TemplateListOutput } from '../../../common/schemas.js';
 import { listTemplates, type TemplateDescriptor } from '@salesforce/magen-templates';
 
 /**

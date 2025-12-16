@@ -6,9 +6,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { FileSystemSnapshotNode } from '../../src/workflow/nodes/fileSystemSnapshot.js';
-import { FileSystemDiffNode } from '../../src/workflow/nodes/fileSystemDiff.js';
-import { XcodeProjectSyncNode } from '../../src/workflow/nodes/xcodeProjectSync.js';
+import { FileSystemSnapshotNode } from '../../src/workflow/nodes/add-feature/fileSystemSnapshot.js';
+import { FileSystemDiffNode } from '../../src/workflow/nodes/add-feature/fileSystemDiff.js';
+import { XcodeProjectSyncNode } from '../../src/workflow/nodes/add-feature/xcodeProjectSync.js';
 import { XcodeProjectManagementService } from '../../src/services/xcodeProjectManagementService.js';
 import { AddFeatureState } from '../../src/workflow/add-feature-metadata.js';
 import * as fs from 'fs';

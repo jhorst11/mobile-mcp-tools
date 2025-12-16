@@ -339,12 +339,17 @@ export class XcodeProjectManagementService {
             # Add file to the group with just the filename (or appropriate relative path)
             file_ref = target_group.new_file(path_for_group)
             
-            # Add to build phase if it's a source file
+            # Determine the appropriate build phase based on file extension
             file_ext = File.extname(file_path).downcase
             source_extensions = ['.swift', '.m', '.mm', '.c', '.cpp', '.cc', '.cxx', '.metal']
+            resource_extensions = ['.plist', '.xcassets', '.storyboard', '.xib', '.strings', '.stringsdict', '.json', '.xml', '.png', '.jpg', '.jpeg', '.gif', '.pdf', '.mp3', '.wav', '.mp4', '.mov']
             
             if source_extensions.include?(file_ext)
+              # Add to Sources build phase
               target.source_build_phase.add_file_reference(file_ref)
+            elsif resource_extensions.include?(file_ext)
+              # Add to Resources build phase
+              target.resources_build_phase.add_file_reference(file_ref)
             end
             
             files_added << File.basename(file_path)
