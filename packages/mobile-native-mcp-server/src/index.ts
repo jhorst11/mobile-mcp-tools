@@ -53,6 +53,10 @@ const getInputTool = createSFMobileNativeGetInputTool(server);
 const inputExtractionTool = createSFMobileNativeInputExtractionTool(server);
 const addFeatureGetInputTool = createSFMobileNativeAddFeatureGetInputTool(server);
 const addFeatureInputExtractionTool = createSFMobileNativeAddFeatureInputExtractionTool(server);
+// Build tool defaults to add-feature orchestrator (used in add-feature workflow)
+// Note: The main workflow also uses this tool, but the orchestrator ID only affects
+// the guidance prompt when the tool is called directly by LLM. Since both workflows
+// use BuildValidationService which handles the tool execution, this should work for both.
 const buildTool = new SFMobileNativeBuildTool(server);
 const buildRecoveryTool = new SFMobileNativeBuildRecoveryTool(server);
 const xcodeAddFilesTool = new UtilsXcodeAddFilesTool(server);

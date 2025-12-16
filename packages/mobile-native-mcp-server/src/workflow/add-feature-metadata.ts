@@ -55,6 +55,8 @@ export const AddFeatureWorkflowState = Annotation.Root({
   // Feature integration state
   integrationSuccessful: Annotation<boolean>,
   integrationErrorMessages: Annotation<string[]>,
+  filesAdded: Annotation<string[]>,
+  podfileModified: Annotation<boolean>,
 
   // Build and deployment state (reusing from main workflow)
   buildType: Annotation<'debug' | 'release'>,

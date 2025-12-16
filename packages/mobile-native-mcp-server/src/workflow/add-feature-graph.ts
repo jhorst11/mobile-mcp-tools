@@ -16,6 +16,8 @@ import { FeatureTemplateFetchNode } from './nodes/featureTemplateFetch.js';
 import { FeatureTemplateSelectionNode } from './nodes/featureTemplateSelection.js';
 import { PatchInspectionNode } from './nodes/patchInspection.js';
 import { FeatureIntegrationNode } from './nodes/featureIntegration.js';
+import { XcodeProjectUpdateNode } from './nodes/xcodeProjectUpdate.js';
+import { PodInstallNode } from './nodes/podInstall.js';
 import { BuildValidationNode } from './nodes/buildValidation.js';
 import { BuildRecoveryNode } from './nodes/buildRecovery.js';
 import { DeploymentNode } from './nodes/deploymentNode.js';
@@ -23,6 +25,8 @@ import { CompletionNode } from './nodes/completionNode.js';
 import { FailureNode } from './nodes/failureNode.js';
 import { CheckProjectValidRouter } from './nodes/checkProjectValidRouter.js';
 import { CheckFeatureIntegrationRouter } from './nodes/checkFeatureIntegrationRouter.js';
+import { CheckXcodeUpdateRouter } from './nodes/checkXcodeUpdateRouter.js';
+import { CheckPodInstallRouter } from './nodes/checkPodInstallRouter.js';
 import { CheckAddFeatureBuildSuccessfulRouter } from './nodes/checkAddFeatureBuildSuccessfulRouter.js';
 import {
   createGetUserInputNode,
@@ -52,6 +56,8 @@ const featureTemplateFetchNode = new FeatureTemplateFetchNode();
 const featureTemplateSelectionNode = new FeatureTemplateSelectionNode();
 const patchInspectionNode = new PatchInspectionNode();
 const featureIntegrationNode = new FeatureIntegrationNode();
+const xcodeProjectUpdateNode = new XcodeProjectUpdateNode();
+const podInstallNode = new PodInstallNode();
 const buildValidationNode = new BuildValidationNode();
 const buildRecoveryNode = new BuildRecoveryNode();
 const deploymentNode = new DeploymentNode();
@@ -71,8 +77,13 @@ const checkProjectValidRouter = new CheckProjectValidRouter(
 );
 
 const checkFeatureIntegrationRouter = new CheckFeatureIntegrationRouter(
-  buildValidationNode.name,
+  xcodeProjectUpdateNode.name,
   failureNode.name
+);
+
+const checkPodInstallRouter = new CheckPodInstallRouter(
+  podInstallNode.name,
+  buildValidationNode.name
 );
 
 const checkBuildSuccessfulRouter = new CheckAddFeatureBuildSuccessfulRouter(
@@ -91,9 +102,11 @@ const checkBuildSuccessfulRouter = new CheckAddFeatureBuildSuccessfulRouter(
  * 4. Feature template selection (choose best match)
  * 5. Patch inspection (analyze the feature's layer.patch)
  * 6. Feature integration (apply changes to project)
- * 7. Build validation (ensure project still builds)
- * 8. Deployment (deploy to device/simulator)
- * 9. Completion
+ * 7. Xcode project update (if iOS and files were added)
+ * 8. Pod install (if iOS and Podfile was modified)
+ * 9. Build validation (ensure project still builds)
+ * 10. Deployment (deploy to device/simulator)
+ * 11. Completion
  */
 export const addFeatureWorkflow = new StateGraph(AddFeatureWorkflowState)
   // Add all workflow nodes
@@ -104,6 +117,8 @@ export const addFeatureWorkflow = new StateGraph(AddFeatureWorkflowState)
   .addNode(featureTemplateSelectionNode.name, featureTemplateSelectionNode.execute)
   .addNode(patchInspectionNode.name, patchInspectionNode.execute)
   .addNode(featureIntegrationNode.name, featureIntegrationNode.execute)
+  .addNode(xcodeProjectUpdateNode.name, xcodeProjectUpdateNode.execute)
+  .addNode(podInstallNode.name, podInstallNode.execute)
   .addNode(buildValidationNode.name, buildValidationNode.execute)
   .addNode(buildRecoveryNode.name, buildRecoveryNode.execute)
   .addNode(deploymentNode.name, deploymentNode.execute)
@@ -119,6 +134,13 @@ export const addFeatureWorkflow = new StateGraph(AddFeatureWorkflowState)
   .addEdge(featureTemplateSelectionNode.name, patchInspectionNode.name)
   .addEdge(patchInspectionNode.name, featureIntegrationNode.name)
   .addConditionalEdges(featureIntegrationNode.name, checkFeatureIntegrationRouter.execute)
+  // iOS-specific post-integration steps
+  // xcodeProjectUpdateNode checks internally if it should run (iOS + filesAdded)
+  // After xcodeProjectUpdateNode, check if pod install is needed
+  .addConditionalEdges(xcodeProjectUpdateNode.name, checkPodInstallRouter.execute)
+  // podInstallNode checks internally if it should run (iOS + podfileModified)
+  // After podInstallNode, proceed to build validation
+  .addEdge(podInstallNode.name, buildValidationNode.name)
   // Build validation with recovery loop
   .addConditionalEdges(buildValidationNode.name, checkBuildSuccessfulRouter.execute)
   .addEdge(buildRecoveryNode.name, buildValidationNode.name)

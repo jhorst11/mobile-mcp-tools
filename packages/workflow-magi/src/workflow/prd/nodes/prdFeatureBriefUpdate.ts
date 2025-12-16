@@ -59,9 +59,8 @@ export class PRDFeatureBriefUpdateNode extends AbstractGuidanceNode<PRDState> {
       },
     };
 
-    const validatedResult = this.executeWithGuidance<typeof FEATURE_BRIEF_UPDATE_TOOL.resultSchema>(
-      guidanceData
-    );
+    const validatedResult =
+      this.executeWithGuidance<typeof FEATURE_BRIEF_UPDATE_TOOL.resultSchema>(guidanceData);
 
     // Write the updated feature brief file with draft status
     // The tool should have already included the status section with "draft" status
