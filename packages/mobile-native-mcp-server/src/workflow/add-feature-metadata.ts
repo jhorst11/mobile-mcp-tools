@@ -10,6 +10,7 @@ import z from 'zod';
 import { PLATFORM_ENUM, TemplateListOutput } from '../common/schemas.js';
 import { PropertyMetadata, PropertyMetadataCollection } from '@salesforce/magen-mcp-workflow';
 import { TemplatePropertiesMetadata } from './metadata.js';
+import { FileSnapshot } from './nodes/fileSystemSnapshot.js';
 
 /**
  * Definition of user input properties required by the add-feature workflow.
@@ -62,6 +63,17 @@ export const AddFeatureWorkflowState = Annotation.Root({
   filesAdded: Annotation<string[]>,
   filesRemoved: Annotation<string[]>,
   podfileModified: Annotation<boolean>,
+
+  // File system tracking (for automated Xcode sync)
+  preIntegrationFileSnapshot: Annotation<FileSnapshot>,
+  filesActuallyAdded: Annotation<string[]>,
+  filesActuallyRemoved: Annotation<string[]>,
+  filesActuallyModified: Annotation<string[]>,
+
+  // Xcode project sync state
+  xcodeUpdateSuccessful: Annotation<boolean>,
+  filesAddedToXcode: Annotation<string[]>,
+  filesRemovedFromXcode: Annotation<string[]>,
 
   // Build and deployment state (reusing from main workflow)
   buildType: Annotation<'debug' | 'release'>,

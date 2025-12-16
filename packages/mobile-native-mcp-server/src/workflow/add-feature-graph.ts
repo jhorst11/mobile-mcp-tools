@@ -20,8 +20,10 @@ import { FeatureTemplatePropertiesUserInputNode } from './nodes/featureTemplateP
 import { FeatureTemplatePropertiesExtractionFromInputNode } from './nodes/featureTemplatePropertiesExtractionFromInput.js';
 import { CheckFeatureTemplatePropertiesFulfilledRouter } from './nodes/checkFeatureTemplatePropertiesFulfilledRouter.js';
 import { PatchInspectionNode } from './nodes/patchInspection.js';
+import { FileSystemSnapshotNode } from './nodes/fileSystemSnapshot.js';
 import { FeatureIntegrationNode } from './nodes/featureIntegration.js';
-import { XcodeProjectUpdateNode } from './nodes/xcodeProjectUpdate.js';
+import { FileSystemDiffNode } from './nodes/fileSystemDiff.js';
+import { XcodeProjectSyncNode } from './nodes/xcodeProjectSync.js';
 import { PodInstallNode } from './nodes/podInstall.js';
 import { BuildValidationNode } from './nodes/buildValidation.js';
 import { BuildRecoveryNode } from './nodes/buildRecovery.js';
@@ -64,8 +66,10 @@ const featureTemplatePropertiesUserInputNode = new FeatureTemplatePropertiesUser
 const featureTemplatePropertiesExtractionFromInputNode =
   new FeatureTemplatePropertiesExtractionFromInputNode();
 const patchInspectionNode = new PatchInspectionNode();
+const fileSystemSnapshotNode = new FileSystemSnapshotNode();
 const featureIntegrationNode = new FeatureIntegrationNode();
-const xcodeProjectUpdateNode = new XcodeProjectUpdateNode();
+const fileSystemDiffNode = new FileSystemDiffNode();
+const xcodeProjectSyncNode = new XcodeProjectSyncNode();
 const podInstallNode = new PodInstallNode();
 const buildValidationNode = new BuildValidationNode();
 const buildRecoveryNode = new BuildRecoveryNode();
@@ -92,7 +96,7 @@ const checkFeatureTemplatePropertiesFulfilledRouter =
   );
 
 const checkFeatureIntegrationRouter = new CheckFeatureIntegrationRouter(
-  xcodeProjectUpdateNode.name,
+  fileSystemDiffNode.name,
   failureNode.name
 );
 
@@ -118,13 +122,15 @@ const checkBuildSuccessfulRouter = new CheckAddFeatureBuildSuccessfulRouter(
  * 5. Template properties extraction (extract variables from selected template)
  * 6. Check existing app configuration (determine which variables are already configured)
  * 7. Collect missing template variables (prompt user for variables not already configured)
- * 8. Patch inspection (analyze the feature's layer.patch)
- * 6. Feature integration (apply changes to project)
- * 7. Xcode project update (if iOS and files were added)
- * 8. Pod install (if iOS and Podfile was modified)
- * 9. Build validation (ensure project still builds)
- * 10. Deployment (deploy to device/simulator)
- * 11. Completion
+ * 8. Patch inspection (analyze the feature's layer.patch for guidance)
+ * 9. File system snapshot (capture pre-integration state)
+ * 10. Feature integration (LLM applies changes to project based on patch guidance)
+ * 11. File system diff (compare before/after to see what actually changed)
+ * 12. Xcode project sync (automated: sync project.pbxproj with actual file system)
+ * 13. Pod install (if iOS and Podfile was modified)
+ * 14. Build validation (ensure project still builds)
+ * 15. Deployment (deploy to device/simulator)
+ * 16. Completion
  */
 export const addFeatureWorkflow = new StateGraph(AddFeatureWorkflowState)
   // Add all workflow nodes
@@ -147,8 +153,10 @@ export const addFeatureWorkflow = new StateGraph(AddFeatureWorkflowState)
     featureTemplatePropertiesExtractionFromInputNode.execute
   )
   .addNode(patchInspectionNode.name, patchInspectionNode.execute)
+  .addNode(fileSystemSnapshotNode.name, fileSystemSnapshotNode.execute)
   .addNode(featureIntegrationNode.name, featureIntegrationNode.execute)
-  .addNode(xcodeProjectUpdateNode.name, xcodeProjectUpdateNode.execute)
+  .addNode(fileSystemDiffNode.name, fileSystemDiffNode.execute)
+  .addNode(xcodeProjectSyncNode.name, xcodeProjectSyncNode.execute)
   .addNode(podInstallNode.name, podInstallNode.execute)
   .addNode(buildValidationNode.name, buildValidationNode.execute)
   .addNode(buildRecoveryNode.name, buildRecoveryNode.execute)
@@ -176,12 +184,13 @@ export const addFeatureWorkflow = new StateGraph(AddFeatureWorkflowState)
     featureTemplatePropertiesExtractionFromInputNode.name,
     checkFeatureTemplatePropertiesFulfilledRouter.execute
   )
-  .addEdge(patchInspectionNode.name, featureIntegrationNode.name)
+  .addEdge(patchInspectionNode.name, fileSystemSnapshotNode.name)
+  .addEdge(fileSystemSnapshotNode.name, featureIntegrationNode.name)
   .addConditionalEdges(featureIntegrationNode.name, checkFeatureIntegrationRouter.execute)
-  // iOS-specific post-integration steps
-  // xcodeProjectUpdateNode checks internally if it should run (iOS + (filesAdded || filesRemoved))
-  // After xcodeProjectUpdateNode, check if pod install is needed
-  .addConditionalEdges(xcodeProjectUpdateNode.name, checkPodInstallRouter.execute)
+  // Post-integration: automatically detect file changes and sync Xcode
+  .addEdge(fileSystemDiffNode.name, xcodeProjectSyncNode.name)
+  // After Xcode sync, check if pod install is needed
+  .addConditionalEdges(xcodeProjectSyncNode.name, checkPodInstallRouter.execute)
   // podInstallNode checks internally if it should run (iOS + podfileModified)
   // After podInstallNode, proceed to build validation
   .addEdge(podInstallNode.name, buildValidationNode.name)

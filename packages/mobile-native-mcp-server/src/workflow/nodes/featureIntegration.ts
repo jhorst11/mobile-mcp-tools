@@ -70,26 +70,35 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
       };
     }
 
-    // Analyze patch to determine if files were added, removed, and if Podfile was modified
-    const { filesAdded, filesRemoved, podfileModified } = this.analyzeIntegrationChanges(
-      state.patchContent,
+    // Check if Podfile was modified (still useful for pod install decision)
+    const podfileModified = this.checkPodfileModified(validatedResult.filesModified || []);
+
+    // Check if LLM manually modified the Xcode project file (they shouldn't!)
+    const xcodeProjectModified = this.checkXcodeProjectModified(
       validatedResult.filesModified || []
     );
+
+    const warnings: string[] = [];
+    if (xcodeProjectModified && state.platform === 'iOS') {
+      const warning =
+        'WARNING: .xcodeproj/project.pbxproj was manually modified. ' +
+        'This may conflict with automatic project sync. ' +
+        'The automatic sync will attempt to reconcile changes.';
+      this.logger.warn(warning);
+      warnings.push(warning);
+    }
 
     this.logger.info('Feature integration completed', {
       projectPath: state.projectPath,
       featureTemplate: state.selectedFeatureTemplate,
       filesModified: validatedResult.filesModified?.length || 0,
-      filesAdded: filesAdded.length,
-      filesRemoved: filesRemoved.length,
       podfileModified,
+      xcodeProjectModified,
     });
 
     return {
       integrationSuccessful: true,
-      integrationErrorMessages: [],
-      filesAdded,
-      filesRemoved,
+      integrationErrorMessages: warnings,
       podfileModified,
     };
   };
@@ -113,6 +122,18 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
       You need to apply the changes from the feature template patch to the existing project.
       The patch shows the minimal diff needed to add this feature.
 
+      ${
+        state.platform === 'iOS'
+          ? dedent`
+      **⚠️ CRITICAL FOR iOS PROJECTS:**
+      - DO NOT manually edit the .xcodeproj/project.pbxproj file
+      - DO NOT add file references to the Xcode project yourself
+      - The system will automatically sync the Xcode project after you create/delete files
+      - Only create, modify, or delete source files - file references are handled automatically
+      `
+          : ''
+      }
+
       ### Integration Steps
 
       1. **Review the patch** (provided below) to understand what changes are needed
@@ -126,11 +147,12 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
       ${
         state.platform === 'iOS'
           ? dedent`
-         - **Xcode project (.pbxproj)**: Carefully apply file reference additions
+         - **DO NOT manually modify .xcodeproj/project.pbxproj**: File references will be added automatically
          - **Info.plist**: Merge any new keys/values
          - **Podfile**: Add any new dependencies
          - **Swift files**: Ensure proper imports and module references
          - **Assets**: Copy any new assets to the project
+         - **IMPORTANT**: Only create/modify source files - the Xcode project file will be updated automatically
       `
           : dedent`
          - **build.gradle**: Merge dependency changes
@@ -172,82 +194,19 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
   }
 
   /**
-   * Analyzes the patch content and filesModified list to determine:
-   * - Which files were added (new files)
-   * - Which files were removed (deleted files)
-   * - Whether Podfile was modified
+   * Checks if Podfile was modified during integration.
+   * This is used to determine if we need to run pod install.
    */
-  private analyzeIntegrationChanges(
-    patchContent: string,
-    filesModified: string[]
-  ): { filesAdded: string[]; filesRemoved: string[]; podfileModified: boolean } {
-    const filesAdded: string[] = [];
-    const filesRemoved: string[] = [];
-    let podfileModified = false;
+  private checkPodfileModified(filesModified: string[]): boolean {
+    return filesModified.some(file => file.endsWith('Podfile'));
+  }
 
-    // Parse patch to find new files and deleted files
-    const lines = patchContent.split('\n');
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-
-      // Check for new file pattern: "--- /dev/null" followed by "+++ b/path"
-      if (line.startsWith('--- /dev/null') && i + 1 < lines.length) {
-        const nextLine = lines[i + 1];
-        const match = nextLine.match(/^\+\+\+ b\/(.+)$/);
-        if (match) {
-          const filePath = match[1];
-          // Only track source files that need to be added to Xcode project
-          const sourceExtensions = [
-            '.swift',
-            '.m',
-            '.mm',
-            '.c',
-            '.cpp',
-            '.h',
-            '.hpp',
-            '.plist',
-            '.json',
-          ];
-          const isSourceFile = sourceExtensions.some(ext => filePath.endsWith(ext));
-          if (isSourceFile && filesModified.includes(filePath)) {
-            filesAdded.push(filePath);
-          }
-        }
-      }
-
-      // Check for deleted file pattern: "--- a/path" followed by "+++ /dev/null"
-      if (line.startsWith('--- a/') && i + 1 < lines.length) {
-        const nextLine = lines[i + 1];
-        if (nextLine.startsWith('+++ /dev/null')) {
-          const match = line.match(/^--- a\/(.+)$/);
-          if (match) {
-            const filePath = match[1];
-            // Track files that need to be removed from Xcode project
-            const sourceExtensions = [
-              '.swift',
-              '.m',
-              '.mm',
-              '.c',
-              '.cpp',
-              '.h',
-              '.hpp',
-              '.plist',
-              '.json',
-            ];
-            const isSourceFile = sourceExtensions.some(ext => filePath.endsWith(ext));
-            if (isSourceFile) {
-              filesRemoved.push(filePath);
-            }
-          }
-        }
-      }
-
-      // Check if Podfile was modified
-      if (line.includes('Podfile') && filesModified.includes('Podfile')) {
-        podfileModified = true;
-      }
-    }
-
-    return { filesAdded, filesRemoved, podfileModified };
+  /**
+   * Checks if the Xcode project file was manually modified during integration.
+   * This should NOT happen - the LLM is instructed not to modify .pbxproj files.
+   * If detected, we log a warning as the automated sync may conflict.
+   */
+  private checkXcodeProjectModified(filesModified: string[]): boolean {
+    return filesModified.some(file => file.includes('.xcodeproj/project.pbxproj'));
   }
 }
