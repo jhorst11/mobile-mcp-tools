@@ -56,9 +56,8 @@ export class DeploymentNode extends AbstractGuidanceNode<State> {
       },
     };
 
-    const validatedResult = this.executeWithGuidance<typeof DEPLOYMENT_TOOL.resultSchema>(
-      guidanceData
-    );
+    const validatedResult =
+      this.executeWithGuidance<typeof DEPLOYMENT_TOOL.resultSchema>(guidanceData);
     return validatedResult;
   };
 
@@ -171,7 +170,11 @@ export class DeploymentNode extends AbstractGuidanceNode<State> {
     `;
   }
 
-  private generateDeploymentCommand(state: State, packageName: string, targetDevice: string): string {
+  private generateDeploymentCommand(
+    state: State,
+    packageName: string,
+    targetDevice: string
+  ): string {
     return state.platform === 'iOS'
       ? `xcrun simctl install "${targetDevice}" "${this.tempDirManager.getAppArtifactPath(state.projectName, 'iOS')}"`
       : `./gradlew install${state.buildType === 'release' ? 'Release' : 'Debug'}`;

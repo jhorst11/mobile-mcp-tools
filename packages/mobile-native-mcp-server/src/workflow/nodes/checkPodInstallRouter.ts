@@ -26,4 +26,3 @@ export class CheckPodInstallRouter {
     return this.buildValidationNodeName;
   };
 }
-

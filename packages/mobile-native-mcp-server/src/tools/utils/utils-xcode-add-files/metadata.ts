@@ -20,7 +20,12 @@ export const XCODE_ADD_FILES_WORKFLOW_INPUT_SCHEMA = WORKFLOW_TOOL_BASE_INPUT_SC
   xcodeProjectPath: z.string().describe('Path to the .xcodeproj file (e.g., "MyApp.xcodeproj")'),
   newFilePaths: z
     .array(z.string())
+    .optional()
     .describe('Array of newly created file paths relative to project root'),
+  filesToRemove: z
+    .array(z.string())
+    .optional()
+    .describe('Array of file paths to remove from the Xcode project (relative to project root)'),
   targetName: z
     .string()
     .optional()
@@ -36,7 +41,8 @@ export const XCODE_ADD_FILES_RESULT_SCHEMA = z.object({
   success: z.boolean().describe('Whether the operation was successful'),
   command: z.string().describe('The Ruby command that was generated'),
   projectPath: z.string().describe('Absolute path to the Xcode project directory'),
-  filePaths: z.array(z.string()).describe('Array of file paths that were processed'),
+  filePaths: z.array(z.string()).optional().describe('Array of file paths that were added'),
+  filesRemoved: z.array(z.string()).optional().describe('Array of file paths that were removed'),
   targetName: z.string().optional().describe('Target name that files were added to'),
   message: z.string().describe('Human-readable status message'),
   error: z.string().optional().describe('Error message if operation failed'),

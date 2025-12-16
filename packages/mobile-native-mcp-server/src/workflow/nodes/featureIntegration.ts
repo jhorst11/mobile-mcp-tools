@@ -57,9 +57,8 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
       },
     };
 
-    const validatedResult = this.executeWithGuidance<typeof FEATURE_INTEGRATION_TOOL.resultSchema>(
-      guidanceData
-    );
+    const validatedResult =
+      this.executeWithGuidance<typeof FEATURE_INTEGRATION_TOOL.resultSchema>(guidanceData);
 
     // Check if integration was completed
     if (!validatedResult.integrationComplete) {
@@ -71,8 +70,8 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
       };
     }
 
-    // Analyze patch to determine if files were added and if Podfile was modified
-    const { filesAdded, podfileModified } = this.analyzeIntegrationChanges(
+    // Analyze patch to determine if files were added, removed, and if Podfile was modified
+    const { filesAdded, filesRemoved, podfileModified } = this.analyzeIntegrationChanges(
       state.patchContent,
       validatedResult.filesModified || []
     );
@@ -82,6 +81,7 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
       featureTemplate: state.selectedFeatureTemplate,
       filesModified: validatedResult.filesModified?.length || 0,
       filesAdded: filesAdded.length,
+      filesRemoved: filesRemoved.length,
       podfileModified,
     });
 
@@ -89,6 +89,7 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
       integrationSuccessful: true,
       integrationErrorMessages: [],
       filesAdded,
+      filesRemoved,
       podfileModified,
     };
   };
@@ -173,20 +174,22 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
   /**
    * Analyzes the patch content and filesModified list to determine:
    * - Which files were added (new files)
+   * - Which files were removed (deleted files)
    * - Whether Podfile was modified
    */
   private analyzeIntegrationChanges(
     patchContent: string,
     filesModified: string[]
-  ): { filesAdded: string[]; podfileModified: boolean } {
+  ): { filesAdded: string[]; filesRemoved: string[]; podfileModified: boolean } {
     const filesAdded: string[] = [];
+    const filesRemoved: string[] = [];
     let podfileModified = false;
 
-    // Parse patch to find new files (lines starting with "+++ b/" after "--- /dev/null")
+    // Parse patch to find new files and deleted files
     const lines = patchContent.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       // Check for new file pattern: "--- /dev/null" followed by "+++ b/path"
       if (line.startsWith('--- /dev/null') && i + 1 < lines.length) {
         const nextLine = lines[i + 1];
@@ -194,10 +197,47 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
         if (match) {
           const filePath = match[1];
           // Only track source files that need to be added to Xcode project
-          const sourceExtensions = ['.swift', '.m', '.mm', '.c', '.cpp', '.h', '.hpp'];
+          const sourceExtensions = [
+            '.swift',
+            '.m',
+            '.mm',
+            '.c',
+            '.cpp',
+            '.h',
+            '.hpp',
+            '.plist',
+            '.json',
+          ];
           const isSourceFile = sourceExtensions.some(ext => filePath.endsWith(ext));
           if (isSourceFile && filesModified.includes(filePath)) {
             filesAdded.push(filePath);
+          }
+        }
+      }
+
+      // Check for deleted file pattern: "--- a/path" followed by "+++ /dev/null"
+      if (line.startsWith('--- a/') && i + 1 < lines.length) {
+        const nextLine = lines[i + 1];
+        if (nextLine.startsWith('+++ /dev/null')) {
+          const match = line.match(/^--- a\/(.+)$/);
+          if (match) {
+            const filePath = match[1];
+            // Track files that need to be removed from Xcode project
+            const sourceExtensions = [
+              '.swift',
+              '.m',
+              '.mm',
+              '.c',
+              '.cpp',
+              '.h',
+              '.hpp',
+              '.plist',
+              '.json',
+            ];
+            const isSourceFile = sourceExtensions.some(ext => filePath.endsWith(ext));
+            if (isSourceFile) {
+              filesRemoved.push(filePath);
+            }
           }
         }
       }
@@ -208,6 +248,6 @@ export class FeatureIntegrationNode extends AbstractGuidanceNode<AddFeatureState
       }
     }
 
-    return { filesAdded, podfileModified };
+    return { filesAdded, filesRemoved, podfileModified };
   }
 }

@@ -9,6 +9,7 @@ import { Annotation } from '@langchain/langgraph';
 import z from 'zod';
 import { PLATFORM_ENUM, TemplateListOutput } from '../common/schemas.js';
 import { PropertyMetadata, PropertyMetadataCollection } from '@salesforce/magen-mcp-workflow';
+import { TemplatePropertiesMetadata } from './metadata.js';
 
 /**
  * Definition of user input properties required by the add-feature workflow.
@@ -49,6 +50,9 @@ export const AddFeatureWorkflowState = Annotation.Root({
   // Feature template discovery state
   featureTemplateOptions: Annotation<TemplateListOutput>,
   selectedFeatureTemplate: Annotation<string>,
+  templatePropertiesMetadata: Annotation<TemplatePropertiesMetadata>,
+  templateProperties: Annotation<Record<string, string>>,
+  templatePropertiesUserInput: Annotation<unknown>,
   patchContent: Annotation<string>,
   patchAnalysis: Annotation<string>,
 
@@ -56,6 +60,7 @@ export const AddFeatureWorkflowState = Annotation.Root({
   integrationSuccessful: Annotation<boolean>,
   integrationErrorMessages: Annotation<string[]>,
   filesAdded: Annotation<string[]>,
+  filesRemoved: Annotation<string[]>,
   podfileModified: Annotation<boolean>,
 
   // Build and deployment state (reusing from main workflow)

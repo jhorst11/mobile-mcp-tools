@@ -33,7 +33,8 @@ export class FailureNode extends AbstractGuidanceNode<State> {
       },
     };
 
-    const validatedResult = this.executeWithGuidance<typeof FAILURE_TOOL.resultSchema>(guidanceData);
+    const validatedResult =
+      this.executeWithGuidance<typeof FAILURE_TOOL.resultSchema>(guidanceData);
     return validatedResult;
   };
 

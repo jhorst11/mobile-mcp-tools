@@ -52,9 +52,8 @@ export class TemplateSelectionNode extends AbstractGuidanceNode<State> {
       },
     };
 
-    const validatedResult = this.executeWithGuidance<typeof TEMPLATE_SELECTION_TOOL.resultSchema>(
-      guidanceData
-    );
+    const validatedResult =
+      this.executeWithGuidance<typeof TEMPLATE_SELECTION_TOOL.resultSchema>(guidanceData);
 
     if (!validatedResult.selectedTemplate) {
       return {

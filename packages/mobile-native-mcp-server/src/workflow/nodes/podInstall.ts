@@ -14,14 +14,15 @@ import {
 } from '@salesforce/magen-mcp-workflow';
 import { AddFeatureState } from '../add-feature-metadata.js';
 import dedent from 'dedent';
+import z from 'zod';
 
 /**
  * Pod install result schema - matches what we expect from the LLM
  */
-const POD_INSTALL_RESULT_SCHEMA = {
-  success: 'boolean',
-  message: 'string',
-} as const;
+const POD_INSTALL_RESULT_SCHEMA = z.object({
+  success: z.boolean().describe('Whether pod install completed successfully'),
+  message: z.string().describe('Status message from pod install execution'),
+});
 
 /**
  * Runs pod install if Podfile was modified.
@@ -52,14 +53,15 @@ export class PodInstallNode extends AbstractGuidanceNode<AddFeatureState> {
         projectPath: state.projectPath,
         projectName: state.projectName,
       },
-      resultSchema: POD_INSTALL_RESULT_SCHEMA as any,
+      resultSchema: POD_INSTALL_RESULT_SCHEMA,
       metadata: {
         nodeName: this.name,
         description: 'Run pod install to install CocoaPods dependencies',
       },
     };
 
-    const validatedResult = this.executeWithGuidance<any>(guidanceData);
+    const validatedResult =
+      this.executeWithGuidance<typeof POD_INSTALL_RESULT_SCHEMA>(guidanceData);
 
     if (!validatedResult.success) {
       this.logger.warn('Pod install failed', {
@@ -132,4 +134,3 @@ export class PodInstallNode extends AbstractGuidanceNode<AddFeatureState> {
     `;
   }
 }
-
