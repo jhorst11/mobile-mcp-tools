@@ -1,0 +1,453 @@
+diff --git a/Podfile b/Podfile
+index 91178dc..13b5b05 100644
+--- a/Podfile
++++ b/Podfile
+@@ -14,6 +14,9 @@ target '{{projectName}}' do
+   # Salesforce Mobile SDK
+   pod 'SalesforceSDKCore', '~> {{salesforceMobileSDKVersion}}'
+   
++  # reCAPTCHA Enterprise for passwordless login
++  pod "RecaptchaEnterprise", "18.5.0-beta01"
++  
+   post_install do |installer|
+     installer.pods_project.targets.each do |target|
+       target.build_configurations.each do |config|
+diff --git a/variables.json b/variables.json
+index 14766a8..46ac0e0 100644
+--- a/variables.json
++++ b/variables.json
+@@ -54,6 +54,26 @@
+       "type": "string",
+       "required": true,
+       "description": "Experience Cloud community URL (e.g. https://your-community.force.com)"
++    },
++    {
++      "name": "reCaptchaSiteKeyId",
++      "type": "string",
++      "required": true,
++      "description": "Google Cloud reCAPTCHA Site Key ID (required for enterprise reCAPTCHA)"
++    },
++    {
++      "name": "googleCloudProjectId",
++      "type": "string",
++      "required": false,
++      "description": "Google Cloud Project ID (required for enterprise reCAPTCHA, set to empty string for non-enterprise)",
++      "default": ""
++    },
++    {
++      "name": "isReCaptchaEnterprise",
++      "type": "boolean",
++      "required": true,
++      "description": "Whether to use enterprise reCAPTCHA (true) or non-enterprise reCAPTCHA (false)",
++      "default": true
+     }
+   ]
+ }
+\ No newline at end of file
+diff --git a/{{projectName}}.xcodeproj/project.pbxproj b/{{projectName}}.xcodeproj/project.pbxproj
+index 78b59b0..9c20892 100644
+--- a/{{projectName}}.xcodeproj/project.pbxproj
++++ b/{{projectName}}.xcodeproj/project.pbxproj
+@@ -35,6 +35,7 @@
+ 		SRC004 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+ 		SRC005 /* NativeLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLoginView.swift; sourceTree = "<group>"; };
+ 		SRC006 /* NativeLoginViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeLoginViewFactory.swift; sourceTree = "<group>"; };
++		ENT001 /* {{projectName}}.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = {{projectName}}.entitlements; sourceTree = "<group>"; };
+ /* End PBXFileReference section */
+ 
+ /* Begin PBXFrameworksBuildPhase section */
+@@ -98,6 +99,7 @@
+ 				RES001REF /* Assets.xcassets */,
+ 				RES002REF /* bootconfig.plist */,
+ 				INFO /* Info.plist */,
++				ENT001 /* {{projectName}}.entitlements */,
+ 			);
+ 			path = {{projectName}};
+ 			sourceTree = "<group>";
+@@ -346,6 +348,7 @@
+ 			buildSettings = {
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
++				CODE_SIGN_ENTITLEMENTS = {{projectName}}/{{projectName}}.entitlements;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				CURRENT_PROJECT_VERSION = 1;
+ 				DEVELOPMENT_TEAM = "";
+@@ -378,6 +381,7 @@
+ 			buildSettings = {
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
++				CODE_SIGN_ENTITLEMENTS = {{projectName}}/{{projectName}}.entitlements;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				CURRENT_PROJECT_VERSION = 1;
+ 				DEVELOPMENT_TEAM = "";
+diff --git a/{{projectName}}/NativeLoginView.swift b/{{projectName}}/NativeLoginView.swift
+index 6972a6f..8a4ff7d 100644
+--- a/{{projectName}}/NativeLoginView.swift
++++ b/{{projectName}}/NativeLoginView.swift
+@@ -12,6 +12,11 @@ import SalesforceSDKCore
+ struct NativeLoginView: View {
+     @Environment(\.colorScheme) var colorScheme
+     
++    // MARK: reCAPTCHA Properties
++    
++    /// The reCAPTCHA client used to obtain reCAPTCHA tokens when needed for Salesforce Headless Identity API requests
++    @EnvironmentObject var reCaptchaClientObservable: ReCaptchaClientObservable
++    
+     /// The layout type for the user's active identity flow
+     @State private var identityFlowLayoutType = IdentityFlowLayoutType.Login
+     
+@@ -31,6 +36,15 @@ struct NativeLoginView: View {
+     /// The user's entered password
+     @State private var password = ""
+     
++    /// The user's entered one-time-passcode
++    @State private var otp = ""
++    
++    /// The OTP identifier returned by the Salesforce Identity API's initialize headless login endpoint
++    @State private var otpIdentifier: String? = nil
++    
++    /// Password-Less Login Via One-Time-Passcode: The user's chosen OTP verification method of email or SMS
++    @State private var otpVerificationMethod = OtpVerificationMethod.sms
++    
+     /// The user's entered username
+     @State private var username = ""
+     
+@@ -112,11 +126,75 @@ struct NativeLoginView: View {
+                 .buttonStyle(.bordered)
+                 .tint(colorScheme == .dark ? .white : .blue)
+                 
++                Button {
++                    navigate(.StartPasswordLessLogin)
++                } label: {
++                    Text("Use One Time Password Instead").frame(minWidth: 150)
++                }
++                .buttonStyle(.bordered)
++                .tint(colorScheme == .dark ? .white : .blue)
++                
+                 Button("Salesforce Login") {
+                     SalesforceManager.shared.nativeLoginManager().fallbackToWebAuthentication()
+                 }
+                 .buttonStyle(.bordered)
+                 .tint(colorScheme == .dark ? .white : .blue)
++                
++            case .StartPasswordLessLogin:
++                // Layout to initialize password-less login by requesting a one-time-passcode.
++                TextField("Username", text: $username)
++                    .loginTextField()
++                
++                Picker(
++                    "OTP Verification Method",
++                    selection: $otpVerificationMethod) {
++                        Text("Email").tag(OtpVerificationMethod.email)
++                        Text("SMS").tag(OtpVerificationMethod.sms)
++                    }
++                    .frame(maxWidth: 250)
++                
++                Button {
++                    onRequestOtpTapped()
++                } label: {
++                    HStack {
++                        Image(systemName: "key.radiowaves.forward")
++                        Text("Request One Time Password")
++                    }.frame(minWidth: 150)
++                }
++                .buttonStyle(.bordered)
++                .tint(colorScheme == .dark ? .white : .blue)
++                
++                Button {
++                    layoutReset()
++                } label: {
++                    Text("Cancel").frame(minWidth: 150)
++                }
++                .buttonStyle(.bordered)
++                .tint(.red)
++                
++            case .CompletePasswordLessLogin:
++                // Layout for password-less login by submitting a previously requested one-time-passcode.
++                TextField("One Time Password", text: $otp)
++                    .loginTextField()
++                
++                Button {
++                    onSubmitOtpTapped()
++                } label: {
++                    HStack {
++                        Image(systemName: "lock")
++                        Text("Log In Using OTP")
++                    }.frame(minWidth: 150)
++                }
++                .buttonStyle(.bordered)
++                .tint(colorScheme == .dark ? .white : .blue)
++                
++                Button {
++                    layoutReset()
++                } label: {
++                    Text("Cancel").frame(minWidth: 150)
++                }
++                .buttonStyle(.bordered)
++                .tint(.red)
+             }
+             
+             Spacer()
+@@ -169,6 +247,9 @@ struct NativeLoginView: View {
+     
+     /// Resets to the initial layout.
+     private func layoutReset() {
++        otp = ""
++        otpIdentifier = nil
++        otpVerificationMethod = .sms
+         password = ""
+         username = ""
+         
+@@ -180,6 +261,111 @@ struct NativeLoginView: View {
+         messageReset()
+         self.identityFlowLayoutType = identityFlowLayoutType
+     }
++    
++    // MARK: Password-Less Login User Actions
++    
++    ///
++    /// Submits the OTP delivery request when the request button is tapped.  This submits a request to the
++    /// `init/passwordless/login`endpoint and opens the submit OTP verification view on success.
++    ///
++    private func onRequestOtpTapped() {
++        // Reset the message.
++        messageReset()
++        
++        // Show the progress indicator.
++        isAuthenticating = true
++        
++        // Wait for reCAPTCHA client to be ready
++        Task {
++            // Wait for initialization with timeout
++            let isReady = await reCaptchaClientObservable.waitForInitialization()
++            
++            guard let reCaptchaClient = reCaptchaClientObservable.reCaptchaClient, isReady else {
++                isAuthenticating = false
++                errorMessage("reCAPTCHA client failed to initialize. Please check your configuration and try again.")
++                SalesforceLogger.e(AppDelegate.self, message: "reCAPTCHA client is not initialized or failed to initialize.")
++                return
++            }
++            
++            // Execute for a new reCAPTCHA token.
++            reCaptchaClient.execute(withAction: .login) {reCaptchaExecuteResult, error in
++                
++                // Guard for the new reCAPTCHA token.
++                guard let reCaptchaToken = reCaptchaExecuteResult else {
++                    self.isAuthenticating = false
++                    self.errorMessage("Could not obtain a reCAPTCHA token. Please try again.")
++                    SalesforceLogger.e(AppDelegate.self, message: "Could not obtain a reCAPTCHA login action token due to error with description '\(error?.localizedDescription ?? "(A description wasn't provided.)")'.")
++                    return
++                }
++                
++                // Submit the request and act on the response.
++                Task {
++                    // Submit the request.
++                    let result = await SalesforceManager.shared.nativeLoginManager()
++                        .submitOtpRequest(
++                            username: username,
++                            reCaptchaToken: reCaptchaToken,
++                            otpVerificationMethod: otpVerificationMethod)
++                    
++                    // Clear the progresss indicator.
++                    isAuthenticating = false
++                    
++                    // Act on the response.
++                    unwrapResult(result.nativeLoginResult) {
++                        // Verify parameters.
++                        guard let otpIdentifierResult = result.otpIdentifier else { return }
++                        
++                        // Switch to the OTP submission layout.
++                        otpIdentifier = otpIdentifierResult
++                        navigate(.CompletePasswordLessLogin)
++                    }
++                }
++            }
++        }
++    }
++    
++    ///
++    /// Submits the OTP verification request when the request button is tapped.  This submits a request to
++    /// the `services/oauth2/authorize`endpoint and in turn the `services/oauth2/token`
++    /// endpoint.
++    ///
++    /// On receiving a successful response from the endpoints, the user will be authenticated by Salesforce
++    /// Mobile SDK and returned to the app's views.
++    ///
++    private func onSubmitOtpTapped() {
++        
++        guard let otpIdentifier = otpIdentifier else {
++            errorMessage("OTP identifier is missing. Please request a new OTP.")
++            return
++        }
++        
++        // Reset the message.
++        messageReset()
++        
++        // Show the progress indicator.
++        isAuthenticating = true
++        
++        // Submit the request and act on the response.
++        Task {
++            // Submit the request.
++            let result = await SalesforceManager.shared.nativeLoginManager()
++                .submitPasswordlessAuthorizationRequest(
++                    otp: otp,
++                    otpIdentifier: otpIdentifier,
++                    otpVerificationMethod: otpVerificationMethod)
++            
++            // Clear the progresss indicator.
++            isAuthenticating = false
++            
++            switch result {
++            case .success:
++                layoutReset()
++                break
++            default:
++                errorMessage("An error occurred.")
++            }
++        }
++    }
+ }
+ 
+ ///
+@@ -188,6 +374,10 @@ struct NativeLoginView: View {
+ enum IdentityFlowLayoutType {
+     /// A layout for authorization code and credentials flow via username and password
+     case Login
++    /// A layout to initialize password-less login via one-time-passcode request.
++    case StartPasswordLessLogin
++    /// A layout for authorization code and credentials flow via username and previously requested one-time-passcode.
++    case CompletePasswordLessLogin
+ }
+ 
+ // MARK: Private SwiftUI Utilities
+diff --git a/{{projectName}}/NativeLoginViewFactory.swift b/{{projectName}}/NativeLoginViewFactory.swift
+index 1458496..af33539 100644
+--- a/{{projectName}}/NativeLoginViewFactory.swift
++++ b/{{projectName}}/NativeLoginViewFactory.swift
+@@ -15,6 +15,15 @@ class NativeLoginViewFactory: NSObject {
+     static func create() -> UIViewController {
+         return NativeLoginTemplateHostingController(rootView: NativeLoginView())
+     }
++    
++    static func create(
++        reCaptchaClientObservable: ReCaptchaClientObservable
++    ) -> UIViewController {
++        let view = NativeLoginTemplateHostingController(rootView: NativeLoginView()
++            .environmentObject(reCaptchaClientObservable))
++        
++        return view
++    }
+ }
+ 
+ class NativeLoginTemplateHostingController<Content>: UIHostingController<Content> where Content : View {
+diff --git a/{{projectName}}/SceneDelegate.swift b/{{projectName}}/SceneDelegate.swift
+index 67b9ec5..0eebede 100644
+--- a/{{projectName}}/SceneDelegate.swift
++++ b/{{projectName}}/SceneDelegate.swift
+@@ -1,9 +1,13 @@
+ import UIKit
+ import SwiftUI
+ import SalesforceSDKCore
++import RecaptchaEnterprise
+ 
+ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+ 
++    /// The reCAPTCHA client used to obtain reCAPTCHA tokens when needed for Salesforce Headless Identity API requests.
++    var recaptchaClientObservable: ReCaptchaClientObservable? = nil
++
+     var window: UIWindow?
+ 
+     func scene(_ scene: UIScene, willConnectTo session: UISceneSession,
+@@ -21,13 +25,27 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+         let redirectUri = "{{salesforceCallbackUrl}}"
+         let loginUrl = "{{salesforceCommunityUrl}}"
+         
+-        // Used to create a View Controller from SwiftUI.
+-        let nativeLoginViewController = NativeLoginViewFactory.create()
++        // Setup reCAPTCHA for passwordless login
++        let reCaptchaSiteKeyId = "{{reCaptchaSiteKeyId}}"
++        let googleCloudProjectId = "{{googleCloudProjectId}}"
++        let isReCaptchaEnterprise = {{isReCaptchaEnterprise}}
++        
++        // Initialize reCAPTCHA client observable
++        let recaptchaClientObservable = ReCaptchaClientObservable(reCaptchaSiteKey: reCaptchaSiteKeyId)
++        self.recaptchaClientObservable = recaptchaClientObservable
++        
++        // Used to create a View Controller from SwiftUI with reCAPTCHA support.
++        let nativeLoginViewController = NativeLoginViewFactory.create(
++            reCaptchaClientObservable: recaptchaClientObservable)
+         
+-        // This line tells the SDK the app intends to use Native Login.
++        // This line tells the SDK the app intends to use Password-less Native Login with OTP.
++        // For non-enterprise reCAPTCHA, pass nil for reCaptchaSiteKeyId and googleCloudProjectId
+         SalesforceManager.shared.useNativeLogin(withConsumerKey: clientId,
+                                                 callbackUrl: redirectUri,
+                                                 communityUrl: loginUrl,
++                                                reCaptchaSiteKeyId: isReCaptchaEnterprise ? reCaptchaSiteKeyId : nil,
++                                                googleCloudProjectId: isReCaptchaEnterprise && !googleCloudProjectId.isEmpty ? googleCloudProjectId : nil,
++                                                isReCaptchaEnterprise: isReCaptchaEnterprise,
+                                                 nativeLoginViewController: nativeLoginViewController,
+                                                 scene: scene)
+         
+@@ -118,3 +136,43 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+         }
+     }
+ }
++
++@MainActor class ReCaptchaClientObservable: ObservableObject {
++    
++    @Published var reCaptchaClient: RecaptchaClient? = nil
++    @Published var isInitialized: Bool = false
++    
++    init(reCaptchaSiteKey: String) {
++        Task(priority: .medium) {
++            await initializeReCaptchaClient(reCaptchaSiteKey: reCaptchaSiteKey)
++        }
++    }
++    
++    final func initializeReCaptchaClient(reCaptchaSiteKey: String) async {
++        do {
++            reCaptchaClient = try await Recaptcha.getClient(withSiteKey: reCaptchaSiteKey)
++            await MainActor.run {
++                isInitialized = true
++            }
++        } catch let error {
++            await MainActor.run {
++                isInitialized = true // Mark as initialized even on error so UI doesn't hang
++            }
++            SalesforceLogger.e(SceneDelegate.self, message: "Cannot get reCAPTCHA client due to an error with description '\(error.localizedDescription).'.")
++        }
++    }
++    
++    /// Waits for the reCAPTCHA client to be initialized, with a timeout
++    func waitForInitialization(timeout: TimeInterval = 10.0) async -> Bool {
++        if isInitialized {
++            return reCaptchaClient != nil
++        }
++        
++        let startTime = Date()
++        while !isInitialized && Date().timeIntervalSince(startTime) < timeout {
++            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
++        }
++        
++        return reCaptchaClient != nil
++    }
++}
+diff --git a/{{projectName}}/{{projectName}}.entitlements b/{{projectName}}/{{projectName}}.entitlements
+new file mode 100644
+index 0000000..e855932
+--- /dev/null
++++ b/{{projectName}}/{{projectName}}.entitlements
+@@ -0,0 +1,11 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>keychain-access-groups</key>
++	<array>
++		<string>$(AppIdentifierPrefix){{bundleIdentifier}}</string>
++	</array>
++</dict>
++</plist>
++

@@ -1,0 +1,23 @@
+{
+    "$schema": "../../schemas/template.schema.json",
+    "name": "ios-native-login-otp",
+    "platform": "ios",
+    "version": "1.0.0",
+    "description": "iOS application with Salesforce Mobile SDK and native login with OTP (One-Time Password) support for Experience Cloud. Extends ios-native-login template to include passwordless login via OTP with reCAPTCHA integration.",
+    "tags": [
+        "ios",
+        "swift",
+        "salesforce",
+        "mobile-sdk",
+        "native-login",
+        "otp",
+        "passwordless",
+        "recaptcha",
+        "experience-cloud"
+    ],
+    "extends": {
+        "template": "ios-native-login",
+        "version": "1.0.0",
+        "patchFile": "layer.patch"
+    }
+}
