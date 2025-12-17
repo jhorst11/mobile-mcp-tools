@@ -3,7 +3,7 @@
   "name": "ios-native-login",
   "platform": "ios",
   "version": "1.0.0",
-  "description": "iOS application with Salesforce Mobile SDK and native login for Experience Cloud. Includes customizable native login UI with username/password authentication.",
+  "description": "iOS application with Salesforce Mobile SDK and native login for Experience Cloud. Includes customizable native login UI with username/password authentication. Native login is generally used when building a B2C app or when wanting a fully custom login experience.",
   "tags": [
     "ios",
     "swift",

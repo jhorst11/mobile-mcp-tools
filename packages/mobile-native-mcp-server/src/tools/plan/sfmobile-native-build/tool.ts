@@ -48,12 +48,14 @@ export class SFMobileNativeBuildTool extends AbstractWorkflowTool<typeof BUILD_T
      
      If the build fails, simply return the failure status. The build recovery process will handle fixes separately.
 
-      ${input.platform === 'iOS' ? this.msdkAppBuildExecutionIOS(input.projectPath, input.projectName) : this.msdkAppBuildExecutionAndroid(input.projectPath)}
+      ${input.platform === 'iOS' ? this.msdkAppBuildExecutionIOS(input.projectPath, input.projectName, input.cleanBuild ?? false) : this.msdkAppBuildExecutionAndroid(input.projectPath, input.cleanBuild ?? false)}
       
     `;
   }
 
-  private msdkAppBuildExecutionIOS(projectPath: string, projectName: string) {
+  private msdkAppBuildExecutionIOS(projectPath: string, projectName: string, cleanBuild: boolean) {
+    const cleanCommand = cleanBuild ? 'clean ' : '';
+    const derivedDataPath = this.tempDirManager.getDerivedDataPath(projectName);
     return dedent`  
       ## Build Execution Steps
 
@@ -64,7 +66,7 @@ export class SFMobileNativeBuildTool extends AbstractWorkflowTool<typeof BUILD_T
 
       **Step 2:** Execute the build command (this is the ONLY command you should run):
       \`\`\`bash
-      { xcodebuild -workspace ${projectName}.xcworkspace -scheme ${projectName} -destination 'generic/platform=iOS Simulator' clean build CONFIGURATION_BUILD_DIR="${this.tempDirManager.getAppArtifactRootPath(projectName)}" > "${this.tempDirManager.getIOSBuildOutputFilePath()}" 2>&1; echo $?; }
+      { xcodebuild -workspace ${projectName}.xcworkspace -scheme ${projectName} -destination 'generic/platform=iOS Simulator' -derivedDataPath "${derivedDataPath}" -jobs $(sysctl -n hw.ncpu) ${cleanCommand}build CONFIGURATION_BUILD_DIR="${this.tempDirManager.getAppArtifactRootPath(projectName)}" ONLY_ACTIVE_ARCH=YES CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO > "${this.tempDirManager.getIOSBuildOutputFilePath()}" 2>&1; echo $?; }
       \`\`\`
       
       **Step 3:** Check the exit code:
@@ -79,7 +81,8 @@ export class SFMobileNativeBuildTool extends AbstractWorkflowTool<typeof BUILD_T
     `;
   }
 
-  private msdkAppBuildExecutionAndroid(projectPath: string) {
+  private msdkAppBuildExecutionAndroid(projectPath: string, cleanBuild: boolean) {
+    const cleanCommand = cleanBuild ? 'clean ' : '';
     return dedent`  
       ## Build Execution Steps
 
@@ -90,7 +93,7 @@ export class SFMobileNativeBuildTool extends AbstractWorkflowTool<typeof BUILD_T
 
       **Step 2:** Execute the build command (this is the ONLY command you should run):
       \`\`\`bash
-      { ./gradlew build > "${this.tempDirManager.getAndroidBuildOutputFilePath()}" 2>&1; echo $?; }
+      { ./gradlew ${cleanCommand}build > "${this.tempDirManager.getAndroidBuildOutputFilePath()}" 2>&1; echo $?; }
       \`\`\`
       
       **Step 3:** Check the exit code:

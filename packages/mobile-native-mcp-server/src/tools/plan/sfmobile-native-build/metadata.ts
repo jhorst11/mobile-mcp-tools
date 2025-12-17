@@ -20,6 +20,11 @@ export const BUILD_WORKFLOW_INPUT_SCHEMA = WORKFLOW_TOOL_BASE_INPUT_SCHEMA.exten
   platform: PLATFORM_ENUM,
   projectPath: PROJECT_PATH_FIELD,
   projectName: PROJECT_NAME_FIELD,
+  cleanBuild: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Whether to perform a clean build (defaults to false for incremental builds)'),
 });
 
 export const BUILD_WORKFLOW_RESULT_SCHEMA = z.object({

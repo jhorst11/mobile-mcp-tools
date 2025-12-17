@@ -204,4 +204,163 @@ describe('SFMobileNativeBuildTool', () => {
       expect(result.content[0].text).toContain('cd ');
     });
   });
+
+  describe('Clean Build Parameter', () => {
+    it('should include clean command for iOS when cleanBuild is true', async () => {
+      const input = {
+        platform: 'iOS' as const,
+        projectPath: '/ios/path',
+        projectName: 'TestApp',
+        cleanBuild: true,
+        workflowStateData: { thread_id: 'test-123' },
+      };
+
+      const result = await tool.handleRequest(input);
+      const guidance = result.content[0].text;
+
+      expect(guidance).toContain('clean build');
+      expect(guidance).not.toContain('build build'); // Should not duplicate
+    });
+
+    it('should not include clean command for iOS when cleanBuild is false', async () => {
+      const input = {
+        platform: 'iOS' as const,
+        projectPath: '/ios/path',
+        projectName: 'TestApp',
+        cleanBuild: false,
+        workflowStateData: { thread_id: 'test-123' },
+      };
+
+      const result = await tool.handleRequest(input);
+      const guidance = result.content[0].text;
+
+      expect(guidance).not.toContain('clean build');
+      expect(guidance).toContain('build');
+      // Check that the command doesn't have "clean" before "build"
+      const buildCommandMatch = guidance.match(/xcodebuild[^`]*build/);
+      expect(buildCommandMatch).toBeTruthy();
+      expect(buildCommandMatch![0]).not.toContain('clean');
+    });
+
+    it('should default to false (no clean) for iOS when cleanBuild is undefined', async () => {
+      const input = {
+        platform: 'iOS' as const,
+        projectPath: '/ios/path',
+        projectName: 'TestApp',
+        workflowStateData: { thread_id: 'test-123' },
+      };
+
+      const result = await tool.handleRequest(input);
+      const guidance = result.content[0].text;
+
+      expect(guidance).not.toContain('clean build');
+      expect(guidance).toContain('build');
+    });
+
+    it('should include clean command for Android when cleanBuild is true', async () => {
+      const input = {
+        platform: 'Android' as const,
+        projectPath: '/android/path',
+        projectName: 'TestApp',
+        cleanBuild: true,
+        workflowStateData: { thread_id: 'test-123' },
+      };
+
+      const result = await tool.handleRequest(input);
+      const guidance = result.content[0].text;
+
+      expect(guidance).toContain('./gradlew clean build');
+    });
+
+    it('should not include clean command for Android when cleanBuild is false', async () => {
+      const input = {
+        platform: 'Android' as const,
+        projectPath: '/android/path',
+        projectName: 'TestApp',
+        cleanBuild: false,
+        workflowStateData: { thread_id: 'test-123' },
+      };
+
+      const result = await tool.handleRequest(input);
+      const guidance = result.content[0].text;
+
+      expect(guidance).not.toContain('clean build');
+      expect(guidance).toContain('./gradlew build');
+    });
+
+    it('should default to false (no clean) for Android when cleanBuild is undefined', async () => {
+      const input = {
+        platform: 'Android' as const,
+        projectPath: '/android/path',
+        projectName: 'TestApp',
+        workflowStateData: { thread_id: 'test-123' },
+      };
+
+      const result = await tool.handleRequest(input);
+      const guidance = result.content[0].text;
+
+      expect(guidance).not.toContain('clean build');
+      expect(guidance).toContain('./gradlew build');
+    });
+  });
+
+  describe('Build Optimizations', () => {
+    it('should include derived data path for iOS builds to enable caching', async () => {
+      const input = {
+        platform: 'iOS' as const,
+        projectPath: '/ios/path',
+        projectName: 'TestApp',
+        workflowStateData: { thread_id: 'test-123' },
+      };
+
+      const result = await tool.handleRequest(input);
+      const guidance = result.content[0].text;
+
+      expect(guidance).toContain('-derivedDataPath');
+    });
+
+    it('should include parallel build flag for iOS builds', async () => {
+      const input = {
+        platform: 'iOS' as const,
+        projectPath: '/ios/path',
+        projectName: 'TestApp',
+        workflowStateData: { thread_id: 'test-123' },
+      };
+
+      const result = await tool.handleRequest(input);
+      const guidance = result.content[0].text;
+
+      expect(guidance).toContain('-jobs');
+    });
+
+    it('should include ONLY_ACTIVE_ARCH for iOS simulator builds', async () => {
+      const input = {
+        platform: 'iOS' as const,
+        projectPath: '/ios/path',
+        projectName: 'TestApp',
+        workflowStateData: { thread_id: 'test-123' },
+      };
+
+      const result = await tool.handleRequest(input);
+      const guidance = result.content[0].text;
+
+      expect(guidance).toContain('ONLY_ACTIVE_ARCH=YES');
+    });
+
+    it('should skip code signing for iOS simulator builds', async () => {
+      const input = {
+        platform: 'iOS' as const,
+        projectPath: '/ios/path',
+        projectName: 'TestApp',
+        workflowStateData: { thread_id: 'test-123' },
+      };
+
+      const result = await tool.handleRequest(input);
+      const guidance = result.structuredContent?.promptForLLM ?? result.content[0].text;
+
+      expect(guidance).toContain('CODE_SIGN_IDENTITY=""');
+      expect(guidance).toContain('CODE_SIGNING_REQUIRED=NO');
+      expect(guidance).toContain('CODE_SIGNING_ALLOWED=NO');
+    });
+  });
 });

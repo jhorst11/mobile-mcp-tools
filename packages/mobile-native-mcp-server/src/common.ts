@@ -96,6 +96,16 @@ export class TempDirectoryManager {
       platform === 'iOS' ? `${projectName}.app` : `${projectName}.apk`
     );
   }
+
+  /**
+   * Gets the path to the derived data directory for Xcode builds.
+   * This allows Xcode to cache build artifacts between builds for faster incremental builds.
+   * @param projectName The name of the project, used to create a unique derived data path
+   * @returns The full path to the derived data directory
+   */
+  getDerivedDataPath(projectName: string): string {
+    return join(this.getTempWorkingDirectory(), 'DerivedData', projectName);
+  }
 }
 
 /**

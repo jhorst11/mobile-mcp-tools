@@ -219,4 +219,64 @@ describe('BuildValidationService', () => {
       expect(result.buildSuccessful).toBe(true);
     });
   });
+
+  describe('executeBuild - Clean Build Parameter', () => {
+    it('should pass cleanBuild false when not specified', () => {
+      mockToolExecutor.setResult(BUILD_TOOL.toolId, {
+        buildSuccessful: true,
+      });
+
+      service.executeBuild(testParams);
+
+      const lastCall = mockToolExecutor.getLastCall();
+      expect(lastCall?.input.cleanBuild).toBe(false);
+    });
+
+    it('should pass cleanBuild true when specified', () => {
+      mockToolExecutor.setResult(BUILD_TOOL.toolId, {
+        buildSuccessful: true,
+      });
+
+      service.executeBuild({
+        ...testParams,
+        cleanBuild: true,
+      });
+
+      const lastCall = mockToolExecutor.getLastCall();
+      expect(lastCall?.input.cleanBuild).toBe(true);
+    });
+
+    it('should pass cleanBuild false when explicitly set to false', () => {
+      mockToolExecutor.setResult(BUILD_TOOL.toolId, {
+        buildSuccessful: true,
+      });
+
+      service.executeBuild({
+        ...testParams,
+        cleanBuild: false,
+      });
+
+      const lastCall = mockToolExecutor.getLastCall();
+      expect(lastCall?.input.cleanBuild).toBe(false);
+    });
+
+    it('should log cleanBuild parameter', () => {
+      mockToolExecutor.setResult(BUILD_TOOL.toolId, {
+        buildSuccessful: true,
+      });
+
+      mockLogger.reset();
+      service.executeBuild({
+        ...testParams,
+        cleanBuild: true,
+      });
+
+      const infoLogs = mockLogger.getLogsByLevel('info');
+      const startLog = infoLogs.find(log => log.message.includes('Executing build'));
+
+      expect(startLog?.data).toMatchObject({
+        cleanBuild: true,
+      });
+    });
+  });
 });

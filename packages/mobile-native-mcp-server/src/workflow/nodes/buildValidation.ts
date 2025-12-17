@@ -28,11 +28,14 @@ export class BuildValidationNode extends BaseNode<State> {
   execute = (state: State): Partial<State> => {
     // Increment build attempt count
     const attemptCount = (state.buildAttemptCount ?? 0) + 1;
+    // Only do clean build on retry attempts (after first failure)
+    const cleanBuild = attemptCount > 1;
 
     const result = this.buildValidationService.executeBuild({
       platform: state.platform,
       projectPath: state.projectPath,
       projectName: state.projectName,
+      cleanBuild,
     });
 
     return {

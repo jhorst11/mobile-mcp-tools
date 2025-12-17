@@ -30,6 +30,7 @@ export interface BuildValidationParams {
   platform: PlatformEnum;
   projectPath: string;
   projectName: string;
+  cleanBuild?: boolean;
 }
 
 /**
@@ -69,6 +70,7 @@ export class BuildValidationService implements BuildValidationServiceProvider {
     this.logger.info('Executing build', {
       platform: params.platform,
       projectPath: params.projectPath,
+      cleanBuild: params.cleanBuild ?? false,
     });
 
     const toolInvocationData: MCPToolInvocationData<typeof BUILD_TOOL.inputSchema> = {
@@ -81,6 +83,7 @@ export class BuildValidationService implements BuildValidationServiceProvider {
         platform: params.platform,
         projectPath: params.projectPath,
         projectName: params.projectName,
+        cleanBuild: params.cleanBuild ?? false,
       },
     };
 

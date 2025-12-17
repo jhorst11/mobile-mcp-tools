@@ -581,4 +581,125 @@ describe('BuildValidationNode', () => {
       expect(call2?.input.projectPath).toBe('/path/to/project2');
     });
   });
+
+  describe('execute() - Clean Build Logic', () => {
+    it('should set cleanBuild to false on first build attempt (buildAttemptCount is 0)', () => {
+      const inputState = createTestState({
+        platform: 'iOS',
+        projectPath: '/path/to/project',
+        projectName: 'TestProject',
+        buildAttemptCount: 0,
+      });
+
+      mockToolExecutor.setResult(BUILD_TOOL.toolId, {
+        buildSuccessful: true,
+      });
+
+      node.execute(inputState);
+
+      const lastCall = mockToolExecutor.getLastCall();
+      expect(lastCall?.input.cleanBuild).toBe(false);
+    });
+
+    it('should set cleanBuild to false on first build attempt (buildAttemptCount is undefined)', () => {
+      const inputState = createTestState({
+        platform: 'iOS',
+        projectPath: '/path/to/project',
+        projectName: 'TestProject',
+        // buildAttemptCount is undefined
+      });
+
+      mockToolExecutor.setResult(BUILD_TOOL.toolId, {
+        buildSuccessful: true,
+      });
+
+      node.execute(inputState);
+
+      const lastCall = mockToolExecutor.getLastCall();
+      expect(lastCall?.input.cleanBuild).toBe(false);
+    });
+
+    it('should set cleanBuild to true on retry attempt (buildAttemptCount is 1)', () => {
+      const inputState = createTestState({
+        platform: 'iOS',
+        projectPath: '/path/to/project',
+        projectName: 'TestProject',
+        buildAttemptCount: 1,
+      });
+
+      mockToolExecutor.setResult(BUILD_TOOL.toolId, {
+        buildSuccessful: true,
+      });
+
+      node.execute(inputState);
+
+      const lastCall = mockToolExecutor.getLastCall();
+      expect(lastCall?.input.cleanBuild).toBe(true);
+    });
+
+    it('should set cleanBuild to true on subsequent retry attempts (buildAttemptCount > 1)', () => {
+      const inputState = createTestState({
+        platform: 'iOS',
+        projectPath: '/path/to/project',
+        projectName: 'TestProject',
+        buildAttemptCount: 2,
+      });
+
+      mockToolExecutor.setResult(BUILD_TOOL.toolId, {
+        buildSuccessful: true,
+      });
+
+      node.execute(inputState);
+
+      const lastCall = mockToolExecutor.getLastCall();
+      expect(lastCall?.input.cleanBuild).toBe(true);
+    });
+
+    it('should set cleanBuild correctly for Android platform', () => {
+      const inputState = createTestState({
+        platform: 'Android',
+        projectPath: '/path/to/project',
+        projectName: 'TestProject',
+        buildAttemptCount: 1,
+      });
+
+      mockToolExecutor.setResult(BUILD_TOOL.toolId, {
+        buildSuccessful: true,
+      });
+
+      node.execute(inputState);
+
+      const lastCall = mockToolExecutor.getLastCall();
+      expect(lastCall?.input.cleanBuild).toBe(true);
+      expect(lastCall?.input.platform).toBe('Android');
+    });
+
+    it('should use cleanBuild false for first attempt and true for retry in sequence', () => {
+      const firstAttemptState = createTestState({
+        platform: 'iOS',
+        projectPath: '/path/to/project',
+        projectName: 'TestProject',
+        buildAttemptCount: 0,
+      });
+
+      const retryState = createTestState({
+        platform: 'iOS',
+        projectPath: '/path/to/project',
+        projectName: 'TestProject',
+        buildAttemptCount: 1,
+      });
+
+      mockToolExecutor.setResult(BUILD_TOOL.toolId, {
+        buildSuccessful: true,
+      });
+
+      node.execute(firstAttemptState);
+      const firstCall = mockToolExecutor.getLastCall();
+      expect(firstCall?.input.cleanBuild).toBe(false);
+
+      node.execute(retryState);
+      const retryCall = mockToolExecutor.getLastCall();
+      expect(retryCall?.input.cleanBuild).toBe(true);
+    });
+  });
 });
