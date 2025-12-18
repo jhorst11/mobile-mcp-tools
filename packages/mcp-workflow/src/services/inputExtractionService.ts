@@ -155,14 +155,19 @@ export class InputExtractionService
     const invalidProperties: string[] = [];
 
     for (const [propertyName, propertyValue] of Object.entries(extractedProperties)) {
-      if (propertyValue == null) {
-        this.logger.debug(`Skipping property with null/undefined value`, { propertyName });
-        continue;
-      }
-
       const propertyMetadata = properties[propertyName];
       if (!propertyMetadata) {
         this.logger.warn(`Unknown property in extraction result`, { propertyName });
+        continue;
+      }
+
+      // Handle null/undefined values: these indicate the LLM couldn't extract the property
+      // We should NOT skip them - instead, we let them through so the router knows
+      // the property is unfulfilled and can re-prompt the user
+      if (propertyValue == null) {
+        this.logger.debug(`Property value is null/undefined, keeping as null`, { propertyName });
+        // Don't skip - keep the null value so the router knows this property is unfulfilled
+        validatedProperties[propertyName] = null;
         continue;
       }
 
