@@ -344,7 +344,11 @@ export class XcodeProjectManagementService {
             source_extensions = ['.swift', '.m', '.mm', '.c', '.cpp', '.cc', '.cxx', '.metal']
             resource_extensions = ['.plist', '.xcassets', '.storyboard', '.xib', '.strings', '.stringsdict', '.json', '.xml', '.png', '.jpg', '.jpeg', '.gif', '.pdf', '.mp3', '.wav', '.mp4', '.mov']
             
-            if source_extensions.include?(file_ext)
+            # Entitlements files are added to the project but not to any build phase
+            # They are referenced via CODE_SIGN_ENTITLEMENTS build setting
+            if file_ext == '.entitlements'
+              # File is already added to the project group, no build phase needed
+            elsif source_extensions.include?(file_ext)
               # Add to Sources build phase
               target.source_build_phase.add_file_reference(file_ref)
             elsif resource_extensions.include?(file_ext)

@@ -66,7 +66,7 @@ export class SFMobileNativeBuildTool extends AbstractWorkflowTool<typeof BUILD_T
 
       **Step 2:** Execute the build command (this is the ONLY command you should run):
       \`\`\`bash
-      { xcodebuild -workspace ${projectName}.xcworkspace -scheme ${projectName} -destination 'generic/platform=iOS Simulator' -derivedDataPath "${derivedDataPath}" -jobs $(sysctl -n hw.ncpu) ${cleanCommand}build CONFIGURATION_BUILD_DIR="${this.tempDirManager.getAppArtifactRootPath(projectName)}" ONLY_ACTIVE_ARCH=YES CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO > "${this.tempDirManager.getIOSBuildOutputFilePath()}" 2>&1; echo $?; }
+      { xcodebuild -workspace ${projectName}.xcworkspace -scheme ${projectName} -destination 'generic/platform=iOS Simulator' -derivedDataPath "${derivedDataPath}" -jobs $(sysctl -n hw.ncpu) ${cleanCommand}build CONFIGURATION_BUILD_DIR="${this.tempDirManager.getAppArtifactRootPath(projectName)}" ONLY_ACTIVE_ARCH=YES> "${this.tempDirManager.getIOSBuildOutputFilePath()}" 2>&1; echo $?; }
       \`\`\`
       
       **Step 3:** Check the exit code:

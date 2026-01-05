@@ -58,10 +58,10 @@ index d96407e..78b59b0 100644
  		};
 diff --git a/{{projectName}}/NativeLoginView.swift b/{{projectName}}/NativeLoginView.swift
 new file mode 100644
-index 0000000..6972a6f
+index 0000000..85f600f
 --- /dev/null
 +++ b/{{projectName}}/NativeLoginView.swift
-@@ -0,0 +1,215 @@
+@@ -0,0 +1,237 @@
 +//
 +//  NativeLoginView.swift
 +//  {{projectName}}
@@ -75,9 +75,6 @@ index 0000000..6972a6f
 +
 +struct NativeLoginView: View {
 +    @Environment(\.colorScheme) var colorScheme
-+    
-+    /// The layout type for the user's active identity flow
-+    @State private var identityFlowLayoutType = IdentityFlowLayoutType.Login
 +    
 +    // MARK: User Messaging
 +    
@@ -102,39 +99,52 @@ index 0000000..6972a6f
 +    
 +    var body: some View {
 +        VStack(spacing: 20) {
-+            HStack {
-+                // Check Native Login Manager to see if back button should be shown.
-+                if (SalesforceManager.shared.nativeLoginManager().shouldShowBackButton()) {
++            // MARK: - STYLING HINT: Back Button Section
++            // Customize the back button appearance here:
++            // - Change icon: replace "arrowshape.backward.fill" with any SF Symbol
++            // - Adjust size: modify width/height values (currently 30)
++            // - Change color: modify tint color
++            // - Adjust opacity: change opacity value (currently 0.5)
++            if SalesforceManager.shared.nativeLoginManager().shouldShowBackButton() {
++                HStack {
 +                    Button {
-+                        // Let Native Login Manager do all the work.
 +                        SalesforceManager.shared.nativeLoginManager().cancelAuthentication()
 +                    } label: {
 +                        Image(systemName: "arrowshape.backward.fill")
 +                            .resizable()
-+                            .frame(width: 30, height: 30, alignment: .topLeading)
++                            .frame(width: 30, height: 30)
 +                            .tint(colorScheme == .dark ? .white : .blue)
 +                            .opacity(0.5)
 +                    }
-+                    .frame(width: 30, height: 30, alignment: .topLeading)
 +                    .padding(.leading)
-+                    
-+                } else {
 +                    Spacer()
 +                }
-+                Spacer()
 +            }
 +            
 +            Spacer()
 +            
++            // MARK: - STYLING HINT: Logo/Icon Section
++            // Customize the login icon:
++            // - Change icon: replace "lock.shield.fill" with any SF Symbol
++            // - Adjust size: modify font size (currently 60)
++            // - Change color: modify foregroundStyle (currently .blue)
 +            Image(systemName: "lock.shield.fill")
-+                .imageScale(.large)
-+                .foregroundStyle(.blue)
 +                .font(.system(size: 60))
++                .foregroundStyle(.blue)
 +            
++            // MARK: - STYLING HINT: Loading Indicator
++            // Customize the progress indicator:
++            // - Replace ProgressView() with custom loading view
++            // - Add animation or styling
 +            if isAuthenticating {
 +                ProgressView()
 +            }
 +            
++            // MARK: - STYLING HINT: Message Display
++            // Customize message appearance:
++            // - Modify font: change .font(.body) to any Font
++            // - Modify colors: change Color.red and Color.blue
++            // - Adjust padding: modify .padding() value
 +            if !messageText.isEmpty {
 +                Text(messageText)
 +                    .font(.body)
@@ -143,49 +153,63 @@ index 0000000..6972a6f
 +                    .padding()
 +            }
 +            
-+            // Login layout
-+            switch(identityFlowLayoutType) {
-+            case .Login:
-+                TextField("Username", text: $username)
-+                    .loginTextField()
-+                
-+                SecureField("Password", text: $password)
-+                    .loginSecureField()
-+                
-+                Button {
-+                    Task {
-+                        messageReset()
-+                        isAuthenticating = true
-+                        
-+                        // Login.
-+                        let result = await SalesforceManager.shared.nativeLoginManager()
-+                            .login(username: username, password: password)
-+                        isAuthenticating = false
-+                        
-+                        // Act on the response.
-+                        unwrapResult(result) {
-+                            layoutReset()
-+                        }
++            // MARK: - STYLING HINT: Login Form Section
++            // The text fields use the LoginField modifier (see bottom of file)
++            // To customize text field styling, modify the LoginField ViewModifier
++            
++            TextField("Username", text: $username)
++                .loginTextField()
++            
++            SecureField("Password", text: $password)
++                .loginSecureField()
++            
++            // MARK: - STYLING HINT: Login Button
++            // Customize the login button:
++            // - Change button style: replace .bordered with .borderedProminent, .plain, or custom
++            // - Modify tint color: change tint value
++            // - Adjust button content: modify HStack content (icon + text)
++            // - Change minimum width: modify minWidth value (currently 150)
++            Button {
++                Task {
++                    messageReset()
++                    isAuthenticating = true
++                    
++                    let result = await SalesforceManager.shared.nativeLoginManager()
++                        .login(username: username, password: password)
++                    isAuthenticating = false
++                    
++                    unwrapResult(result) {
++                        layoutReset()
 +                    }
-+                } label: {
-+                    HStack {
-+                        Image(systemName: "lock")
-+                        Text("Log In")
-+                    }.frame(minWidth: 150)
 +                }
-+                .buttonStyle(.bordered)
-+                .tint(colorScheme == .dark ? .white : .blue)
-+                
-+                Button("Salesforce Login") {
-+                    SalesforceManager.shared.nativeLoginManager().fallbackToWebAuthentication()
++            } label: {
++                HStack {
++                    Image(systemName: "lock")
++                    Text("Log In")
 +                }
-+                .buttonStyle(.bordered)
-+                .tint(colorScheme == .dark ? .white : .blue)
++                .frame(minWidth: 150)
 +            }
++            .buttonStyle(.bordered)
++            .tint(colorScheme == .dark ? .white : .blue)
++            
++            // MARK: - STYLING HINT: Salesforce Login Button
++            // Customize the Salesforce login button:
++            // - Change button style: replace .bordered with .borderedProminent, .plain, or custom
++            // - Modify tint color: change tint value
++            // - Change button text: modify "Salesforce Login" string
++            Button("Salesforce Login") {
++                SalesforceManager.shared.nativeLoginManager().fallbackToWebAuthentication()
++            }
++            .buttonStyle(.bordered)
++            .tint(colorScheme == .dark ? .white : .blue)
 +            
 +            Spacer()
 +        }
 +        .padding()
++        // MARK: - STYLING HINT: Blur Effect
++        // Customize blur effect during authentication:
++        // - Adjust blur radius: change 2.0 value
++        // - Remove blur: set radius to 0.0 or remove modifier
 +        .blur(radius: isAuthenticating ? 2.0 : 0.0)
 +    }
 +    
@@ -194,7 +218,6 @@ index 0000000..6972a6f
 +    /// Sets the error message displayed to the user.
 +    private func errorMessage(_ text: String) {
 +        messageReset()
-+        
 +        messageText = text
 +        isMessageError = true
 +    }
@@ -235,27 +258,27 @@ index 0000000..6972a6f
 +    private func layoutReset() {
 +        password = ""
 +        username = ""
-+        
-+        navigate(.Login)
-+    }
-+    
-+    /// Navigates to the specified layout.
-+    private func navigate(_ identityFlowLayoutType: IdentityFlowLayoutType) {
 +        messageReset()
-+        self.identityFlowLayoutType = identityFlowLayoutType
 +    }
 +}
 +
-+///
-+/// Layouts for the available Salesforce identity flows.
-+///
-+enum IdentityFlowLayoutType {
-+    /// A layout for authorization code and credentials flow via username and password
-+    case Login
-+}
-+
-+// MARK: Private SwiftUI Utilities
-+
++// MARK: - STYLING HINT: Text Field Customization
++// This ViewModifier controls the appearance of both username and password fields.
++// To customize text field styling, modify the properties below:
++// - textFieldStyle: Change .roundedBorder to .plain, .automatic, or create a custom style
++// - Add padding: Use .padding() modifier
++// - Add background: Use .background() modifier with Color or Shape
++// - Add border: Use .overlay() modifier with RoundedRectangle or other shapes
++// - Change font: Use .font() modifier
++// - Add corner radius: Use .cornerRadius() or .clipShape()
++//
++// Example customizations:
++//   .textFieldStyle(.plain)
++//   .padding(12)
++//   .background(Color.gray.opacity(0.1))
++//   .cornerRadius(8)
++//   .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color.gray.opacity(0.3), lineWidth: 1))
++//
 +private struct LoginField: ViewModifier {
 +    func body(content: Content) -> some View {
 +        content
@@ -276,7 +299,6 @@ index 0000000..6972a6f
 +        modifier(LoginField())
 +    }
 +}
-+
 diff --git a/{{projectName}}/NativeLoginViewFactory.swift b/{{projectName}}/NativeLoginViewFactory.swift
 new file mode 100644
 index 0000000..1458496

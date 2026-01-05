@@ -70,6 +70,7 @@ export class FileSystemDiffNode extends BaseNode<AddFeatureState> {
     '.plist',
     '.strings',
     '.stringsdict',
+    '.entitlements',
   ];
 
   constructor(logger?: Logger) {
