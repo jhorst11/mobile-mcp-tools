@@ -10,7 +10,7 @@ import dedent from 'dedent';
 import { Logger, AbstractWorkflowTool } from '@salesforce/magen-mcp-workflow';
 import { BUILD_TOOL, BuildWorkflowInput } from './metadata.js';
 import { TempDirectoryManager, defaultTempDirectoryManager } from '../../../common.js';
-import { ADD_FEATURE_ORCHESTRATOR_TOOL } from '../../workflow/sfmobile-native-add-feature/metadata.js';
+import { ORCHESTRATOR_TOOL } from '../../workflow/sfmobile-native-project-manager/metadata.js';
 
 export class SFMobileNativeBuildTool extends AbstractWorkflowTool<typeof BUILD_TOOL> {
   private readonly tempDirManager: TempDirectoryManager;
@@ -19,7 +19,7 @@ export class SFMobileNativeBuildTool extends AbstractWorkflowTool<typeof BUILD_T
     server: McpServer,
     tempDirManager: TempDirectoryManager = defaultTempDirectoryManager,
     logger?: Logger,
-    orchestratorToolId: string = ADD_FEATURE_ORCHESTRATOR_TOOL.toolId
+    orchestratorToolId: string = ORCHESTRATOR_TOOL.toolId
   ) {
     super(server, BUILD_TOOL, orchestratorToolId, 'BuildTool', logger);
     this.tempDirManager = tempDirManager;
@@ -64,6 +64,12 @@ export class SFMobileNativeBuildTool extends AbstractWorkflowTool<typeof BUILD_T
       cd ${projectPath}
       \`\`\`
 
+
+      **Step 1a:** Run pod install
+      \`\`\`bash
+      pod install
+      \`\`\`
+      
       **Step 2:** Execute the build command (this is the ONLY command you should run):
       \`\`\`bash
       { xcodebuild -workspace ${projectName}.xcworkspace -scheme ${projectName} -destination 'generic/platform=iOS Simulator' -derivedDataPath "${derivedDataPath}" -jobs $(sysctl -n hw.ncpu) ${cleanCommand}build CONFIGURATION_BUILD_DIR="${this.tempDirManager.getAppArtifactRootPath(projectName)}" ONLY_ACTIVE_ARCH=YES> "${this.tempDirManager.getIOSBuildOutputFilePath()}" 2>&1; echo $?; }

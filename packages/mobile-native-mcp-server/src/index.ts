@@ -53,10 +53,11 @@ const getInputTool = createSFMobileNativeGetInputTool(server);
 const inputExtractionTool = createSFMobileNativeInputExtractionTool(server);
 const addFeatureGetInputTool = createSFMobileNativeAddFeatureGetInputTool(server);
 const addFeatureInputExtractionTool = createSFMobileNativeAddFeatureInputExtractionTool(server);
-// Build tool defaults to add-feature orchestrator (used in add-feature workflow)
-// Note: The main workflow also uses this tool, but the orchestrator ID only affects
-// the guidance prompt when the tool is called directly by LLM. Since both workflows
-// use BuildValidationService which handles the tool execution, this should work for both.
+// Build tool defaults to project manager orchestrator (main workflow)
+// Note: The orchestrator ID only affects the guidance prompt when the tool is called directly by LLM.
+// Both workflows use BuildValidationService which handles the tool execution programmatically,
+// so the orchestrator ID doesn't matter in that case. If the add-feature workflow needs a different
+// orchestrator ID, a separate instance can be created with the add-feature orchestrator ID.
 const buildTool = new SFMobileNativeBuildTool(server);
 const buildRecoveryTool = new SFMobileNativeBuildRecoveryTool(server);
 const xcodeAddFilesTool = new UtilsXcodeAddFilesTool(server);

@@ -193,7 +193,7 @@ export class DeploymentNode extends AbstractGuidanceNode<State> {
     return state.platform === 'iOS'
       ? dedent`
         \`\`\`bash
-        xcrun simctl launch "${targetDevice}" "${packageName}.${state.projectName}"
+        xcrun simctl launch "${targetDevice}" "${packageName}"
         \`\`\`
       `
       : dedent`

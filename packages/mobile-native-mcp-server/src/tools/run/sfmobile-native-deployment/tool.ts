@@ -181,7 +181,7 @@ export class SFMobileNativeDeploymentTool extends AbstractNativeProjectManagerTo
     return input.platform === 'iOS'
       ? dedent`
         \`\`\`bash
-        xcrun simctl launch "${input.targetDevice}" "${input.packageName}.${input.projectName}"
+        xcrun simctl launch "${input.targetDevice}" "${input.packageName}"
         \`\`\`
       `
       : dedent`

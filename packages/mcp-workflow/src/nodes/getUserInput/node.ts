@@ -103,7 +103,35 @@ export class GetUserInputNode<TState extends StateType<StateDefinition>> extends
   }
 
   execute = (state: TState): Partial<TState> => {
+    // Check if user input is already present in the target property (e.g., from a resume command)
+    // This handles the case where the orchestrator resumes with user input that was already stored
+    const existingUserInput = state[this.userInputProperty];
+    if (existingUserInput !== undefined && existingUserInput !== null) {
+      // User input already exists in state, return empty update to preserve it
+      return {};
+    }
+
+    // Check if user input is in state.userInput (common resume pattern)
+    // When LangGraph resumes with Command({ resume: userInput }), it may update state.userInput
+    // If so, we should use that data for our target property
+    const stateUserInput = (state as Record<string, unknown>).userInput;
+    if (
+      stateUserInput !== undefined &&
+      stateUserInput !== null &&
+      typeof stateUserInput === 'object' &&
+      Object.keys(stateUserInput).length > 0
+    ) {
+      // User input from resume is in state.userInput, use it for our target property
+      return { [this.userInputProperty]: stateUserInput } as unknown as Partial<TState>;
+    }
+
     const unfulfilledProperties = this.getUnfulfilledProperties(state);
+
+    // If all properties are already fulfilled, no need to call the tool
+    if (unfulfilledProperties.length === 0) {
+      return {};
+    }
+
     const userResponse = this.getInputService.getInput(unfulfilledProperties);
     return { [this.userInputProperty]: userResponse } as unknown as Partial<TState>;
   };
